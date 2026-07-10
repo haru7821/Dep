@@ -62,10 +62,61 @@ const SHARD_UPGRADES = [
     max:20, effect:l=>1, fmt:l=>`${(3+3*l)}% crit` },
 ];
 
-const CRIT_MULT = 2.5;                  // critical hit damage multiplier
+const CRIT_MULT = 2.5;                  // base critical hit damage multiplier
 function critChance(){ return Math.min(0.75, 0.03 + 0.03 * S.shardUpg.crit); }
+function critMultiplier(){ return CRIT_MULT + 0.1 * talent('precision'); }
 function critRoll(dmg){
-  return Math.random() < critChance() ? { dmg: dmg * CRIT_MULT, crit:true } : { dmg, crit:false };
+  return Math.random() < critChance() ? { dmg: dmg * critMultiplier(), crit:true } : { dmg, crit:false };
+}
+
+// --- Talent tree: spent with Talent Points (earned from prestige + achievements)
+const TALENTS = [
+  { id:'might',     branch:'⚔️ Offense', name:'Might',        desc:'+5% all damage',          max:10, cost:2, fmt:l=>`+${5*l}% dmg` },
+  { id:'precision', branch:'⚔️ Offense', name:'Precision',    desc:'+0.1× critical damage',   max:5,  cost:2, fmt:l=>`×${(CRIT_MULT+0.1*l).toFixed(1)} crit` },
+  { id:'haste',     branch:'⚔️ Offense', name:'Haste',        desc:'+5% attack speed',        max:8,  cost:2, fmt:l=>`+${5*l}% spd` },
+  { id:'bulwark',   branch:'🛡️ Defense', name:'Bulwark',      desc:'+10% crystal defense',    max:8,  cost:1, fmt:l=>`+${10*l}% def` },
+  { id:'regen',     branch:'🛡️ Defense', name:'Regeneration', desc:'+0.5%/s crystal regen',   max:6,  cost:1, fmt:l=>`+${(0.5*l).toFixed(1)}%/s` },
+  { id:'greed',     branch:'💰 Economy', name:'Greed',        desc:'+8% gold from kills',     max:8,  cost:1, fmt:l=>`+${8*l}% gold` },
+  { id:'fortune',   branch:'💰 Economy', name:'Fortune',      desc:'+1% golden enemy chance', max:5,  cost:2, fmt:l=>`+${l}% golden` },
+  { id:'focus',     branch:'✨ Skills',  name:'Focus',        desc:'-4% skill cooldown',      max:8,  cost:2, fmt:l=>`-${4*l}% CD` },
+  { id:'empower',   branch:'✨ Skills',  name:'Empower',      desc:'+10% skill damage',       max:8,  cost:2, fmt:l=>`+${10*l}% skill` },
+  { id:'grace',     branch:'✨ Skills',  name:'Grace',        desc:'+1s party buff',          max:5,  cost:1, fmt:l=>`+${l}s buff` },
+];
+const talent = id => (S.talents[id] || 0);
+
+// talent-derived modifiers
+function effInterval(def){ return Math.max(0.05, def.atkInterval * (1 - 0.05 * talent('haste'))); }
+function effSkillCd(def){ return def.skill.cd * (1 - 0.04 * talent('focus')); }
+function wardMul(){ return shardMul('ward') * (1 + 0.10 * talent('bulwark')); }
+function goldMulAll(){ return shardMul('gold') * (1 + 0.08 * talent('greed')); }
+function goldenChance(){ return 0.03 + 0.01 * talent('fortune'); }
+
+// --- Achievements: one-time unlocks that pay Talent Points + spendable Shards
+const ACHIEVEMENTS = [
+  { id:'w25',  name:'Rising Tide',      desc:'Reach Wave 25',            tp:1, shards:1, check:()=>S.bestWave>=25 },
+  { id:'w50',  name:'Half a Hundred',   desc:'Reach Wave 50',            tp:1, shards:2, check:()=>S.bestWave>=50 },
+  { id:'w100', name:'Centurion',        desc:'Reach Wave 100',           tp:2, shards:3, check:()=>S.bestWave>=100 },
+  { id:'w200', name:'Unbroken',         desc:'Reach Wave 200',           tp:3, shards:5, check:()=>S.bestWave>=200 },
+  { id:'k1k',  name:'Monster Hunter',   desc:'Defeat 1,000 enemies',     tp:1, shards:1, check:()=>S.totalKills>=1000 },
+  { id:'k10k', name:'Legion Breaker',   desc:'Defeat 10,000 enemies',    tp:2, shards:3, check:()=>S.totalKills>=10000 },
+  { id:'g1m',  name:'Treasurer',        desc:'Earn 1M total gold',       tp:1, shards:1, check:()=>S.totalGoldEarned>=1e6 },
+  { id:'g1b',  name:'Tycoon',           desc:'Earn 1B total gold',       tp:2, shards:3, check:()=>S.totalGoldEarned>=1e9 },
+  { id:'gold', name:'Lucky Strike',     desc:'Slay a golden enemy',      tp:1, shards:1, check:()=>S.goldenKills>=1 },
+  { id:'team', name:'Fellowship',       desc:'Recruit all 5 heroes',     tp:2, shards:2, check:()=>HERO_DEFS.every(d=>S.heroLevels[d.id]>0) },
+  { id:'p1',   name:'First Reseal',     desc:'Prestige once',            tp:1, shards:0, check:()=>S.prestiges>=1 },
+  { id:'p10',  name:'Eternal Guardian', desc:'Prestige 10 times',        tp:3, shards:5, check:()=>S.prestiges>=10 },
+];
+function checkAchievements(){
+  for (const a of ACHIEVEMENTS){
+    if (!S.achievements[a.id] && a.check()){
+      S.achievements[a.id] = true;
+      S.talentPoints += a.tp;
+      S.shards += a.shards;
+      const reward = [a.tp?`+${a.tp} TP`:'', a.shards?`+${a.shards}💠`:''].filter(Boolean).join(', ');
+      toast('🏆 ' + a.name + (reward ? ' — ' + reward : ''));
+      GA('prestige');
+    }
+  }
 }
 
 // ------------------------------------------------------------------ formulas
@@ -114,6 +165,11 @@ function freshState(){
     recentGoldRate: [],     // gold/sec samples of recent waves (for offline calc)
     bestWave: 1,            // lifetime best wave reached
     totalKills: 0,          // lifetime enemies defeated
+    goldenKills: 0,         // golden enemies slain (lifetime)
+    prestiges: 0,           // number of reseals performed
+    achievements: {},       // id -> true when unlocked
+    talents: {},            // talent node id -> level
+    talentPoints: 0,        // spendable talent points
   };
 }
 
@@ -146,8 +202,8 @@ function globalDmgMul(){
   if (aunelLv > 0) m *= 1 + 0.03 * aunelLv;          // Aunel passive damage aura
   return m;
 }
-function combatMul(){ return globalDmgMul() * (partyBuffT > 0 ? PARTY_BUFF_MUL : 1); }
-function crystalMaxHp(){ return 100 * shardMul('ward'); }
+function combatMul(){ return globalDmgMul() * (partyBuffT > 0 ? PARTY_BUFF_MUL : 1) * (1 + 0.05 * talent('might')); }
+function crystalMaxHp(){ return 100 * wardMul(); }
 function gameSpeed(){ return S.speed * shardMul('speed'); }
 
 // ------------------------------------------------------------------ combat sim
@@ -194,7 +250,7 @@ function spawnEnemy(w){
   const type = pickType(w);
   const t = ENEMY_TYPES[type];
   const hp = enemyHP(w) * t.hp;
-  const golden = w >= 8 && Math.random() < 0.03;   // rare high-gold enemy
+  const golden = w >= 8 && Math.random() < goldenChance();   // rare high-gold enemy
   enemies.push({
     x: view.laneRight + Math.random()*40, y: view.ground,
     hp, maxHp: hp, type, speed: t.spd, frame:0, boss:false,
@@ -220,11 +276,15 @@ function grantGold(amount){
 function damageEnemy(e, dmg){
   e.hp -= dmg;
   if (e.hp <= 0){
-    const g = goldPerKill(S.wave) * e.goldMul * shardMul('gold');
+    const g = goldPerKill(S.wave) * e.goldMul * goldMulAll();
     grantGold(g);
     waveKills++;
     S.totalKills++;
-    if (e.golden){ addFloater(e.x, e.y - 34*(view.h/460), '💰 +' + fmt(g), '#ffe14d'); GA('prestige'); }
+    if (e.golden){
+      S.goldenKills++;
+      addFloater(e.x, e.y - 34*(view.h/460), '💰 +' + fmt(g), '#ffe14d'); GA('prestige');
+      checkAchievements();
+    }
     else addFloater(e.x, e.y - 30*(view.h/460), '+' + fmt(g), '#ffd75e');
     return true;
   }
@@ -241,7 +301,7 @@ function removeEnemy(e){ const i = enemies.indexOf(e); if (i >= 0) enemies.splic
 // ------------------------------------------------------------------ skills
 function castSkill(def, slot, lvl){
   const s = def.skill;
-  const roll = critRoll(skillBase(def, lvl) * combatMul() * s.mult);
+  const roll = critRoll(skillBase(def, lvl) * combatMul() * s.mult * (1 + 0.10 * talent('empower')));
   const dmg = roll.dmg;
   const hx = slot.x, hy = slot.y - 22;
   if (roll.crit && s.kind !== 'blessing') addFloater(hx, hy - 20, 'CRIT!', '#ffa03c');
@@ -282,7 +342,7 @@ function castSkill(def, slot, lvl){
   }
   else if (s.kind === 'blessing'){
     S.crystalHp = Math.min(1, S.crystalHp + 0.25);
-    partyBuffT = 5;
+    partyBuffT = 5 + talent('grace');
     const holy = skillBase(def, lvl) * combatMul() * 2.5;
     addFx({ kind:'nova', x: view.crystalX, y: slot.y - 18, r0:8, r:220, dur:0.7, color:s.fx });
     addFx({ kind:'heal', x: view.crystalX, y: view.ground - 40, dur:0.9, color:s.fx });
@@ -300,6 +360,8 @@ function simulate(dt){
   waveTime += dt;
   sfxGap -= dt;
   if (partyBuffT > 0) partyBuffT -= dt;
+  if (talent('regen') > 0 && S.crystalHp > 0)
+    S.crystalHp = Math.min(1, S.crystalHp + 0.005 * talent('regen') * dt);
 
   // spawn
   if (spawnedThisWave < totalToSpawn){
@@ -325,7 +387,7 @@ function simulate(dt){
       e.atkTimer += dt;
       if (e.atkTimer >= 1){
         e.atkTimer -= 1;
-        const dmgFrac = (e.boss ? 0.20 : 0.05) / shardMul('ward');
+        const dmgFrac = (e.boss ? 0.20 : 0.05) / wardMul();
         S.crystalHp = Math.max(0, S.crystalHp - dmgFrac);
         addFloater(view.crystalX, view.ground - 60*px, '-' + Math.round(dmgFrac*100) + '%', '#ff6b6b');
       }
@@ -338,7 +400,7 @@ function simulate(dt){
     const def = slot.def, lvl = S.heroLevels[def.id];
 
     // --- basic attack ---
-    const interval = def.atkInterval;
+    const interval = effInterval(def);
     heroTimers[def.id] = (heroTimers[def.id] || 0) + dt;
     while (heroTimers[def.id] >= interval){
       heroTimers[def.id] -= interval;
@@ -346,7 +408,7 @@ function simulate(dt){
     }
 
     // --- skill (auto-cast on cooldown) ---
-    const cd = def.skill.cd;
+    const cd = effSkillCd(def);
     skillTimers[def.id] = (skillTimers[def.id] || 0) + dt;
     if (skillTimers[def.id] >= cd){
       const wantsHeal = def.skill.kind === 'blessing' && S.crystalHp < 0.98;
@@ -379,6 +441,7 @@ function simulate(dt){
     S.wave++;
     if (S.wave > S.bestWave) S.bestWave = S.wave;
     checkUnlocks(S.wave);
+    checkAchievements();
     startWave(S.wave);
     showWaveBanner(S.wave);
     GA(isBossWave(S.wave) ? 'boss' : 'wave');
@@ -558,7 +621,7 @@ function draw(now){
   for (const slot of heroSlots()){
     if (!slot.active) continue;
     // skill-ready glow ring under the hero (also the tap-to-cast target)
-    if ((skillTimers[slot.def.id] || 0) >= slot.def.skill.cd){
+    if ((skillTimers[slot.def.id] || 0) >= effSkillCd(slot.def)){
       ctx.save();
       ctx.globalAlpha = 0.35 + 0.2*Math.sin(now/180);
       ctx.strokeStyle = slot.def.color; ctx.lineWidth = 2;
@@ -625,6 +688,7 @@ function updateHud(){
   el('s-wave').textContent = S.wave;
   el('s-gold').textContent = fmt(S.gold);
   el('s-shard').textContent = fmt(S.shards);
+  if (el('s-tp')) el('s-tp').textContent = fmt(S.talentPoints);
   el('s-crystal').textContent = Math.round(S.crystalHp*100) + '%';
   el('btnPrestige').disabled = prestigeShards(S.totalGoldEarned) <= S.shardsEarned;
   for (const def of HERO_DEFS){
@@ -638,7 +702,7 @@ function updateHud(){
     // skill cooldown bar
     const bar = el('cd-'+def.id);
     if (bar && S.heroLevels[def.id] > 0){
-      const frac = Math.min(1, (skillTimers[def.id] || 0) / def.skill.cd);
+      const frac = Math.min(1, (skillTimers[def.id] || 0) / effSkillCd(def));
       bar.style.width = (frac*100) + '%';
       bar.style.opacity = frac >= 1 ? '1' : '0.7';
     }
@@ -692,6 +756,7 @@ function buyHero(def){
   }
   const btn = el('buy-'+def.id);
   btn.innerHTML = `Upgrade <small>🪙 ${fmt(heroCost(def, S.heroLevels[def.id]))}</small>`;
+  checkAchievements();
   updateHud();
 }
 
@@ -731,18 +796,19 @@ function doPrestige(){
     const keep = {
       shards: S.shards + gain, shardsEarned: S.shardsEarned + gain,
       shardUpg: S.shardUpg, totalGoldEarned: S.totalGoldEarned,
-      bestWave: S.bestWave, totalKills: S.totalKills,
+      bestWave: S.bestWave, totalKills: S.totalKills, goldenKills: S.goldenKills,
+      prestiges: S.prestiges + 1, achievements: S.achievements,
+      talents: S.talents, talentPoints: S.talentPoints + 2,   // +2 TP per reseal
     };
     S = freshState();
-    S.shards = keep.shards; S.shardsEarned = keep.shardsEarned;
-    S.shardUpg = keep.shardUpg; S.totalGoldEarned = keep.totalGoldEarned;
-    S.bestWave = keep.bestWave; S.totalKills = keep.totalKills;
+    Object.assign(S, keep);
     enemies.length = 0; fx.length = 0; partyBuffT = 0;
     for (const k in skillTimers) skillTimers[k] = 0;
     startWave(1);
+    checkAchievements();
     buildHeroPanel(); updateHud(); save();
     closeModal(); GA('prestige');
-    toast('💠 The Crystal is resealed. +' + gain + ' shards.');
+    toast('💠 The Crystal is resealed. +' + gain + ' shards, +2 TP.');
   };
   el('cancPrestige').onclick = closeModal;
 }
@@ -828,7 +894,7 @@ canvas.addEventListener('pointerdown', e => {
   }
   if (best && bd < 48){
     const def = best.def;
-    const ready = (skillTimers[def.id] || 0) >= def.skill.cd;
+    const ready = (skillTimers[def.id] || 0) >= effSkillCd(def);
     if (ready && (enemies.length > 0 || def.skill.kind === 'blessing')){
       skillTimers[def.id] = 0;
       castSkill(def, best, S.heroLevels[def.id]);
@@ -853,6 +919,62 @@ function openStats(){
 }
 if (el('btnStats')) el('btnStats').onclick = openStats;
 
+// talent tree panel
+function openTalents(){
+  const branches = [...new Set(TALENTS.map(t => t.branch))];
+  let body = branches.map(b => {
+    const rows = TALENTS.filter(t => t.branch === b).map(t => {
+      const lvl = talent(t.id), maxed = lvl >= t.max;
+      const afford = S.talentPoints >= t.cost && !maxed;
+      return `<div class="shard-item">
+        <div class="info"><b>${t.name}</b> — ${t.desc}
+          <div class="lv">Lv ${lvl}/${t.max} · now ${t.fmt(lvl)}</div></div>
+        <button class="btn" data-tal="${t.id}" ${afford?'':'disabled'}>${maxed?'MAX':'🌳 '+t.cost}</button>
+      </div>`;
+    }).join('');
+    return `<div class="branch-title">${b}</div>${rows}`;
+  }).join('');
+  openModal(`
+    <h2>🌳 Talent Tree</h2>
+    <p>Spend Talent Points on permanent bonuses. Earn <b>+2 TP</b> per reseal and
+       more from achievements. You have <b style="color:var(--hp)">${S.talentPoints} TP</b>.</p>
+    <div class="shard-shop">${body}</div>
+    <button class="btn" id="closeTal" style="width:100%">Close</button>`);
+  el('closeTal').onclick = closeModal;
+  el('modalBox').querySelectorAll('[data-tal]').forEach(btn => {
+    btn.onclick = () => {
+      const t = TALENTS.find(x => x.id === btn.dataset.tal);
+      const lvl = talent(t.id);
+      if (S.talentPoints < t.cost || lvl >= t.max) return;
+      S.talentPoints -= t.cost;
+      S.talents[t.id] = lvl + 1;
+      GA('upgrade'); save(); openTalents(); updateHud();
+    };
+  });
+}
+if (el('btnTalents')) el('btnTalents').onclick = openTalents;
+
+// achievements panel
+function openAchievements(){
+  const done = ACHIEVEMENTS.filter(a => S.achievements[a.id]).length;
+  const rows = ACHIEVEMENTS.map(a => {
+    const got = !!S.achievements[a.id];
+    const reward = [a.tp?`+${a.tp} TP`:'', a.shards?`+${a.shards}💠`:''].filter(Boolean).join(' · ') || '—';
+    return `<div class="shard-item" style="${got?'':'opacity:.6'}">
+      <div class="info"><b>${got?'🏆':'🔒'} ${a.name}</b> — ${a.desc}
+        <div class="lv">Reward: ${reward}</div></div>
+      <div class="lv">${got?'DONE':''}</div>
+    </div>`;
+  }).join('');
+  openModal(`
+    <h2>🏆 Achievements <span style="font-size:13px;color:var(--muted)">(${done}/${ACHIEVEMENTS.length})</span></h2>
+    <p>One-time milestones that reward Talent Points and Aether Shards.</p>
+    <div class="shard-shop">${rows}</div>
+    <button class="btn" id="closeAch" style="width:100%">Close</button>`);
+  el('closeAch').onclick = closeModal;
+}
+if (el('btnAch')) el('btnAch').onclick = openAchievements;
+
 // audio buttons + unlock-on-first-gesture
 const btnMute = el('btnMute'), btnMusic = el('btnMusic');
 if (btnMute) btnMute.onclick = () => { const m = window.GameAudio && GameAudio.toggleMute(); btnMute.textContent = m ? '🔇' : '🔊'; };
@@ -867,6 +989,7 @@ function boot(){
   S = load() || freshState();
   resize();
   applyOffline();
+  checkAchievements();
   startWave(S.wave);
   buildHeroPanel();
   showWaveBanner(S.wave);

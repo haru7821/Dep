@@ -46,7 +46,9 @@ check('Cannot recruit Mira below unlock wave', guard === 0);
 // FIX 2 + shard exploit: prestige preserves totalGold, awards delta, no refund on spend
 const prestige = await page.evaluate(() => {
   // reset to a clean-ish run
-  S.shards = 0; S.shardsEarned = 0; S.shardUpg = {power:0,gold:0,speed:0,ward:0};
+  S.shards = 0; S.shardsEarned = 0; S.shardUpg = {power:0,gold:0,speed:0,ward:0,crit:0};
+  // pre-unlock all achievements so their shard rewards don't perturb the prestige-only math
+  S.achievements = Object.fromEntries(ACHIEVEMENTS.map(a=>[a.id,true]));
   S.totalGoldEarned = 9e6; // sqrt(9)=3 shards
   const t0 = prestigeShards(S.totalGoldEarned);           // 3
   // first prestige

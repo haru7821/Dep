@@ -79,6 +79,7 @@
   .shard-item .info{flex:1;font-size:12px}
   .shard-item .info b{color:var(--shard)}
   .shard-item .lv{font-size:11px;color:var(--muted)}
+  .branch-title{font-size:12px;font-weight:700;color:var(--accent);margin:10px 2px 2px}
   .toast{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
     background:rgba(20,24,48,.92);border:1px solid var(--line);border-radius:10px;
     padding:8px 14px;font-size:12px;pointer-events:none;opacity:0;transition:opacity .3s;z-index:20}
@@ -95,6 +96,7 @@
       <div class="stat g-wave">🌊 Wave <b id="s-wave">1</b></div>
       <div class="stat g-gold">🪙 <b id="s-gold">0</b></div>
       <div class="stat g-shard">💠 <b id="s-shard">0</b></div>
+      <div class="stat" style="color:var(--hp)">🌳 <b id="s-tp">0</b></div>
       <div class="stat"><span class="g-hp">💎</span> <b id="s-crystal">100%</b></div>
     </div>
   </header>
@@ -110,6 +112,8 @@
   <div class="controls">
     <button class="btn prestige" id="btnPrestige">💠 Reseal Crystal (Prestige)</button>
     <button class="btn" id="btnShop">💠 Shard Shop</button>
+    <button class="btn" id="btnTalents">🌳 Talents</button>
+    <button class="btn" id="btnAch">🏆 Achievements</button>
     <button class="btn" id="btnStats">📊 Stats</button>
     <button class="btn" id="btnReset">Reset Save</button>
     <button class="btn icon" id="btnMusic" title="Music on/off">♪</button>

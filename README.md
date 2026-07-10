@@ -64,6 +64,26 @@ reflows on narrow / portrait screens.
 - **Boss health bar** across the top during boss waves.
 - **📊 Stats panel** — best wave, enemies defeated, lifetime gold, shards, crit chance.
 
+## 🏆 Achievements & 🌳 Talent Tree
+
+**Achievements** are one-time milestones (reach Wave 25/50/100/200, defeat 1k/10k
+enemies, earn 1M/1B gold, slay a golden enemy, recruit all heroes, prestige
+1×/10×). Each pays out **Talent Points (TP)** and **Aether Shards**.
+
+**Talent Points** (also +2 per reseal) are spent in a branching **Talent Tree**:
+
+| Branch | Talents |
+|--------|---------|
+| ⚔️ Offense | Might (+dmg) · Precision (+crit dmg) · Haste (+atk speed) |
+| 🛡️ Defense | Bulwark (+crystal defense) · Regeneration (crystal regen) |
+| 💰 Economy | Greed (+gold) · Fortune (+golden-enemy chance) |
+| ✨ Skills | Focus (−skill cooldown) · Empower (+skill dmg) · Grace (+party-buff duration) |
+
+Achievements, talents, and Talent Points all persist through prestige.
+
+![talent tree](screenshot-talents.png)
+![achievements](screenshot-achievements.png)
+
 ## Design & balance
 
 Core formulas (wave index `w`):
