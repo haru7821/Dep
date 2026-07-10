@@ -108,6 +108,25 @@ Core formulas (wave index `w`):
 Milestones: W10 unlock Mira · W25 Faye · W100 Aunel · W500 fully reseals the
 Crystal (endless mode continues).
 
+## HD sprite sheets (optional)
+
+The game can render **real animated sprite-sheet art** (idle / walk / attack /
+cast frames) instead of the built-in canvas pixel-art. Drop PNG sheets into
+[`assets/`](assets/README.md) with these names and click the **🎨** button (or
+open with `?sheets=1`):
+
+| File | Character |
+|------|-----------|
+| `warrior.png` | Sir Garran (Knight) |
+| `wizard.png` | Mira (Mage) |
+| `archer.png` | Faye (Archer) |
+| `sorcerer.png` | Rai (Storm Ronin) |
+| `shadow.png` | Boss |
+
+Sheets are off by default and any missing/broken sheet falls back to the
+built-in art automatically, so the game always runs. Grid/frame counts are
+configured in `sheets.js → SHEET_CONFIG` if your export needs adjusting.
+
 ## Files
 
 | File | Contents |
@@ -115,6 +134,7 @@ Crystal (endless mode continues).
 | `index.html` | Markup, HUD, hero/skill panel, audio & mobile styling |
 | `game.js` | Game engine: waves, combat, skills + visible FX, enemy types, economy, save/load, offline, prestige, shop |
 | `sprites.js` | Pure canvas pixel-art renderers for every hero (incl. Rai), enemy type, boss, the Crystal, and the parallax night background |
+| `sheets.js` | Optional image sprite-sheet animation system (`assets/*.png`) with canvas fallback |
 | `audio.js` | Web Audio synthesized SFX + background music |
 
 ## Built with a multi-agent workflow

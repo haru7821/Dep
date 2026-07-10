@@ -213,6 +213,7 @@ const floaters = [];         // damage/gold popups {x,y,txt,color,life}
 const heroTimers = {};       // basic-attack cooldown per hero
 const skillTimers = {};      // skill cooldown accumulator per hero
 const heroFlash = {};        // attack-flash timer per hero id (survives heroSlots rebuilds)
+const heroAnim = {};         // per-hero sprite-sheet animation state {name, t}
 let spawnTimer = 0, spawnedThisWave = 0, waveKills = 0, waveGoldAccum = 0, waveTime = 0;
 let partyBuffT = 0;          // remaining seconds of Aunel's damage buff
 
@@ -383,6 +384,7 @@ function castSkill(def, slot, lvl){
   const roll = critRoll(skillBase(def, lvl) * combatMul() * s.mult * (1 + 0.10 * talent('empower')));
   const dmg = roll.dmg;
   const hx = slot.x, hy = slot.y - 22;
+  heroAnim[def.id] = { name:'cast', t:0.6 };
   if (roll.crit && s.kind !== 'blessing') addFloater(hx, hy - 20, 'CRIT!', '#ffa03c');
 
   if (s.kind === 'shock'){
@@ -548,10 +550,12 @@ function simulate(dt){
     if (floaters[i].life <= 0) floaters.splice(i, 1);
   }
   for (const k in heroFlash){ if (heroFlash[k] > 0) heroFlash[k] -= dt; }
+  for (const k in heroAnim){ if (heroAnim[k].t > 0) heroAnim[k].t -= dt; }
 }
 
 function basicAttack(def, slot, lvl){
   const hx = slot.x, hy = slot.y - 22;
+  if (!(heroAnim[def.id] && heroAnim[def.id].name === 'cast')) heroAnim[def.id] = { name:'attack', t:0.35 };
   if (def.target === 'support'){
     S.crystalHp = Math.min(1, S.crystalHp + 0.01 * lvl);
     return;
@@ -682,7 +686,11 @@ function draw(now){
     const es = size * (e.boss ? 3 : t.size);
     const floatOff = t.float ? (10 + Math.sin(now/300)*4) : 0;
     const by = e.y - floatOff;
-    if (e.boss && Spr().drawBoss) Spr().drawBoss(ctx, e.x, by, es, e.frame);
+    if (e.boss){
+      const atCrystal = e.x <= view.crystalX + 40 * px;
+      const drew = window.Sheets && Sheets.draw(ctx, 'boss', e.x, by, es*16, atCrystal ? 'attack' : 'walk', now);
+      if (!drew){ if (Spr().drawBoss) Spr().drawBoss(ctx, e.x, by, es, e.frame); else drawFallbackChar(e.x, by, es, '#b3407a'); }
+    }
     else if (Spr().drawEnemy) Spr().drawEnemy(ctx, e.x, by, es, e.type, e.frame, e.hp/e.maxHp);
     else drawFallbackChar(e.x, by, es, '#b3407a');
     // frozen overlay
@@ -721,10 +729,16 @@ function draw(now){
       ctx.beginPath(); ctx.ellipse(slot.x, slot.y - 2, size*4, size*1.8, 0, 0, Math.PI*2); ctx.stroke();
       ctx.restore();
     }
-    const frame = (heroFlash[slot.def.id] > 0) ? 1 : (Math.floor(now/350)%2);
-    const fn = Spr()[slot.def.draw];
-    if (fn) fn(ctx, slot.x, slot.y, size, frame);
-    else drawFallbackChar(slot.x, slot.y, size, slot.def.color);
+    // prefer an image sprite-sheet if one is loaded; otherwise canvas pixel-art
+    const st = heroAnim[slot.def.id];
+    const animName = (st && st.t > 0) ? st.name : 'idle';
+    const drewSheet = window.Sheets && Sheets.draw(ctx, slot.def.id, slot.x, slot.y, size*20, animName, now);
+    if (!drewSheet){
+      const frame = (heroFlash[slot.def.id] > 0) ? 1 : (Math.floor(now/350)%2);
+      const fn = Spr()[slot.def.draw];
+      if (fn) fn(ctx, slot.x, slot.y, size, frame);
+      else drawFallbackChar(slot.x, slot.y, size, slot.def.color);
+    }
   }
 
   // boss health bar across the top during boss waves
@@ -1073,6 +1087,19 @@ if (el('btnAch')) el('btnAch').onclick = openAchievements;
 const btnMute = el('btnMute'), btnMusic = el('btnMusic');
 if (btnMute) btnMute.onclick = () => { const m = window.GameAudio && GameAudio.toggleMute(); btnMute.textContent = m ? '🔇' : '🔊'; };
 if (btnMusic) btnMusic.onclick = () => { const on = window.GameAudio && GameAudio.toggleMusic(); btnMusic.textContent = on ? '♪' : '♪̶'; btnMusic.style.opacity = on ? '1' : '0.5'; };
+// HD sprite-sheet toggle (uses assets/*.png if present; reloads to apply)
+const btnSheets = el('btnSheets');
+if (btnSheets){
+  if (window.Sheets && Sheets.isEnabled()) btnSheets.classList.add('sel');
+  btnSheets.onclick = () => {
+    if (!window.Sheets) return;
+    const on = !Sheets.isEnabled();
+    Sheets.setEnabled(on);
+    toast(on ? '🎨 HD sprites ON — place PNGs in assets/ (reloading…)' : '🎨 HD sprites off (reloading…)');
+    setTimeout(() => location.reload(), 700);
+  };
+}
+
 function audioUnlock(){ if (window.GameAudio) GameAudio.unlock(); window.removeEventListener('pointerdown', audioUnlock); window.removeEventListener('keydown', audioUnlock); window.removeEventListener('touchstart', audioUnlock); }
 window.addEventListener('pointerdown', audioUnlock);
 window.addEventListener('touchstart', audioUnlock);
