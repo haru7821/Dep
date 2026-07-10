@@ -266,6 +266,81 @@ function startWave(w){
 function addFloater(x, y, txt, color){ floaters.push({ x, y, txt, color, life: 1 }); }
 function addFx(o){ o.t = 0; if (o.dur == null) o.dur = 0.3; fx.push(o); if (fx.length > 140) fx.shift(); }
 
+// ---------------------------------------------------- glowing particle system
+const PI2 = Math.PI * 2;
+const particles = [];
+const MAX_PARTICLES = 340;
+// Element presets — colors + motion shape the look of each spell (fire/ice/…)
+const PARTICLE_PRESETS = {
+  fire:   { n:26, colors:['#ffe27a','#ff9d3c','#ff5a1a','#ff2d0a'], shape:'circle', spMin:40,  spMax:180, sizeMin:2, sizeMax:5, life:[0.4,0.9], grav:-46, drag:0.90, rise:26, glow:true },
+  smoke:  { n:8,  colors:['#3a2418','#241812'],                     shape:'circle', spMin:10,  spMax:60,  sizeMin:5, sizeMax:9, life:[0.6,1.1], grav:-30, drag:0.9,  rise:18, glow:false },
+  ice:    { n:22, colors:['#d6f6ff','#8fe0ff','#5fd0ff','#bfefff'], shape:'shard',  spMin:30,  spMax:160, sizeMin:2, sizeMax:5, life:[0.5,1.0], grav:34,  drag:0.92, rise:0,  glow:true },
+  frost:  { n:16, colors:['#eaffff','#bfefff','#8fe0ff'],           shape:'star',   spMin:10,  spMax:80,  sizeMin:2, sizeMax:4, life:[0.6,1.3], grav:10,  drag:0.94, rise:0,  glow:true },
+  spark:  { n:20, colors:['#ffffff','#bff0ff','#7ad0ff'],           shape:'spark',  spMin:130, spMax:300, sizeMin:6, sizeMax:13,life:[0.12,0.34],grav:0,  drag:0.80, rise:0,  glow:true },
+  poison: { n:16, colors:['#c8ff8a','#7CFC55','#3fae2a'],           shape:'bubble', spMin:10,  spMax:64,  sizeMin:2, sizeMax:6, life:[0.8,1.7], grav:-30, drag:0.93, rise:22, glow:true },
+  holy:   { n:18, colors:['#fff6c0','#ffe9a0','#ffd75e'],           shape:'star',   spMin:20,  spMax:130, sizeMin:2, sizeMax:5, life:[0.6,1.2], grav:-48, drag:0.9,  rise:20, glow:true },
+  earth:  { n:18, colors:['#e0b877','#a06a34','#ffcc66'],           shape:'shard',  spMin:40,  spMax:180, sizeMin:2, sizeMax:5, life:[0.35,0.8],grav:150, drag:0.9,  rise:0,  glow:false },
+};
+function spawnParticles(x, y, name, scale = 1){
+  const p = PARTICLE_PRESETS[name]; if (!p) return;
+  const n = Math.max(1, Math.round(p.n * scale));
+  for (let i = 0; i < n; i++){
+    if (particles.length >= MAX_PARTICLES) particles.shift();
+    const ang = Math.random() * PI2;
+    const sp = p.spMin + Math.random() * (p.spMax - p.spMin);
+    const life = p.life[0] + Math.random() * (p.life[1] - p.life[0]);
+    particles.push({
+      x, y,
+      vx: Math.cos(ang) * sp,
+      vy: Math.sin(ang) * sp - (p.rise || 0),
+      life, max: life,
+      size: (p.sizeMin + Math.random() * (p.sizeMax - p.sizeMin)) * scale,
+      color: p.colors[(Math.random() * p.colors.length) | 0],
+      shape: p.shape, grav: p.grav, drag: p.drag, glow: p.glow,
+    });
+  }
+}
+function updateParticles(dt){
+  for (let i = particles.length - 1; i >= 0; i--){
+    const q = particles[i];
+    q.life -= dt;
+    if (q.life <= 0){ particles.splice(i, 1); continue; }
+    const df = Math.pow(q.drag, dt * 60);
+    q.vx *= df; q.vy *= df;
+    q.vy += q.grav * dt;
+    q.x += q.vx * dt; q.y += q.vy * dt;
+  }
+}
+function drawParticles(){
+  if (!particles.length) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const q of particles){
+    const a = Math.max(0, Math.min(1, q.life / q.max));
+    ctx.globalAlpha = a;
+    ctx.fillStyle = q.color; ctx.strokeStyle = q.color;
+    ctx.shadowColor = q.glow ? q.color : 'transparent';
+    ctx.shadowBlur = q.glow ? 8 : 0;
+    if (q.shape === 'circle'){
+      ctx.beginPath(); ctx.arc(q.x, q.y, q.size, 0, PI2); ctx.fill();
+    } else if (q.shape === 'shard'){
+      ctx.fillRect(q.x - q.size/2, q.y - q.size/2, q.size, q.size * 1.7);
+    } else if (q.shape === 'spark'){
+      const m = Math.hypot(q.vx, q.vy) || 1;
+      ctx.lineWidth = 2; ctx.beginPath();
+      ctx.moveTo(q.x, q.y); ctx.lineTo(q.x - q.vx/m*q.size, q.y - q.vy/m*q.size); ctx.stroke();
+    } else if (q.shape === 'star'){
+      const s = q.size * 1.7; ctx.lineWidth = 1.5; ctx.beginPath();
+      ctx.moveTo(q.x - s, q.y); ctx.lineTo(q.x + s, q.y);
+      ctx.moveTo(q.x, q.y - s); ctx.lineTo(q.x, q.y + s); ctx.stroke();
+    } else if (q.shape === 'bubble'){
+      ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(q.x, q.y, q.size, 0, PI2); ctx.stroke();
+    }
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0; ctx.globalCompositeOperation = 'source-over';
+}
+
 function grantGold(amount){
   S.gold += amount;
   S.totalGoldEarned += amount;
@@ -283,9 +358,13 @@ function damageEnemy(e, dmg){
     if (e.golden){
       S.goldenKills++;
       addFloater(e.x, e.y - 34*(view.h/460), '💰 +' + fmt(g), '#ffe14d'); GA('prestige');
+      spawnParticles(e.x, e.y - 14, 'holy', 1.4);
       checkAchievements();
     }
     else addFloater(e.x, e.y - 30*(view.h/460), '+' + fmt(g), '#ffd75e');
+    // element-themed death burst
+    if (e.boss){ spawnParticles(e.x, e.y - 24, 'fire', 2.2); spawnParticles(e.x, e.y - 24, 'earth', 1.4); GA('explosion'); }
+    else if (e.type === 'wraith') spawnParticles(e.x, e.y - 16, 'poison', 1.3);   // 독 cloud
     return true;
   }
   return false;
@@ -307,45 +386,57 @@ function castSkill(def, slot, lvl){
   if (roll.crit && s.kind !== 'blessing') addFloater(hx, hy - 20, 'CRIT!', '#ffa03c');
 
   if (s.kind === 'shock'){
+    // earthen shockwave: dust + amber debris
     addFx({ kind:'nova', x: hx + 34, y: slot.y - 12, r0:8, r:150, dur:0.5, color:s.fx });
+    spawnParticles(hx + 34, slot.y - 8, 'earth', 1.3);
+    spawnParticles(hx + 34, slot.y - 8, 'fire', 0.5);
     for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], dmg)) enemies.splice(i, 1);
     GA('explosion');
   }
   else if (s.kind === 'frost'){
+    // ICE: white ring + crystalline shards + twinkling frost sparkles
     const cx = (view.crystalX + view.laneRight) / 2, cy = slot.y - 16;
     addFx({ kind:'nova', x: cx, y: cy, r0:8, r:190, dur:0.6, color:s.fx });
+    spawnParticles(cx, cy, 'ice', 1.4);
+    spawnParticles(cx, cy, 'frost', 1.3);
     for (let i = enemies.length - 1; i >= 0; i--){
       const e = enemies[i];
-      if (!ENEMY_TYPES[e.type] || !ENEMY_TYPES[e.type].slowImmune) e.slow = 3;   // freeze
+      if (!ENEMY_TYPES[e.type] || !ENEMY_TYPES[e.type].slowImmune){ e.slow = 3; spawnParticles(e.x, e.y-14, 'frost', 0.4); }  // freeze
       if (damageEnemy(e, dmg)) enemies.splice(i, 1);
     }
     GA('ice');
   }
   else if (s.kind === 'explode'){
+    // FIRE: arrow → fireball + embers + smoke
     const t = nearestEnemy(); if (!t) return;
     const R = 95;
     addFx({ kind:'arrow', x: hx, y: hy, x2: t.x, y2: t.y - 14, dur:0.22, color:s.fx });
     addFx({ kind:'nova', x: t.x, y: t.y - 14, r0:6, r:R, dur:0.45, color:s.fx });
+    spawnParticles(t.x, t.y - 14, 'fire', 1.6);
+    spawnParticles(t.x, t.y - 14, 'smoke', 1.0);
     for (let i = enemies.length - 1; i >= 0; i--){
       if (Math.abs(enemies[i].x - t.x) <= R){ if (damageEnemy(enemies[i], dmg)) enemies.splice(i, 1); }
     }
     GA('explosion');
   }
   else if (s.kind === 'chain'){
+    // LIGHTNING: arcs + electric sparks at each struck enemy
     const targets = [...enemies].sort((a,b) => a.x - b.x).slice(0, 5);
     if (!targets.length) return;
     const segs = []; let px = hx, py = hy;
-    for (const e of targets){ segs.push([px, py, e.x, e.y - 14]); px = e.x; py = e.y - 14; }
+    for (const e of targets){ segs.push([px, py, e.x, e.y - 14]); px = e.x; py = e.y - 14; spawnParticles(e.x, e.y-14, 'spark', 0.7); }
     addFx({ kind:'chain', segs, dur:0.3, color:s.fx });
     for (const e of targets) if (damageEnemy(e, dmg)) removeEnemy(e);
     GA('lightning');
   }
   else if (s.kind === 'blessing'){
+    // HOLY: golden sparkles + heal
     S.crystalHp = Math.min(1, S.crystalHp + 0.25);
     partyBuffT = 5 + talent('grace');
     const holy = skillBase(def, lvl) * combatMul() * 2.5;
     addFx({ kind:'nova', x: view.crystalX, y: slot.y - 18, r0:8, r:220, dur:0.7, color:s.fx });
     addFx({ kind:'heal', x: view.crystalX, y: view.ground - 40, dur:0.9, color:s.fx });
+    spawnParticles(view.crystalX, slot.y - 18, 'holy', 1.6);
     for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], holy)) enemies.splice(i, 1);
     GA('heal');
   }
@@ -379,6 +470,7 @@ function simulate(dt){
     const e = enemies[i];
     e.frame = (Math.floor(waveTime*4) % 2);
     if (e.slow > 0) e.slow -= dt;
+    if (e.type === 'wraith' && Math.random() < dt * 2.5) spawnParticles(e.x, e.y - 20, 'poison', 0.25);  // 독 trail
     const reach = view.crystalX + 34*px;
     if (e.x > reach){
       const sp = e.speed * (e.slow > 0 ? SLOW_FACTOR : 1);
@@ -425,7 +517,7 @@ function simulate(dt){
   if (S.crystalHp <= 0){
     S.wave = Math.max(1, S.wave - 3);
     S.crystalHp = 1;
-    enemies.length = 0; fx.length = 0;
+    enemies.length = 0; fx.length = 0; particles.length = 0;
     startWave(S.wave);
     toast('💥 The Crystal shattered! Fell back to Wave ' + S.wave);
     return;
@@ -447,7 +539,8 @@ function simulate(dt){
     GA(isBossWave(S.wave) ? 'boss' : 'wave');
   }
 
-  // fx + floaters
+  // fx + particles + floaters
+  updateParticles(dt);
   for (let i = fx.length - 1; i >= 0; i--){ fx[i].t += dt; if (fx[i].t >= fx[i].dur) fx.splice(i, 1); }
   for (let i = floaters.length - 1; i >= 0; i--){
     floaters[i].life -= dt * 1.2;
@@ -647,8 +740,9 @@ function draw(now){
     ctx.restore();
   }
 
-  // attack effects on top
+  // attack effects + glowing particles on top
   for (const o of fx) drawFx(o, now);
+  drawParticles();
 
   // floaters
   for (const f of floaters){
@@ -802,7 +896,7 @@ function doPrestige(){
     };
     S = freshState();
     Object.assign(S, keep);
-    enemies.length = 0; fx.length = 0; partyBuffT = 0;
+    enemies.length = 0; fx.length = 0; particles.length = 0; partyBuffT = 0;
     for (const k in skillTimers) skillTimers[k] = 0;
     startWave(1);
     checkAchievements();

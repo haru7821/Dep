@@ -42,6 +42,16 @@ All attacks and skills are drawn on screen (projectiles, novas, lightning).
 `wraith` (floats, **immune to slow**) — introduced progressively as waves climb —
 plus a **boss** every 5th wave.
 
+## Elemental particle effects
+
+Skills throw lush, glowing (additive-blended) particle bursts themed by element:
+
+- 🔥 **Fire** — Faye's Explosive Arrow bursts into a fireball with rising embers + smoke
+- ❄️ **Ice** — Mira's Frost Nova throws a white ring, crystalline shards, and twinkling frost sparkles
+- ⚡ **Lightning** — Rai's Chain Lightning arcs with electric sparks at each target
+- ☠️ **Poison** — wraith enemies trail green toxic bubbles and burst into a poison cloud on death
+- 🌅 **Holy / 🪨 Earth** — Aunel's golden blessing sparkles; Garran's shockwave kicks up dust; bosses die in a fiery blast
+
 ## Sound
 
 All audio is **synthesized with the Web Audio API** (no files): per-skill SFX
