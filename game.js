@@ -146,6 +146,7 @@ const fx = [];               // visible attack effects
 const floaters = [];         // damage/gold popups {x,y,txt,color,life}
 const heroTimers = {};       // basic-attack cooldown per hero
 const skillTimers = {};      // skill cooldown accumulator per hero
+const heroFlash = {};        // attack-flash timer per hero id (survives heroSlots rebuilds)
 let spawnTimer = 0, spawnedThisWave = 0, waveKills = 0, waveGoldAccum = 0, waveTime = 0;
 let partyBuffT = 0;          // remaining seconds of Aunel's damage buff
 
@@ -269,11 +270,11 @@ function castSkill(def, slot, lvl){
     partyBuffT = 5;
     const holy = skillBase(def, lvl) * combatMul() * 2.5;
     addFx({ kind:'nova', x: view.crystalX, y: slot.y - 18, r0:8, r:220, dur:0.7, color:s.fx });
-    addFx({ kind:'heal', x: view.crystalX, y: view.ground - 40, dur:0.9 });
+    addFx({ kind:'heal', x: view.crystalX, y: view.ground - 40, dur:0.9, color:s.fx });
     for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], holy)) enemies.splice(i, 1);
     GA('heal');
   }
-  slot.flash = 0.22;
+  heroFlash[def.id] = 0.22;
 }
 
 // ------------------------------------------------------------------ main tick
@@ -374,7 +375,7 @@ function simulate(dt){
     floaters[i].y -= dt * 18;
     if (floaters[i].life <= 0) floaters.splice(i, 1);
   }
-  for (const slot of slots){ if (slot.flash) slot.flash -= dt; }
+  for (const k in heroFlash){ if (heroFlash[k] > 0) heroFlash[k] -= dt; }
 }
 
 function basicAttack(def, slot, lvl){
@@ -391,7 +392,7 @@ function basicAttack(def, slot, lvl){
     addFx({ kind:'nova', x: hx, y: hy, r0:4, r:60, dur:0.3, color:def.color });
     for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], dmg)) enemies.splice(i, 1);
     basicSfx('shoot');
-    slot.flash = 0.15;
+    heroFlash[def.id] = 0.15;
   } else {
     const t = nearestEnemy();
     if (!t) return;
@@ -400,7 +401,7 @@ function basicAttack(def, slot, lvl){
     else if (def.id === 'rai')  { addFx({ kind:'bolt',  x:hx, y:hy, x2:t.x, y2:t.y-14, dur:0.12, color:def.color }); basicSfx('shoot'); }
     else                        { addFx({ kind:'slash', x:t.x, y:t.y-14, dur:0.16, color:'#dfe7ff' }); basicSfx('slash'); }
     if (damageEnemy(t, dmg)) removeEnemy(t);
-    slot.flash = 0.15;
+    heroFlash[def.id] = 0.15;
   }
 }
 
@@ -523,7 +524,7 @@ function draw(now){
   // heroes
   for (const slot of heroSlots()){
     if (!slot.active) continue;
-    const frame = slot.flash > 0 ? 1 : (Math.floor(now/350)%2);
+    const frame = (heroFlash[slot.def.id] > 0) ? 1 : (Math.floor(now/350)%2);
     const fn = Spr()[slot.def.draw];
     if (fn) fn(ctx, slot.x, slot.y, size, frame);
     else drawFallbackChar(slot.x, slot.y, size, slot.def.color);
