@@ -9,25 +9,24 @@ await page.evaluate(() => localStorage.removeItem('aether_crystal_save_v1'));
 await page.reload();
 await page.waitForTimeout(300);
 await page.evaluate(() => {
-  S.wave = 55; S.gold = 182000; S.shards = 9; S.shardsEarned = 9;
+  S.wave = 55; S.gold = 210000; S.shards = 11; S.shardsEarned = 11; S.shardUpg.crit = 8;
   S.heroLevels = { garran:22, mira:18, faye:15, rai:8, aunel:0 };
   buildHeroPanel(); updateHud();
-  // stage a varied enemy line-up
   enemies.length = 0;
-  const types = ['normal','fast','runner','tank','golem','wraith'];
-  types.forEach((t,i) => {
-    const et = ENEMY_TYPES[t];
-    enemies.push({ x: 430 + i*80, y: view.ground, hp: enemyHP(55)*et.hp*0.7,
-      maxHp: enemyHP(55)*et.hp, type:t, speed:et.spd, frame:0, boss:false,
-      slow: (t==='tank'||t==='normal')?2:0, goldMul:et.gold, atkTimer:0 });
+  const et = ENEMY_TYPES;
+  const line = [['normal',false],['runner',false],['golem',false],['normal',true],['wraith',false]];
+  line.forEach(([t,gold],i) => {
+    enemies.push({ x: 440 + i*95, y: view.ground, hp: enemyHP(55)*et[t].hp*0.75,
+      maxHp: enemyHP(55)*et[t].hp, type:t, speed:et[t].spd, frame:0, boss:false,
+      slow: t==='golem'?2:0, goldMul: gold? et[t].gold*30 : et[t].gold, golden:gold, atkTimer:0 });
   });
-  // fire a couple of skills so effects are on screen
+  // make skills ready (glow) + fire a crit floater and effects
   const slots = heroSlots();
+  ['garran','mira','faye','rai'].forEach(id => skillTimers[id] = HERO_DEFS.find(d=>d.id===id).skill.cd);
   castSkill(slots.find(s=>s.def.id==='rai').def, slots.find(s=>s.def.id==='rai'), 8);
-  castSkill(slots.find(s=>s.def.id==='faye').def, slots.find(s=>s.def.id==='faye'), 15);
-  castSkill(slots.find(s=>s.def.id==='mira').def, slots.find(s=>s.def.id==='mira'), 18);
+  addFloater(560, view.ground-60, 'CRIT!', '#ffa03c');
 });
-await page.waitForTimeout(80);
+await page.waitForTimeout(70);
 await page.screenshot({ path: path.join(dir, 'screenshot.png') });
 await browser.close();
 console.log('shot saved');

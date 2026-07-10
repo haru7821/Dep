@@ -58,7 +58,15 @@ const SHARD_UPGRADES = [
     max:20, effect:l=>1+0.03*l, fmt:l=>`+${l*3}% speed` },
   { id:'ward',  name:'Crystal Ward', desc:'+20% crystal max HP', base:2, growth:1.65,
     max:30, effect:l=>1+0.20*l, fmt:l=>`+${l*20}% HP` },
+  { id:'crit',  name:'Keen Edge', desc:'+3% critical hit chance', base:2, growth:1.7,
+    max:20, effect:l=>1, fmt:l=>`${(3+3*l)}% crit` },
 ];
+
+const CRIT_MULT = 2.5;                  // critical hit damage multiplier
+function critChance(){ return Math.min(0.75, 0.03 + 0.03 * S.shardUpg.crit); }
+function critRoll(dmg){
+  return Math.random() < critChance() ? { dmg: dmg * CRIT_MULT, crit:true } : { dmg, crit:false };
+}
 
 // ------------------------------------------------------------------ formulas
 const enemyHP    = w => 10 * Math.pow(1.12, w - 1);
@@ -99,11 +107,13 @@ function freshState(){
     shardsEarned: 0,        // lifetime shards ever awarded (monotonic)
     totalGoldEarned: 0,     // lifetime gold, drives prestige payout
     heroLevels: { garran:1, mira:0, faye:0, rai:0, aunel:0 },
-    shardUpg: { power:0, gold:0, speed:0, ward:0 },
+    shardUpg: { power:0, gold:0, speed:0, ward:0, crit:0 },
     crystalHp: 1,           // fraction 0..1
     speed: 1,
     lastSeen: Date.now(),
     recentGoldRate: [],     // gold/sec samples of recent waves (for offline calc)
+    bestWave: 1,            // lifetime best wave reached
+    totalKills: 0,          // lifetime enemies defeated
   };
 }
 
@@ -184,10 +194,11 @@ function spawnEnemy(w){
   const type = pickType(w);
   const t = ENEMY_TYPES[type];
   const hp = enemyHP(w) * t.hp;
+  const golden = w >= 8 && Math.random() < 0.03;   // rare high-gold enemy
   enemies.push({
     x: view.laneRight + Math.random()*40, y: view.ground,
     hp, maxHp: hp, type, speed: t.spd, frame:0, boss:false,
-    slow:0, goldMul: t.gold, atkTimer:0,
+    slow:0, goldMul: golden ? t.gold * 30 : t.gold, golden, atkTimer:0,
   });
 }
 
@@ -212,7 +223,9 @@ function damageEnemy(e, dmg){
     const g = goldPerKill(S.wave) * e.goldMul * shardMul('gold');
     grantGold(g);
     waveKills++;
-    addFloater(e.x, e.y - 30*(view.h/460), '+' + fmt(g), '#ffd75e');
+    S.totalKills++;
+    if (e.golden){ addFloater(e.x, e.y - 34*(view.h/460), '💰 +' + fmt(g), '#ffe14d'); GA('prestige'); }
+    else addFloater(e.x, e.y - 30*(view.h/460), '+' + fmt(g), '#ffd75e');
     return true;
   }
   return false;
@@ -228,8 +241,10 @@ function removeEnemy(e){ const i = enemies.indexOf(e); if (i >= 0) enemies.splic
 // ------------------------------------------------------------------ skills
 function castSkill(def, slot, lvl){
   const s = def.skill;
-  const dmg = skillBase(def, lvl) * combatMul() * s.mult;
+  const roll = critRoll(skillBase(def, lvl) * combatMul() * s.mult);
+  const dmg = roll.dmg;
   const hx = slot.x, hy = slot.y - 22;
+  if (roll.crit && s.kind !== 'blessing') addFloater(hx, hy - 20, 'CRIT!', '#ffa03c');
 
   if (s.kind === 'shock'){
     addFx({ kind:'nova', x: hx + 34, y: slot.y - 12, r0:8, r:150, dur:0.5, color:s.fx });
@@ -362,6 +377,7 @@ function simulate(dt){
     }
     S.crystalHp = Math.min(1, S.crystalHp + 0.05);
     S.wave++;
+    if (S.wave > S.bestWave) S.bestWave = S.wave;
     checkUnlocks(S.wave);
     startWave(S.wave);
     showWaveBanner(S.wave);
@@ -388,9 +404,11 @@ function basicAttack(def, slot, lvl){
   if (dmg <= 0) return;
 
   if (def.target === 'all'){
-    // Mira splash: hit every enemy + purple pulse
+    // Mira splash: hit every enemy + purple pulse (one crit roll for the volley)
+    const r = critRoll(dmg);
+    if (r.crit) addFloater(hx, hy - 18, 'CRIT!', '#ffa03c');
     addFx({ kind:'nova', x: hx, y: hy, r0:4, r:60, dur:0.3, color:def.color });
-    for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], dmg)) enemies.splice(i, 1);
+    for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], r.dmg)) enemies.splice(i, 1);
     basicSfx('shoot');
     heroFlash[def.id] = 0.15;
   } else {
@@ -400,7 +418,9 @@ function basicAttack(def, slot, lvl){
     if (def.id === 'faye')      { addFx({ kind:'arrow', x:hx, y:hy, x2:t.x, y2:t.y-14, dur:0.14, color:def.color }); basicSfx('arrow'); }
     else if (def.id === 'rai')  { addFx({ kind:'bolt',  x:hx, y:hy, x2:t.x, y2:t.y-14, dur:0.12, color:def.color }); basicSfx('shoot'); }
     else                        { addFx({ kind:'slash', x:t.x, y:t.y-14, dur:0.16, color:'#dfe7ff' }); basicSfx('slash'); }
-    if (damageEnemy(t, dmg)) removeEnemy(t);
+    const r = critRoll(dmg);
+    if (r.crit) addFloater(t.x, t.y - 40, 'CRIT!', '#ffa03c');
+    if (damageEnemy(t, r.dmg)) removeEnemy(t);
     heroFlash[def.id] = 0.15;
   }
 }
@@ -514,6 +534,19 @@ function draw(now){
       ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#9fe4ff';
       ctx.fillRect(e.x - es*7, by - es*17, es*14, es*17); ctx.restore();
     }
+    // golden shimmer overlay
+    if (e.golden){
+      ctx.save();
+      ctx.globalAlpha = 0.28 + 0.12*Math.sin(now/120 + e.x);
+      ctx.fillStyle = '#ffe14d';
+      ctx.fillRect(e.x - es*7, by - es*17, es*14, es*17);
+      ctx.globalAlpha = 0.9; ctx.fillStyle = '#fff6c0';
+      for (let k = 0; k < 3; k++){
+        const a = now/200 + k*2.1;
+        ctx.fillRect(e.x + Math.cos(a)*es*8 - 1, by - es*9 + Math.sin(a)*es*8 - 1, 3, 3);
+      }
+      ctx.restore();
+    }
     // hp bar
     const bw = 22*px * (e.boss ? 2.2 : t.size);
     ctx.fillStyle = '#000a'; ctx.fillRect(e.x-bw/2, by - es*15 - 8, bw, 4);
@@ -524,10 +557,31 @@ function draw(now){
   // heroes
   for (const slot of heroSlots()){
     if (!slot.active) continue;
+    // skill-ready glow ring under the hero (also the tap-to-cast target)
+    if ((skillTimers[slot.def.id] || 0) >= slot.def.skill.cd){
+      ctx.save();
+      ctx.globalAlpha = 0.35 + 0.2*Math.sin(now/180);
+      ctx.strokeStyle = slot.def.color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(slot.x, slot.y - 2, size*4, size*1.8, 0, 0, Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
     const frame = (heroFlash[slot.def.id] > 0) ? 1 : (Math.floor(now/350)%2);
     const fn = Spr()[slot.def.draw];
     if (fn) fn(ctx, slot.x, slot.y, size, frame);
     else drawFallbackChar(slot.x, slot.y, size, slot.def.color);
+  }
+
+  // boss health bar across the top during boss waves
+  const bossE = enemies.find(e => e.boss);
+  if (bossE){
+    const bw = view.w * 0.6, bx = (view.w - bw)/2, byy = 12;
+    ctx.save();
+    ctx.fillStyle = 'rgba(10,12,26,.85)'; ctx.fillRect(bx-3, byy-3, bw+6, 16);
+    ctx.fillStyle = '#3a1030'; ctx.fillRect(bx, byy, bw, 10);
+    ctx.fillStyle = '#ff4fa0'; ctx.fillRect(bx, byy, bw * Math.max(0, bossE.hp/bossE.maxHp), 10);
+    ctx.fillStyle = '#ffd7ef'; ctx.font = 'bold 10px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText('⚔ BOSS', view.w/2, byy + 9);
+    ctx.restore();
   }
 
   // attack effects on top
@@ -677,10 +731,12 @@ function doPrestige(){
     const keep = {
       shards: S.shards + gain, shardsEarned: S.shardsEarned + gain,
       shardUpg: S.shardUpg, totalGoldEarned: S.totalGoldEarned,
+      bestWave: S.bestWave, totalKills: S.totalKills,
     };
     S = freshState();
     S.shards = keep.shards; S.shardsEarned = keep.shardsEarned;
     S.shardUpg = keep.shardUpg; S.totalGoldEarned = keep.totalGoldEarned;
+    S.bestWave = keep.bestWave; S.totalKills = keep.totalKills;
     enemies.length = 0; fx.length = 0; partyBuffT = 0;
     for (const k in skillTimers) skillTimers[k] = 0;
     startWave(1);
@@ -759,6 +815,43 @@ document.querySelectorAll('[data-spd]').forEach(b => {
     b.classList.add('sel');
   };
 });
+
+// tap a hero on the battlefield to instantly cast their ready skill
+canvas.addEventListener('pointerdown', e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  let best = null, bd = Infinity;
+  for (const slot of heroSlots()){
+    if (!slot.active) continue;
+    const d = Math.hypot(slot.x - x, (slot.y - 30) - y);
+    if (d < bd){ bd = d; best = slot; }
+  }
+  if (best && bd < 48){
+    const def = best.def;
+    const ready = (skillTimers[def.id] || 0) >= def.skill.cd;
+    if (ready && (enemies.length > 0 || def.skill.kind === 'blessing')){
+      skillTimers[def.id] = 0;
+      castSkill(def, best, S.heroLevels[def.id]);
+    }
+  }
+});
+
+// stats panel
+function openStats(){
+  openModal(`
+    <h2>📊 Guardian's Record</h2>
+    <div class="shard-shop">
+      <div class="shard-item"><div class="info"><b>Current Wave</b><div class="lv">${S.wave}</div></div></div>
+      <div class="shard-item"><div class="info"><b>Best Wave</b><div class="lv">${S.bestWave}</div></div></div>
+      <div class="shard-item"><div class="info"><b>Enemies Defeated</b><div class="lv">${fmt(S.totalKills)}</div></div></div>
+      <div class="shard-item"><div class="info"><b>Lifetime Gold</b><div class="lv">🪙 ${fmt(S.totalGoldEarned)}</div></div></div>
+      <div class="shard-item"><div class="info"><b>Shards Earned</b><div class="lv">💠 ${S.shardsEarned}</div></div></div>
+      <div class="shard-item"><div class="info"><b>Critical Chance</b><div class="lv">${Math.round(critChance()*100)}%</div></div></div>
+    </div>
+    <button class="btn" id="closeStats" style="width:100%">Close</button>`);
+  el('closeStats').onclick = closeModal;
+}
+if (el('btnStats')) el('btnStats').onclick = openStats;
 
 // audio buttons + unlock-on-first-gesture
 const btnMute = el('btnMute'), btnMusic = el('btnMusic');

@@ -54,6 +54,16 @@ on your first tap/click (browser autoplay policy).
 Responsive canvas, touch-friendly tap targets, no tap-delay, and a layout that
 reflows on narrow / portrait screens.
 
+## Extras
+
+- **Tap a hero** on the battlefield to instantly cast their skill when it's
+  ready (a glowing ring marks a ready hero).
+- **Critical hits** — every attack can crit for ×2.5 damage; buy the **Keen
+  Edge** shard upgrade to raise your crit chance.
+- **Golden enemies** — rare shimmering foes that drop a huge gold windfall.
+- **Boss health bar** across the top during boss waves.
+- **📊 Stats panel** — best wave, enemies defeated, lifetime gold, shards, crit chance.
+
 ## Design & balance
 
 Core formulas (wave index `w`):
