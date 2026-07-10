@@ -20,40 +20,29 @@
 'use strict';
 window.Sheets = (function () {
   // character id -> sheet file + grid + per-animation {row, frames, fps}
+  // The bundled sheets are a uniform 4 rows (idle/walk/attack/cast) x 6 frames.
+  const A = { idle:{row:0,frames:6,fps:6}, walk:{row:1,frames:6,fps:9},
+              attack:{row:2,frames:6,fps:13}, cast:{row:3,frames:6,fps:12} };
   const SHEET_CONFIG = {
-    // Warrior (red headband swordsman)  →  Sir Garran (Knight)
-    garran: { file:'warrior.png',  rows:5, cols:7, fit:1.15,
-      anim:{ idle:{row:0,frames:5,fps:6}, walk:{row:1,frames:5,fps:8},
-             attack:{row:2,frames:7,fps:12}, cast:{row:3,frames:7,fps:12} } },
-    // Purple Wizard (staff, fire/ice cast)  →  Mira (Mage)
-    mira:   { file:'wizard.png',   rows:4, cols:10, fit:1.1,
-      anim:{ idle:{row:0,frames:5,fps:6}, walk:{row:1,frames:8,fps:8},
-             attack:{row:2,frames:10,fps:12}, cast:{row:3,frames:9,fps:12} } },
-    // Green hooded Archer  →  Faye (Archer)
-    faye:   { file:'archer.png',   rows:5, cols:7, fit:1.05,
-      anim:{ idle:{row:0,frames:5,fps:6}, walk:{row:1,frames:6,fps:8},
-             attack:{row:2,frames:7,fps:14}, cast:{row:3,frames:7,fps:12} } },
-    // Elemental Sorcerer (orange hood, elemental orbs)  →  Rai (Storm Ronin)
-    rai:    { file:'sorcerer.png',  rows:4, cols:10, fit:1.1,
-      anim:{ idle:{row:0,frames:6,fps:6}, walk:{row:1,frames:7,fps:8},
-             attack:{row:2,frames:8,fps:12}, cast:{row:3,frames:10,fps:12} } },
-    // (Aunel has no provided sheet → keeps canvas art via fallback)
-
-    // Dark shadow mage (red eyes, purple energy)  →  Boss
-    boss:   { file:'shadow.png',   rows:5, cols:7, fit:1.0,
-      anim:{ idle:{row:0,frames:5,fps:5}, walk:{row:1,frames:7,fps:7},
-             attack:{row:2,frames:7,fps:10}, cast:{row:3,frames:8,fps:10} } },
+    garran: { file:'warrior.png',  rows:4, cols:6, fit:1.15, anim:A },  // Knight
+    mira:   { file:'wizard.png',   rows:4, cols:6, fit:1.10, anim:A },  // Mage
+    faye:   { file:'archer.png',   rows:4, cols:6, fit:1.05, anim:A },  // Archer
+    rai:    { file:'sorcerer.png', rows:4, cols:6, fit:1.10, anim:A },  // Storm Ronin
+    aunel:  { file:'healer.png',   rows:4, cols:6, fit:1.10, anim:A },  // Healer
+    boss:   { file:'shadow.png',   rows:4, cols:6, fit:1.35, anim:A },  // Boss
   };
 
   const imgs = {};   // id -> { img, ok, failed }
   let enabled = false;
 
   function detectEnabled(){
+    // On by default now that sprite sheets ship in assets/; explicit off wins.
     try {
+      if (typeof location !== 'undefined' && /[?&]sheets=0/.test(location.search)) return false;
       if (typeof location !== 'undefined' && /[?&]sheets=1/.test(location.search)) return true;
-      if (typeof localStorage !== 'undefined' && localStorage.getItem('use_sheets') === '1') return true;
+      if (typeof localStorage !== 'undefined' && localStorage.getItem('use_sheets') === '0') return false;
     } catch (e) {}
-    return false;
+    return true;
   }
   enabled = detectEnabled();
 

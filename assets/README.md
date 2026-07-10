@@ -1,7 +1,9 @@
 # Sprite sheet assets
 
-Drop your PNG sprite sheets here to replace the built-in canvas pixel-art with
-real animated frames. Expected filenames (mapped in `../sheets.js`):
+This folder ships with **generated** animated sprite sheets (made by
+`../generate-sheets.mjs`, themed to match each class). They are used by default.
+To use your own art, replace a PNG with the same filename. Expected filenames
+(mapped in `../sheets.js`):
 
 | File | Character in game | Source sheet |
 |------|-------------------|--------------|
@@ -13,14 +15,13 @@ real animated frames. Expected filenames (mapped in `../sheets.js`):
 
 *(Aunel the Healer has no sheet yet and keeps the built-in art.)*
 
-## How to turn it on
+## Turning it off / on
 
-Sheets are **off by default** so the game runs clean with no art. After adding
-the PNGs, enable them by any of:
+Sheets are **on by default**. To force the built-in canvas art instead:
 
-- click the **🎨** button in the controls bar, **or**
-- open the game with `?sheets=1` in the URL, **or**
-- run `localStorage.setItem('use_sheets','1')` in the console, then reload.
+- click the **🎨** button in the controls bar to toggle, **or**
+- open the game with `?sheets=0` in the URL, **or**
+- run `localStorage.setItem('use_sheets','0')` in the console, then reload.
 
 Missing or broken sheets fall back to the built-in canvas sprites automatically.
 

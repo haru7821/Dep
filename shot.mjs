@@ -7,37 +7,32 @@ const page = await browser.newPage({ viewport: { width: 1000, height: 640 } });
 await page.goto('file://' + path.join(dir, 'index.html'));
 await page.evaluate(() => localStorage.removeItem('aether_crystal_save_v1'));
 await page.reload();
-await page.waitForTimeout(300);
+await page.waitForTimeout(700);   // let sheet images load
 await page.evaluate(() => {
-  S.wave = 58; S.gold = 260000; S.shards = 8; S.shardsEarned = 14; S.talentPoints = 4;
-  S.heroLevels = { garran:22, mira:18, faye:16, rai:10, aunel:0 };
+  S.wave = 60; S.gold = 300000; S.shards = 8; S.shardsEarned = 14; S.talentPoints = 5;
+  S.heroLevels = { garran:22, mira:18, faye:16, rai:10, aunel:6 };
   buildHeroPanel(); updateHud();
-  S.speed = 0;                    // freeze the sim so the burst frame holds
-  enemies.length = 0; particles.length = 0; fx.length = 0;
+  // set each hero into a lively animation state
+  const anims = { garran:'attack', mira:'cast', faye:'attack', rai:'cast', aunel:'cast' };
+  for (const id in anims) heroAnim[id] = { name:anims[id], t:5 };
+  enemies.length = 0;
   const et = ENEMY_TYPES;
-  [['normal',false],['runner',false],['golem',false],['tank',false],['wraith',false]].forEach(([t,g],i) => {
-    enemies.push({ x: 430 + i*100, y: view.ground, hp: enemyHP(58)*et[t].hp*0.6,
-      maxHp: enemyHP(58)*et[t].hp, type:t, speed:et[t].spd, frame:0, boss:false,
-      slow: t==='tank'?2:0, goldMul: et[t].gold, golden:g, atkTimer:0 });
+  [['runner',false],['golem',false],['wraith',false],['normal',true]].forEach(([t,g],i) => {
+    enemies.push({ x: 470 + i*110, y: view.ground, hp: enemyHP(60)*et[t].hp*0.7,
+      maxHp: enemyHP(60)*et[t].hp, type:t, speed:et[t].spd, frame:0, boss:false,
+      slow:0, goldMul: et[t].gold, golden:g, atkTimer:0 });
   });
-  const g = view.ground;
-  // FIRE burst
-  fx.push({kind:'nova',x:500,y:g-16,r0:6,r:95,dur:0.45,color:'#ff9d3c',t:0.15});
-  spawnParticles(500, g-16, 'fire', 2.0); spawnParticles(500, g-16, 'smoke', 1.0);
-  // ICE nova
-  fx.push({kind:'nova',x:660,y:g-16,r0:8,r:150,dur:0.6,color:'#8fe0ff',t:0.18});
-  spawnParticles(660, g-16, 'ice', 1.8); spawnParticles(660, g-16, 'frost', 1.6);
-  // LIGHTNING chain + sparks
-  fx.push({kind:'chain',segs:[[300,g-24,760,g-14],[760,g-14,830,g-14]],dur:0.3,color:'#bff0ff',t:0.05});
-  spawnParticles(760, g-14, 'spark', 1.2); spawnParticles(830, g-14, 'spark', 1.0);
-  // POISON cloud (wraith)
-  spawnParticles(830, g-18, 'poison', 1.8);
-  // HOLY sparkles at crystal
-  spawnParticles(view.crystalX, g-24, 'holy', 1.2);
-  // spread them a little
-  for (let i=0;i<7;i++) updateParticles(0.03);
 });
-await page.waitForTimeout(30);
+await page.waitForTimeout(120);
 await page.screenshot({ path: path.join(dir, 'screenshot.png') });
+
+// also a boss-wave shot (shadow sheet)
+await page.evaluate(() => {
+  enemies.length = 0;
+  const hp = enemyHP(60)*8;
+  enemies.push({ x: 640, y: view.ground, hp:hp*0.7, maxHp:hp, type:'boss', speed:18, frame:0, boss:true, slow:0, goldMul:10, atkTimer:0 });
+});
+await page.waitForTimeout(200);
+await page.screenshot({ path: path.join(dir, 'screenshot-boss.png') });
 await browser.close();
-console.log('shot saved');
+console.log('shots saved');

@@ -110,10 +110,9 @@ Crystal (endless mode continues).
 
 ## HD sprite sheets (optional)
 
-The game can render **real animated sprite-sheet art** (idle / walk / attack /
-cast frames) instead of the built-in canvas pixel-art. Drop PNG sheets into
-[`assets/`](assets/README.md) with these names and click the **🎨** button (or
-open with `?sheets=1`):
+Characters use **animated sprite-sheet art** (idle / walk / attack / cast
+frames). Sheets ship in [`assets/`](assets/README.md) and are **on by default**;
+toggle with the **🎨** button (or `?sheets=0` to force the built-in canvas art).
 
 | File | Character |
 |------|-----------|
@@ -121,11 +120,14 @@ open with `?sheets=1`):
 | `wizard.png` | Mira (Mage) |
 | `archer.png` | Faye (Archer) |
 | `sorcerer.png` | Rai (Storm Ronin) |
+| `healer.png` | Aunel (Healer) |
 | `shadow.png` | Boss |
 
-Sheets are off by default and any missing/broken sheet falls back to the
-built-in art automatically, so the game always runs. Grid/frame counts are
-configured in `sheets.js → SHEET_CONFIG` if your export needs adjusting.
+The bundled sheets are **generated** (see `generate-sheets.mjs`) themed to match
+each class. To use your own art, replace the PNG with the same filename — grid
+is a uniform 4 rows (idle/walk/attack/cast) × 6 frames; adjust `sheets.js →
+SHEET_CONFIG` if your layout differs. Any missing/broken sheet falls back to the
+built-in canvas art automatically, so the game always runs.
 
 ## Files
 
