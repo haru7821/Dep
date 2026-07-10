@@ -123,11 +123,10 @@ toggle with the **🎨** button (or `?sheets=0` to force the built-in canvas art
 | `healer.png` | Aunel (Healer) |
 | `shadow.png` | Boss |
 
-The bundled sheets are **generated** (see `generate-sheets.mjs`) themed to match
-each class. To use your own art, replace the PNG with the same filename — grid
-is a uniform 4 rows (idle/walk/attack/cast) × 6 frames; adjust `sheets.js →
-SHEET_CONFIG` if your layout differs. Any missing/broken sheet falls back to the
-built-in canvas art automatically, so the game always runs.
+The hero/boss sheets are **sliced from uploaded source art** in `assets/raw/`
+(via `slice-sheets.mjs`, which strips the baked-in titles/labels and re-packs
+clean grids); `healer.png` is a generated placeholder. Any missing/broken sheet
+falls back to the built-in canvas art automatically, so the game always runs.
 
 ## Files
 

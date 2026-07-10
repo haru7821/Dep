@@ -1,0 +1,52 @@
+{
+  "warrior.png": {
+    "cols": 5,
+    "rows": 4,
+    "frames": [
+      5,
+      2,
+      1,
+      1
+    ]
+  },
+  "wizard.png": {
+    "cols": 8,
+    "rows": 4,
+    "frames": [
+      5,
+      8,
+      2,
+      2
+    ]
+  },
+  "archer.png": {
+    "cols": 5,
+    "rows": 4,
+    "frames": [
+      5,
+      5,
+      1,
+      2
+    ]
+  },
+  "sorcerer.png": {
+    "cols": 5,
+    "rows": 4,
+    "frames": [
+      5,
+      1,
+      1,
+      1
+    ]
+  },
+  "shadow.png": {
+    "cols": 5,
+    "rows": 4,
+    "frames": [
+      2,
+      5,
+      1,
+      2
+    ]
+  }
+}

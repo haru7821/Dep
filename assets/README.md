@@ -1,9 +1,10 @@
 # Sprite sheet assets
 
-This folder ships with **generated** animated sprite sheets (made by
-`../generate-sheets.mjs`, themed to match each class). They are used by default.
-To use your own art, replace a PNG with the same filename. Expected filenames
-(mapped in `../sheets.js`):
+The game sheets here are **sliced from the uploaded source art in `raw/`** by
+`../slice-sheets.mjs` (it auto-detects sprite rows/frames, drops the baked-in
+titles and row labels, and re-packs them into clean uniform grids). `healer.png`
+is a generated placeholder (no Healer art was provided). Filenames map to
+characters in `../sheets.js`:
 
 | File | Character in game | Source sheet |
 |------|-------------------|--------------|
@@ -13,7 +14,9 @@ To use your own art, replace a PNG with the same filename. Expected filenames
 | `sorcerer.png` | **Rai** (Storm Ronin)   | orange elemental sorcerer |
 | `shadow.png`   | **Boss**                | dark red-eyed shadow mage |
 
-*(Aunel the Healer has no sheet yet and keeps the built-in art.)*
+`raw/` holds the original uploaded showcase sheets (titles/labels intact), named
+by their actual art. Re-slice after editing them with `node ../slice-sheets.mjs`
+(it prints the frame counts to set in `SHEET_CONFIG`).
 
 ## Turning it off / on
 

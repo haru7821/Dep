@@ -20,16 +20,18 @@
 'use strict';
 window.Sheets = (function () {
   // character id -> sheet file + grid + per-animation {row, frames, fps}
-  // The bundled sheets are a uniform 4 rows (idle/walk/attack/cast) x 6 frames.
-  const A = { idle:{row:0,frames:6,fps:6}, walk:{row:1,frames:6,fps:9},
-              attack:{row:2,frames:6,fps:13}, cast:{row:3,frames:6,fps:12} };
+  // Sheets sliced from the uploaded art (slice-sheets.mjs) are 4 rows
+  // (idle/walk/attack/cast); frame counts per row vary and are set below.
+  const rows4 = (i,w,a,c) => ({ idle:{row:0,frames:i,fps:7}, walk:{row:1,frames:w,fps:9},
+                                attack:{row:2,frames:a,fps:12}, cast:{row:3,frames:c,fps:11} });
   const SHEET_CONFIG = {
-    garran: { file:'warrior.png',  rows:4, cols:6, fit:1.15, anim:A },  // Knight
-    mira:   { file:'wizard.png',   rows:4, cols:6, fit:1.10, anim:A },  // Mage
-    faye:   { file:'archer.png',   rows:4, cols:6, fit:1.05, anim:A },  // Archer
-    rai:    { file:'sorcerer.png', rows:4, cols:6, fit:1.10, anim:A },  // Storm Ronin
-    aunel:  { file:'healer.png',   rows:4, cols:6, fit:1.10, anim:A },  // Healer
-    boss:   { file:'shadow.png',   rows:4, cols:6, fit:1.35, anim:A },  // Boss
+    garran: { file:'warrior.png',  rows:4, cols:5, fit:1.25, anim:rows4(5,2,1,1) },  // Knight  (warrior art)
+    mira:   { file:'wizard.png',   rows:4, cols:8, fit:1.20, anim:rows4(5,8,2,2) },  // Mage    (purple wizard art)
+    faye:   { file:'archer.png',   rows:4, cols:5, fit:1.20, anim:rows4(5,5,1,2) },  // Archer
+    rai:    { file:'sorcerer.png', rows:4, cols:5, fit:1.22, anim:rows4(5,1,1,1) },  // Ronin   (elemental sorcerer art)
+    boss:   { file:'shadow.png',   rows:4, cols:5, fit:1.6,  anim:rows4(2,5,1,2) },  // Boss    (shadow mage art)
+    aunel:  { file:'healer.png',   rows:4, cols:6, fit:1.15,                         // Healer  (generated placeholder)
+      anim:{ idle:{row:0,frames:6,fps:6}, walk:{row:1,frames:6,fps:9}, attack:{row:2,frames:6,fps:13}, cast:{row:3,frames:6,fps:12} } },
   };
 
   const imgs = {};   // id -> { img, ok, failed }
