@@ -336,6 +336,110 @@
   }
 
   /* =======================================================================
+   * HERO: Rai, the Storm Ronin (unlocks wave 50)
+   * Palette: indigo/steel-blue kimono + hakama, straw conical hat, dark
+   * topknot, silver katana with a pale-cyan lightning glint, crackling
+   * electric-cyan accents. On frame 1 the katana is raised/readied.
+   * ===================================================================== */
+  function drawRonin(ctx, x, baseY, size, frame) {
+    var bob = frame ? 1 : 0;
+    var y = baseY - bob * size;
+    groundShadow(ctx, x, baseY, size, size * 4.8);
+
+    var P = {
+      O: '#0c1226', // outline / deep shadow
+      s: '#d9b878', // straw hat
+      S: '#b08f4f', // straw hat shade
+      k: '#33518f', // indigo kimono
+      K: '#22386b', // kimono shade
+      h: '#1a2340', // steel-blue hakama (dark)
+      f: '#f0c9a0', // face skin
+      F: '#c98f63', // skin shade
+      t: '#141824', // topknot / obi black-blue
+      c: '#8ff0ff', // electric cyan accent
+      g: '#f2c14e'  // small gold cord
+    };
+
+    // 12 wide x 16 tall. Conical straw hat, indigo kimono, hakama legs.
+    var rows = [
+      '....ssss....',
+      '...OssssO...',
+      '..OssssssO..',
+      '.OSssssssSO.',
+      '..OOffffOO..',
+      '...OffFfO...',
+      '...OfffO....',
+      '..OktktkO...',   // shoulders + kimono collar (cyan spark hints)
+      '.OkKkkkkKO..',
+      '.OkkgkkgkO..',   // gold obi cords
+      '.OkKkkkkKO..',
+      '.OhhhhhhhO..',   // hakama waist
+      '.OhHhhhHhO..',
+      '.Ohh..hhO...',
+      '.Ohh..hhO...',
+      '.OO....OO...'
+    ];
+    paintGrid(ctx, rows, P, x, y, size, 12, 16);
+
+    var px = makePx(ctx, x - 12 * size / 2, y - 16 * size, size);
+
+    // small crackling cyan spark on the shoulders (brighter on frame 1)
+    ctx.save();
+    ctx.globalAlpha = frame ? 0.9 : 0.5;
+    px(3.4, 7.1, P.c, 0.5, 0.5);
+    px(7.1, 7.4, P.c, 0.5, 0.5);
+    ctx.restore();
+
+    // --- Katana on the right hand ---
+    // frame 0: held ready low/diagonal. frame 1: raised high overhead.
+    ctx.save();
+    if (frame) {
+      // raised: near-vertical blade above the shoulder
+      var bx = 9.0, by = -2.2;
+      px(bx - 0.4, by + 5.2, P.O, 1.8, 1);            // guard (tsuba)
+      px(bx, by + 6, '#2a1c0f', 0.9, 2);              // grip (tsuka)
+      px(bx - 0.1, by, P.O, 1, 5.4);                  // blade outline
+      px(bx + 0.15, by + 0.2, '#e6ecf2', 0.55, 4.8);  // steel blade
+      // lightning glint running down the edge
+      ctx.globalAlpha = 0.85;
+      px(bx + 0.15, by + 0.4, P.c, 0.3, 1.2);
+      px(bx + 0.15, by + 2.4, P.c, 0.3, 1.0);
+    } else {
+      // ready: blade angled down-forward from the hip
+      var gx = 8.6, gy = 8.4;
+      px(gx, gy, '#2a1c0f', 1, 1.4);          // grip
+      px(gx - 0.3, gy - 0.3, P.O, 1.8, 0.8);  // guard
+      // stepped diagonal blade going down-right
+      px(gx + 1.0, gy - 1.6, P.O, 1, 1.2);
+      px(gx + 1.8, gy - 3.0, P.O, 1, 1.2);
+      px(gx + 2.6, gy - 4.4, P.O, 1, 1.2);
+      px(gx + 1.15, gy - 1.5, '#e6ecf2', 0.6, 0.9);
+      px(gx + 1.95, gy - 2.9, '#e6ecf2', 0.6, 0.9);
+      px(gx + 2.75, gy - 4.3, '#e6ecf2', 0.6, 0.9);
+      // faint cyan glint at the tip
+      ctx.globalAlpha = 0.8;
+      px(gx + 3.0, gy - 4.9, P.c, 0.6, 0.6);
+    }
+    ctx.restore();
+
+    // a couple of tiny lightning arcs crackling near the raised blade
+    if (frame) {
+      ctx.save();
+      ctx.strokeStyle = P.c;
+      ctx.globalAlpha = 0.7;
+      ctx.lineWidth = Math.max(1, size * 0.2);
+      var ox = x - 12 * size / 2, oy = y - 16 * size;
+      ctx.beginPath();
+      ctx.moveTo(ox + 9.2 * size, oy - 2.0 * size);
+      ctx.lineTo(ox + 10.2 * size, oy - 1.0 * size);
+      ctx.lineTo(ox + 9.4 * size, oy - 0.2 * size);
+      ctx.lineTo(ox + 10.4 * size, oy + 0.8 * size);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  /* =======================================================================
    * ENEMIES — cute-but-menacing shadow monsters.
    * type: 'normal' | 'fast' | 'tank'. hpRatio tints toward pale as it dies.
    * They face LEFT (marching in from the right toward the crystal).
@@ -778,14 +882,27 @@
     hpRatio = clamp01(hpRatio == null ? 1 : hpRatio);
     var pale = (1 - hpRatio) * 0.55; // fade toward gray as it dies
     var wob = frame ? 1 : 0;
-    var y = baseY - wob * size;
-    groundShadow(ctx, x, baseY, size, size * 3.6);
 
-    var body, bodyShade, eye;
+    // 'wraith' floats: no ground contact, a hover offset, and a soft
+    // bob that swaps direction from the walkers' wobble.
+    var floats = (type === 'wraith');
+    var floatLift = floats ? (frame ? 4 : 3) : 0;
+    var y = baseY - wob * size - floatLift * size;
+    if (!floats) groundShadow(ctx, x, baseY, size, size * 3.6);
+
+    // Per-type body / shade / eye palette.
+    var body, bodyShade, eye, seam;
     if (type === 'fast') {
       body = '#7d3fb0'; bodyShade = '#5a2b82'; eye = '#ffe14d';
     } else if (type === 'tank') {
       body = '#3a5f4a'; bodyShade = '#26402f'; eye = '#ff5a3c';
+    } else if (type === 'runner') {
+      body = '#8a2f2f'; bodyShade = '#5e1e1e'; eye = '#ffd23c';
+    } else if (type === 'golem') {
+      body = '#4a4550'; bodyShade = '#2b2830'; eye = '#ff8a3c';
+      seam = '#ff7a1a'; // molten glowing cracks
+    } else if (type === 'wraith') {
+      body = '#9fb8c8'; bodyShade = '#6f8a9c'; eye = '#b6ff9e';
     } else {
       body = '#3b3b52'; bodyShade = '#242437'; eye = '#ff4d6d';
     }
@@ -795,9 +912,12 @@
       b: mixHex(body, '#9aa0ac', pale),
       B: mixHex(bodyShade, '#6b6f7a', pale),
       e: eye,
+      s: seam ? mixHex(seam, '#9aa0ac', pale) : undefined, // golem seam glow
       w: '#ffffff',
       t: '#e8e8f0'
     };
+    // wraiths glow eerily rather than fade to dull gray teeth.
+    if (type === 'wraith') { P.O = '#1c2b33'; P.t = '#e9fff0'; }
 
     var rows, gridW = 12, gridH = 12;
     if (type === 'tank') {
@@ -830,6 +950,76 @@
         '..OB..O.....',
         '..O...O.....'
       ];
+    } else if (type === 'runner') {
+      // Lean, low, forward-leaning sprinter. Legs shift with the frame
+      // to sell a running stride; bright (eye-colored) shins.
+      if (frame) {
+        rows = [
+          '.....O..O...',
+          '....OBbBO...',
+          '...ObebbO...',
+          '...Obbbb O..',
+          '..Obb ttbO..',
+          '..ObbbbbO...',
+          '.OBbbbBO....',
+          '.Obb.bO.....',
+          'Oe...bO.....',
+          '.O..Oe......',
+          '....O.......',
+          '...O........'
+        ];
+      } else {
+        rows = [
+          '....O..O....',
+          '...OBbBO....',
+          '..ObebbO....',
+          '..Obbbb O...',
+          '.Obb ttbO...',
+          '.ObbbbbO....',
+          'OBbbbBO.....',
+          'Obb.bbO.....',
+          'Oe...eO.....',
+          '.O...O......',
+          '.O...O......',
+          'O.....O.....'
+        ];
+      }
+    } else if (type === 'golem') {
+      // Big blocky obsidian brute with cracked-rock texture + molten seams.
+      gridW = 14; gridH = 14;
+      rows = [
+        '.OO......OO...',
+        '.ObO....ObO...',
+        'OBbbOOOObbBO..',
+        'OBbsbbbbsbBO..',
+        'ObbbbbbbbbbO..',
+        'ObebbssbbebO..',
+        'Obbbbssbbbb O.',
+        'OBbttttttbBO..',
+        'ObbsbbbbsbbO..',
+        'ObbbbbbbbbbO..',
+        'OBbbbssbbbBO..',
+        '.ObbO..ObbO...',
+        '.ObbO..ObbO...',
+        '.OOO....OOO...'
+      ];
+    } else if (type === 'wraith') {
+      // Ghostly specter: hooded head, eerie eyes, and a wispy tail
+      // (no legs). Painted semi-transparent below.
+      rows = [
+        '...OOOO.....',
+        '..OBbbBO....',
+        '.ObbbbbbO...',
+        '.Obebebeb O.',   // glowing eyes
+        '.ObbbbbbbO..',
+        '.Obb tt bbO.',
+        '.OBbbbbbBO..',
+        '..ObbbbbO...',
+        '..Obbbbb O..',
+        '...ObbbO....',
+        '..Ob.bbO....',   // wispy tail begins
+        '...O.bO.....'
+      ];
     } else {
       rows = [
         '....OOOO....',
@@ -846,10 +1036,39 @@
         '.O...O...O..'
       ];
     }
+
+    // Wraiths render translucent for a see-through ghost feel.
+    if (type === 'wraith') {
+      ctx.save();
+      ctx.globalAlpha = 0.62;
+    }
     paintGrid(ctx, rows, P, x, y, size, gridW, gridH);
 
-    // eye glints
     var px = makePx(ctx, x - gridW * size / 2, y - gridH * size, size);
+
+    if (type === 'golem') {
+      // Molten seam glow flickers with the frame.
+      ctx.save();
+      ctx.globalAlpha = frame ? 0.55 : 0.30;
+      px(6, 5, '#ffd24d', 2, 2);
+      px(3, 3, '#ffb347', 1, 1);
+      px(10, 3, '#ffb347', 1, 1);
+      ctx.restore();
+    } else if (type === 'wraith') {
+      // Trailing wisps of the tail, fading downward, + an eerie aura.
+      ctx.globalAlpha = 0.4;
+      px(4.5, 11.4, P.b, 1, 1);
+      ctx.globalAlpha = 0.22;
+      px(5, 12.4, P.b, 1, 1);
+      ctx.restore(); // end the translucent body block
+
+      ctx.save();
+      ctx.globalAlpha = frame ? 0.28 : 0.18;
+      px(2.5, 2.5, '#b6ff9e', 7, 6); // pale-green glow halo
+      ctx.restore();
+    }
+
+    // eye glints for the round slime
     ctx.save();
     ctx.globalAlpha = 0.9;
     if (type === 'normal') {
@@ -866,6 +1085,7 @@
   window.drawMage = drawMage;
   window.drawArcher = drawArcher;
   window.drawHealer = drawHealer;
+  window.drawRonin = drawRonin;
   window.drawEnemy = function (ctx, x, baseY, size, type, frame, hpRatio) {
     return drawEnemy(ctx, x, baseY, size, type, frame, hpRatio);
   };
@@ -878,6 +1098,7 @@
     drawMage: drawMage,
     drawArcher: drawArcher,
     drawHealer: drawHealer,
+    drawRonin: drawRonin,
     drawEnemy: window.drawEnemy,
     drawBoss: drawBoss,
     drawCrystal: drawCrystal,

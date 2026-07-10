@@ -23,14 +23,36 @@ The game plays itself — the only decision is **where to spend your gold**:
 - When progress stalls, **Reseal the Crystal (Prestige)** for permanent **Aether
   Shards**, then spend them in the **Shard Shop** for permanent boosts.
 
-## Heroes
+## Heroes & their AoE skills
 
-| Hero | Archetype | Role |
-|------|-----------|------|
-| **Sir Garran** | Bulwark Knight | High single-target damage (tank) |
-| **Mira** | Emberwind Mage | AoE splash — hits every enemy (unlocks W10) |
-| **Faye** | Gale Archer | Rapid single-target fire (unlocks W25) |
-| **Aunel** | Dawn Healer | Heals the Crystal + global damage aura (unlocks W100) |
+Every hero auto-attacks **and** auto-casts one area skill on its own cooldown.
+All attacks and skills are drawn on screen (projectiles, novas, lightning).
+
+| Hero | Archetype | Auto skill | Effect |
+|------|-----------|-----------|--------|
+| **Sir Garran** | Bulwark Knight (tank) | 🌋 Seismic Slam | AoE damage to all enemies |
+| **Mira** | Emberwind Mage (W10) | ❄️ Frost Nova | AoE damage **+ freezes/slows** all enemies |
+| **Faye** | Gale Archer (W25) | 💥 Explosive Arrow | Arrow that **explodes** for radial AoE |
+| **Rai** | Storm Ronin (**W50**) | ⚡ Chain Lightning | Arcs between up to 5 enemies |
+| **Aunel** | Dawn Healer (W100) | 🌅 Dawn Blessing | Big Crystal heal + holy AoE + party damage buff |
+
+## Enemy types
+
+`normal` · `fast` · `runner` (very fast, fragile) · `tank` · `golem` (huge HP) ·
+`wraith` (floats, **immune to slow**) — introduced progressively as waves climb —
+plus a **boss** every 5th wave.
+
+## Sound
+
+All audio is **synthesized with the Web Audio API** (no files): per-skill SFX
+(ice, explosion, lightning, …), upgrade/wave/boss/prestige cues, and a looping
+background theme. Toggle music (♪) and mute (🔊) from the controls. Audio starts
+on your first tap/click (browser autoplay policy).
+
+## Mobile
+
+Responsive canvas, touch-friendly tap targets, no tap-delay, and a layout that
+reflows on narrow / portrait screens.
 
 ## Design & balance
 
@@ -50,9 +72,10 @@ Crystal (endless mode continues).
 
 | File | Contents |
 |------|----------|
-| `index.html` | Markup, HUD, styling |
-| `game.js` | Game engine: waves, combat, economy, save/load, offline, prestige, shop |
-| `sprites.js` | Pure canvas pixel-art renderers for every hero, enemy, boss, the Crystal, and the parallax night background |
+| `index.html` | Markup, HUD, hero/skill panel, audio & mobile styling |
+| `game.js` | Game engine: waves, combat, skills + visible FX, enemy types, economy, save/load, offline, prestige, shop |
+| `sprites.js` | Pure canvas pixel-art renderers for every hero (incl. Rai), enemy type, boss, the Crystal, and the parallax night background |
+| `audio.js` | Web Audio synthesized SFX + background music |
 
 ## Built with a multi-agent workflow
 

@@ -38,6 +38,9 @@
     font-weight:700;font-size:12px;background:linear-gradient(#f2c14a,#e0a72e);color:#3a2a00}
   .buy:disabled{background:#333a5c;color:#6a72a0;cursor:not-allowed}
   .buy small{display:block;font-weight:400;font-size:10px;opacity:.8}
+  .skill-row{margin-top:6px;font-size:11px;color:var(--accent);display:flex;align-items:center;gap:4px}
+  .cd-bar{height:4px;background:#0d1128;border-radius:3px;overflow:hidden;margin-top:3px}
+  .cd-fill{height:100%;width:0%;border-radius:3px;transition:width .12s linear}
   .lock-tag{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
     font-size:11px;color:var(--muted);text-align:center;padding:8px}
   .controls{display:flex;gap:8px;padding:8px;background:var(--panel);
@@ -47,8 +50,22 @@
   .btn:active{transform:scale(.97)}
   .btn.prestige{background:linear-gradient(#8b5cf6,#6d28d9);border-color:#8b5cf6}
   .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.sel{outline:2px solid var(--accent);outline-offset:-1px}
+  .btn.icon{padding:8px 11px;font-size:15px;line-height:1}
   .spd{margin-left:auto;display:flex;gap:4px;align-items:center;font-size:12px;color:var(--muted)}
   .spd .btn{padding:6px 10px}
+  /* touch: remove tap delay + text selection on interactive bits */
+  .btn,.buy,.hero-card,[data-spd]{touch-action:manipulation;user-select:none}
+  /* mobile / narrow screens */
+  @media (max-width:600px){
+    header h1{font-size:13px}
+    .stats{gap:10px;font-size:12px;width:100%;margin-left:0}
+    .hero-card{min-width:132px;padding:7px 8px}
+    .controls{gap:6px}
+    .controls .btn{padding:8px 9px;font-size:11px}
+    .spd{width:100%;margin-left:0;justify-content:flex-end}
+  }
+  @media (max-width:380px){ .hero-card{min-width:120px} }
   .modal{position:fixed;inset:0;background:rgba(4,6,15,.82);display:none;
     align-items:center;justify-content:center;z-index:30;padding:16px}
   .modal.show{display:flex}
@@ -94,6 +111,8 @@
     <button class="btn prestige" id="btnPrestige">💠 Reseal Crystal (Prestige)</button>
     <button class="btn" id="btnShop">💠 Shard Shop</button>
     <button class="btn" id="btnReset">Reset Save</button>
+    <button class="btn icon" id="btnMusic" title="Music on/off">♪</button>
+    <button class="btn icon" id="btnMute" title="Mute all">🔊</button>
     <div class="spd">
       Speed
       <button class="btn" data-spd="1">1×</button>
@@ -109,4 +128,5 @@
 </div>
 
 <script src="sprites.js"></script>
+<script src="audio.js"></script>
 <script src="game.js"></script>
