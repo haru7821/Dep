@@ -87,7 +87,7 @@ const TALENTS = [
 const talent = id => (S.talents[id] || 0);
 
 // talent-derived modifiers
-function effInterval(def){ return Math.max(0.05, def.atkInterval * (1 - 0.05 * talent('haste'))); }
+function effInterval(def){ return Math.max(0.05, def.atkInterval * (1 - 0.05 * talent('haste')) / (odActive() ? OD_RATE : 1)); }
 function effSkillCd(def){ return def.skill.cd * (1 - 0.04 * talent('focus')); }
 function wardMul(){ return shardMul('ward') * (1 + 0.10 * talent('bulwark')); }
 function goldMulAll(){ return shardMul('gold') * (1 + 0.08 * talent('greed')) * (1 + relicBonus('gold')); }
@@ -253,7 +253,7 @@ function globalDmgMul(){
   m *= 1 + relicBonus('dmg');                         // equipped relics
   return m;
 }
-function combatMul(){ return globalDmgMul() * (partyBuffT > 0 ? PARTY_BUFF_MUL : 1) * (1 + 0.05 * talent('might')); }
+function combatMul(){ return globalDmgMul() * (partyBuffT > 0 ? PARTY_BUFF_MUL : 1) * (1 + 0.05 * talent('might')) * (odActive() ? OD_DMG : 1); }
 function crystalMaxHp(){ return 100 * wardMul() * (1 + relicBonus('ward')); }
 function gameSpeed(){ return S.speed * shardMul('speed'); }
 
@@ -274,6 +274,20 @@ const COMBO_MAX = 60;        // combo count where the gold bonus caps
 // gold bonus from the current streak: up to +150% at COMBO_MAX
 function comboMul(){ return 1 + Math.min(combo, COMBO_MAX) / COMBO_MAX * 1.5; }
 function comboTier(){ return combo>=50?4 : combo>=30?3 : combo>=15?2 : combo>=5?1 : 0; }
+// Overdrive: kills charge a gauge; when full, activate for a burst of power
+let odCharge = 0, odT = 0;         // gauge 0..1, active seconds remaining
+const OD_KILLS = 45;               // kills to fully charge
+const OD_DUR = 8;                  // active duration (s)
+const OD_DMG = 2.0, OD_RATE = 1.5; // damage ×2, attack speed ×1.5 while active
+function odActive(){ return odT > 0; }
+function tryOverdrive(){
+  if (odActive() || odCharge < 1) return false;
+  odCharge = 0; odT = OD_DUR;
+  toast('⚡ OVERDRIVE! ×2 damage, ×1.5 attack speed');
+  spawnParticles(view.w/2, view.ground - 60, 'holy', 2.2);
+  GA('prestige');
+  return true;
+}
 
 // Layout (in canvas coords, set on resize)
 const view = { w: 900, h: 460, ground: 380, crystalX: 90, laneRight: 880 };
@@ -423,6 +437,7 @@ function damageEnemy(e, dmg, crit){
     // extend the kill-streak combo (bosses give a bigger jump)
     combo += e.boss ? 5 : 1; comboT = COMBO_WINDOW;
     if (combo > S.bestCombo) S.bestCombo = combo;
+    if (!odActive()) odCharge = Math.min(1, odCharge + (e.boss ? 6 : 1) / OD_KILLS);
     const g = goldPerKill(S.wave) * e.goldMul * goldMulAll() * comboMul();
     grantGold(g);
     waveKills++;
@@ -617,6 +632,7 @@ function simulate(dt){
 
   // kill-streak combo decay
   if (comboT > 0){ comboT -= dt; if (comboT <= 0){ combo = 0; comboT = 0; } }
+  if (odT > 0) odT = Math.max(0, odT - dt);
 
   // fx + particles + floaters
   updateParticles(dt);
@@ -987,6 +1003,13 @@ function draw(now){
     ctx.save(); ctx.globalAlpha = 0.10 + 0.05*Math.sin(now/120);
     ctx.fillStyle = '#ffe9a0'; ctx.fillRect(0, 0, view.w, view.h); ctx.restore();
   }
+  // overdrive: electric blue edge glow while active
+  if (odActive()){
+    ctx.save(); ctx.globalAlpha = 0.14 + 0.07*Math.sin(now/90);
+    const eg = ctx.createLinearGradient(0,0,0,view.h);
+    eg.addColorStop(0,'#7bd3ff'); eg.addColorStop(0.5,'transparent'); eg.addColorStop(1,'#7bd3ff');
+    ctx.fillStyle = eg; ctx.fillRect(0,0,view.w,view.h); ctx.restore();
+  }
 
   // kill-streak combo meter (top-right), grows/colours with the streak tier
   if (combo >= 3){
@@ -1031,6 +1054,15 @@ function frame(now){
 // ------------------------------------------------------------------ HUD / UI
 const el = id => document.getElementById(id);
 function updateHud(){
+  // overdrive gauge button
+  const ob = el('odBtn');
+  if (ob){
+    const pct = odActive() ? odT/OD_DUR : odCharge;
+    el('odFill').style.width = Math.round(pct*100) + '%';
+    el('odTxt').textContent = odActive() ? odT.toFixed(1)+'s' : Math.round(odCharge*100)+'%';
+    ob.classList.toggle('ready', !odActive() && odCharge >= 1);
+    ob.classList.toggle('active', odActive());
+  }
   el('s-wave').textContent = S.wave;
   el('s-gold').textContent = fmt(S.gold);
   el('s-shard').textContent = fmt(S.shards);
@@ -1227,6 +1259,8 @@ document.querySelectorAll('[data-spd]').forEach(b => {
     b.classList.add('sel');
   };
 });
+
+if (el('odBtn')) el('odBtn').onclick = tryOverdrive;
 
 // tap a hero on the battlefield to instantly cast their ready skill
 canvas.addEventListener('pointerdown', e => {

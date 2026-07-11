@@ -80,6 +80,18 @@
   .shard-item .info b{color:var(--shard)}
   .shard-item .lv{font-size:11px;color:var(--muted)}
   .branch-title{font-size:12px;font-weight:700;color:var(--accent);margin:10px 2px 2px}
+  /* Overdrive gauge button (bottom-left of the battlefield) */
+  #odBtn{position:absolute;left:12px;bottom:12px;z-index:15;width:74px;height:40px;
+    border:2px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--text);
+    font-size:16px;font-weight:800;cursor:pointer;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;gap:4px;touch-action:manipulation;user-select:none}
+  #odBtn b{font-size:11px;position:relative;z-index:2}
+  #odFill{position:absolute;left:0;top:0;bottom:0;width:0%;z-index:1;
+    background:linear-gradient(90deg,#8a5a10,#e0a72e);transition:width .15s}
+  #odBtn.ready{border-color:#ffd75e;box-shadow:0 0 14px rgba(255,215,94,.7);animation:odPulse 1s infinite}
+  #odBtn.active{border-color:#7bd3ff;box-shadow:0 0 18px rgba(123,211,255,.8)}
+  #odBtn.active #odFill{background:linear-gradient(90deg,#1a6a9a,#7bd3ff)}
+  @keyframes odPulse{50%{box-shadow:0 0 26px rgba(255,215,94,1)}}
   .toast{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
     background:rgba(20,24,48,.92);border:1px solid var(--line);border-radius:10px;
     padding:8px 14px;font-size:12px;pointer-events:none;opacity:0;transition:opacity .3s;z-index:20}
@@ -159,6 +171,7 @@
   <div class="stage-wrap">
     <canvas id="stage"></canvas>
     <div id="wavebanner">Wave 1</div>
+    <button id="odBtn" title="Overdrive">⚡<span id="odFill"></span><b id="odTxt">0%</b></button>
     <div id="toast" class="toast"></div>
   </div>
 
@@ -190,8 +203,8 @@
   <div class="box" id="modalBox"></div>
 </div>
 
-<script src="sprites.js?v=10"></script>
-<script src="dungeon.js?v=10"></script>
-<script src="sheets.js?v=10"></script>
-<script src="audio.js?v=10"></script>
-<script src="game.js?v=10"></script>
+<script src="sprites.js?v=11"></script>
+<script src="dungeon.js?v=11"></script>
+<script src="sheets.js?v=11"></script>
+<script src="audio.js?v=11"></script>
+<script src="game.js?v=11"></script>
