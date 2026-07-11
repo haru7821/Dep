@@ -40,12 +40,12 @@ window.Sheets = (function () {
     rai:    { file:'sorcerer.png', rows:2, cols:3, fit:HFIT, anim:bmob(2,3) },  // Sorcerer
     // monsters — extracted from the bestiary (idle + attack rows). Face left
     // = the direction they march, so no flip.
-    slime:      { file:'slime.png',      rows:2, cols:11, fit:1.0, anim:bmob(6,11) },  // earth
-    zombie:     { file:'zombie.png',     rows:2, cols:5,  fit:1.0, anim:bmob(3,5)  },  // poison
-    specter:    { file:'specter.png',    rows:2, cols:5,  fit:1.0, anim:bmob(2,5)  },  // dark
-    skeleton:   { file:'skeleton.png',   rows:2, cols:7,  fit:1.0, anim:bmob(2,7)  },  // tank
-    dragon:     { file:'dragon.png',     rows:2, cols:4,  fit:1.0, anim:bmob(4,4)  },  // Boss (fire)
-    elderghost: { file:'elderghost.png', rows:2, cols:5,  fit:1.0, anim:bmob(3,5)  },  // Boss (dark)
+    slime:      { file:'slime.png',      rows:2, cols:11, fit:1.0, flip:true, anim:bmob(6,11) },  // earth
+    zombie:     { file:'zombie.png',     rows:2, cols:5,  fit:1.0, flip:true, anim:bmob(3,5)  },  // poison
+    specter:    { file:'specter.png',    rows:2, cols:5,  fit:1.0, flip:true, anim:bmob(2,5)  },  // dark
+    skeleton:   { file:'skeleton.png',   rows:2, cols:7,  fit:1.0, flip:true, anim:bmob(2,7)  },  // tank
+    dragon:     { file:'dragon.png',     rows:2, cols:4,  fit:1.0, flip:true, anim:bmob(4,4)  },  // Boss (fire)
+    elderghost: { file:'elderghost.png', rows:2, cols:5,  fit:1.0, flip:true, anim:bmob(3,5)  },  // Boss (dark)
   };
 
   const imgs = {};   // id -> { img, ok, failed }
