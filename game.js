@@ -313,6 +313,19 @@ function pickType(w){
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+// Wave events: random modifiers on ordinary waves (never boss waves)
+const WAVE_EVENTS = {
+  swarm:  { name:'Swarm',     icon:'🐛', desc:'Double the horde!',    color:'#7CFC55', count:2.0, hp:0.6, spd:1.0, gold:1.0 },
+  elite:  { name:'Elite Wave',icon:'💀', desc:'Few, but deadly',      color:'#ff5db1', count:0.5, hp:2.8, spd:0.9, gold:3.5 },
+  rush:   { name:'Gold Rush', icon:'🪙', desc:'Every foe is golden!', color:'#ffd75e', count:1.0, hp:1.0, spd:1.1, gold:1.0, golden:true },
+  frenzy: { name:'Frenzy',    icon:'⚡', desc:'They charge fast!',     color:'#7bd3ff', count:1.2, hp:0.9, spd:1.7, gold:1.5 },
+};
+let curEvent = null;   // active wave event def (or null)
+function waveSpawnCount(w){
+  if (isBossWave(w)) return 1;
+  return Math.max(1, Math.round(enemyCount(w) * (curEvent ? curEvent.count : 1)));
+}
+
 function spawnEnemy(w){
   if (isBossWave(w)){
     const hp = enemyHP(w) * 8;
@@ -321,20 +334,31 @@ function spawnEnemy(w){
       type:'boss', speed:18, frame:0, boss:true, bossKind, slow:0, goldMul:10, atkTimer:0 });
     return;
   }
+  const ev = curEvent;
   const type = pickType(w);
   const t = ENEMY_TYPES[type];
-  const hp = enemyHP(w) * t.hp;
-  const golden = w >= 8 && Math.random() < goldenChance();   // rare high-gold enemy
+  const hp = enemyHP(w) * t.hp * (ev ? ev.hp : 1);
+  const golden = (ev && ev.golden) || (w >= 8 && Math.random() < goldenChance());
+  let goldMul = t.gold * (ev ? ev.gold : 1);
+  if (golden) goldMul *= 30;
   enemies.push({
     x: view.laneRight + Math.random()*40, y: view.ground,
-    hp, maxHp: hp, type, speed: t.spd, frame:0, boss:false,
-    slow:0, goldMul: golden ? t.gold * 30 : t.gold, golden, atkTimer:0,
+    hp, maxHp: hp, type, speed: t.spd * (ev ? ev.spd : 1), frame:0, boss:false,
+    slow:0, goldMul, golden, atkTimer:0,
   });
 }
 
 function startWave(w){
   spawnTimer = 0; spawnedThisWave = 0; waveKills = 0;
   waveGoldAccum = 0; waveTime = 0;
+  // roll a random event on ordinary waves from wave 6 on (~22% of them)
+  curEvent = null;
+  if (!isBossWave(w) && w >= 6 && Math.random() < 0.22){
+    const keys = Object.keys(WAVE_EVENTS);
+    curEvent = WAVE_EVENTS[keys[(Math.random()*keys.length)|0]];
+    toast(`${curEvent.icon} ${curEvent.name} — ${curEvent.desc}`);
+    GA('boss');
+  }
 }
 
 function addFloater(x, y, txt, color){ floaters.push({ x, y, txt, color, life: 1 }); }
@@ -538,7 +562,7 @@ function castSkill(def, slot, lvl){
 function simulate(dt){
   const w = S.wave;
   const slots = heroSlots();
-  const totalToSpawn = isBossWave(w) ? 1 : enemyCount(w);
+  const totalToSpawn = waveSpawnCount(w);
   waveTime += dt;
   sfxGap -= dt;
   if (partyBuffT > 0) partyBuffT -= dt;
@@ -1009,6 +1033,19 @@ function draw(now){
     const eg = ctx.createLinearGradient(0,0,0,view.h);
     eg.addColorStop(0,'#7bd3ff'); eg.addColorStop(0.5,'transparent'); eg.addColorStop(1,'#7bd3ff');
     ctx.fillStyle = eg; ctx.fillRect(0,0,view.w,view.h); ctx.restore();
+  }
+
+  // active wave-event badge (top-left)
+  if (curEvent && enemies.length){
+    const s = view.h/460, bx = 12, by = 12*s;
+    ctx.save();
+    ctx.font = `bold ${Math.round(13*s)}px system-ui`; ctx.textAlign = 'left';
+    const label = `${curEvent.icon} ${curEvent.name}`, tw = ctx.measureText(label).width;
+    ctx.fillStyle = 'rgba(10,12,26,.8)';
+    ctx.fillRect(bx-6, by-3, tw+16, 22*s);
+    ctx.fillStyle = curEvent.color; ctx.fillRect(bx-6, by-3, 4, 22*s);
+    ctx.fillStyle = curEvent.color; ctx.fillText(label, bx+4, by + 13*s);
+    ctx.restore();
   }
 
   // kill-streak combo meter (top-right), grows/colours with the streak tier
