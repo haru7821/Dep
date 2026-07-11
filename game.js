@@ -778,7 +778,7 @@ function drawIceBlock(cx, topY, w, h, now){
     const dh = h * 1.42, dw = dh * (img.width / img.height);
     const dx = cx - dw/2, dy = (topY + h) - dh + h*0.05;   // crystal base near the feet
     ctx.save();
-    ctx.globalAlpha = 0.9; ctx.imageSmoothingEnabled = true;
+    ctx.globalAlpha = 0.5; ctx.imageSmoothingEnabled = true;
     ctx.drawImage(img, dx, dy, dw, dh);
     ctx.restore();
     // twinkling frost sparkles orbiting the crystal
