@@ -32,11 +32,12 @@ window.Sheets = (function () {
   // sliced sheets pack every character at the same body height, so heroes share
   // one fit for a consistent on-screen size.
   const HFIT = 1.05;  // hero on-screen scale (halved per request)
+  // heroes from hero.png: row0 idle, row1 attack; art faces right (no flip)
   const SHEET_CONFIG = {
-    garran: { file:'warrior.png',  rows:4, cols:5, fit:HFIT, flip:true, anim:rows4(5,2,1,1) },  // Knight  (warrior art)
-    mira:   { file:'wizard.png',   rows:4, cols:8, fit:HFIT, flip:true, anim:rows4(5,8,2,2) },  // Mage    (purple wizard art)
-    faye:   { file:'archer.png',   rows:4, cols:5, fit:HFIT,            anim:rows4(5,5,1,2) },  // Archer  (art already faces right)
-    rai:    { file:'sorcerer.png', rows:4, cols:5, fit:HFIT, flip:true, anim:rows4(5,1,1,1) },  // Ronin   (elemental sorcerer art)
+    garran: { file:'warrior.png',  rows:2, cols:4, fit:HFIT, anim:bmob(2,4) },  // Knight
+    mira:   { file:'wizard.png',   rows:2, cols:3, fit:HFIT, anim:bmob(2,3) },  // Mage
+    faye:   { file:'archer.png',   rows:2, cols:5, fit:HFIT, anim:bmob(2,5) },  // Archer
+    rai:    { file:'sorcerer.png', rows:2, cols:3, fit:HFIT, anim:bmob(2,3) },  // Sorcerer
     // monsters — extracted from the bestiary (idle + attack rows). Face left
     // = the direction they march, so no flip.
     slime:      { file:'slime.png',      rows:2, cols:11, fit:1.0, anim:bmob(6,11) },  // earth

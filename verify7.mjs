@@ -22,11 +22,10 @@ const R = []; const check = (n,c) => R.push((c?'PASS':'FAIL')+' — '+n);
   check('🎨 toggle button present', await page.evaluate(() => !!document.getElementById('btnSheets')));
   check('Healer sheet removed → Aunel uses canvas fallback', await page.evaluate(() =>
     !Sheets.CONFIG.aunel && Sheets.draw(document.getElementById('stage').getContext('2d'),'aunel',100,300,60,'idle',0)===false));
-  check('Flip: garran/mira/rai flipped; faye + all monsters not', await page.evaluate(() =>
-    ['garran','mira','rai'].every(id=>Sheets.CONFIG[id].flip===true) && !Sheets.CONFIG.faye.flip &&
-    !['slime','zombie','specter','skeleton','dragon','elderghost'].some(id=>Sheets.CONFIG[id].flip)));
-  check('Monsters have idle + attack rows', await page.evaluate(() =>
-    ['slime','zombie','specter','skeleton','dragon','elderghost'].every(id => Sheets.CONFIG[id].rows===2 && Sheets.CONFIG[id].anim.attack.row===1)));
+  check('No flips needed (all art faces correctly)', await page.evaluate(() =>
+    ['garran','mira','faye','rai','slime','zombie','specter','skeleton','dragon','elderghost'].every(id=>!Sheets.CONFIG[id].flip)));
+  check('Heroes + monsters have idle + attack rows', await page.evaluate(() =>
+    ['garran','mira','faye','rai','slime','zombie','specter','skeleton','dragon','elderghost'].every(id => Sheets.CONFIG[id].rows===2 && Sheets.CONFIG[id].anim.attack.row===1)));
   check('Sheet images load (ready after load)', await page.evaluate(async () => {
     const ids=['garran','mira','faye','rai','slime','zombie','specter','skeleton','dragon','elderghost'];
     ids.forEach(id => Sheets.load(id));
