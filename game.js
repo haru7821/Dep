@@ -1330,24 +1330,85 @@ function openShardShop(){
 }
 
 // ------------------------------------------------------------------ offline
+// ---- Idle progression: simulate wave clears while the player is away ----
+function fmtDur(s){ s = Math.floor(s); return s < 60 ? s+'s' : s < 3600 ? Math.floor(s/60)+'m' : (s/3600).toFixed(1)+'h'; }
+// rough total hero DPS (single + AoE approx, small fudge for skills/crits)
+function heroDPS(){
+  let d = 0;
+  for (const def of HERO_DEFS){
+    const lvl = S.heroLevels[def.id];
+    if (lvl <= 0 || def.baseDmg <= 0) continue;
+    const perHit = heroDmg(def, lvl) * combatMul();
+    const mult = def.target === 'all' ? 4 : 1;      // AoE hits several foes
+    d += perHit / effInterval(def) * mult;
+  }
+  return d * 1.3;
+}
+const owHP   = w => isBossWave(w) ? enemyHP(w) * 8 : enemyCount(w) * enemyHP(w) * 1.3;
+const owGold = w => Math.ceil((isBossWave(w) ? goldPerKill(w) * 10 : enemyCount(w) * goldPerKill(w)) * goldMulAll());
+
+// Advance waves for `seconds` of absence, stopping at the DPS sustain wall.
+function runOfflineSim(seconds){
+  const budgetTotal = Math.min(seconds, OFFLINE_CAP_S);
+  let budget = budgetTotal, waves = 0, gold = 0, kills = 0, it = 0;
+  const dps = heroDPS();
+  if (dps <= 0){
+    if (S.recentGoldRate.length){
+      const rate = S.recentGoldRate.reduce((a,b)=>a+b,0) / S.recentGoldRate.length;
+      gold = Math.floor(rate * budget * 0.5);
+    }
+  } else {
+    while (budget > 0 && it++ < 5000){
+      const w = S.wave;
+      const combatT = owHP(w) / dps;
+      if (combatT > 40) break;                        // can't burn them down → wall
+      const total = combatT + (isBossWave(w) ? 3 : enemyCount(w) * SPAWN_INTERVAL * 0.6);
+      if (total > budget) break;
+      budget -= total;
+      gold += owGold(w); kills += isBossWave(w) ? 1 : enemyCount(w);
+      S.wave++; waves++;
+      if (S.wave > S.bestWave) S.bestWave = S.wave;
+    }
+  }
+  gold = Math.floor(gold);
+  if (gold > 0){ S.gold += gold; S.totalGoldEarned += gold; }
+  if (kills > 0) S.totalKills += kills;
+  if (waves > 0){ S.crystalHp = 1; enemies.length = 0; startWave(S.wave); checkUnlocks(S.wave); }
+  checkAchievements();
+  return { waves, gold, seconds: budgetTotal };
+}
+
 function applyOffline(){
   const away = (Date.now() - S.lastSeen) / 1000;
-  if (away < 60 || S.recentGoldRate.length === 0) return;
-  const rate = S.recentGoldRate.reduce((a,b)=>a+b,0) / S.recentGoldRate.length;
-  const effective = Math.min(away, OFFLINE_CAP_S);
-  const earned = Math.floor(rate * effective * 0.5);
-  if (earned <= 0) return;
-  S.gold += earned; S.totalGoldEarned += earned;
-  const mins = Math.floor(effective/60);
+  if (away < 60) return;
+  const r = runOfflineSim(away);
+  if (r.waves <= 0 && r.gold <= 0) return;
   openModal(`
     <h2>🌙 Welcome back, guardian</h2>
-    <p>Your heroes held the line for <b>${mins < 60 ? mins+' min' : (mins/60).toFixed(1)+' h'}</b>
-       while you were away (offline earns 50%, capped at 8h).</p>
-    <p style="font-size:22px;text-align:center;margin:16px 0">
-       🪙 <b style="color:var(--gold)">+${fmt(earned)}</b></p>
+    <p>Your heroes held the line for <b>${fmtDur(r.seconds)}</b> while you were away
+       (progress is capped at 8h and stops where your damage can no longer keep up).</p>
+    <div style="display:flex;gap:10px;justify-content:center;margin:16px 0;text-align:center">
+      <div style="flex:1"><div style="font-size:22px">🌊 <b style="color:var(--accent)">+${r.waves}</b></div><div style="font-size:11px;color:var(--muted)">waves cleared</div></div>
+      <div style="flex:1"><div style="font-size:22px">🪙 <b style="color:var(--gold)">+${fmt(r.gold)}</b></div><div style="font-size:11px;color:var(--muted)">gold earned</div></div>
+    </div>
     <button class="btn" id="collectOff" style="width:100%">Collect</button>`);
   el('collectOff').onclick = closeModal;
 }
+
+// Catch up when a backgrounded tab regains focus (rAF is paused while hidden).
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden){ hiddenAt = Date.now(); save(); return; }
+  if (!hiddenAt) return;
+  const away = (Date.now() - hiddenAt) / 1000; hiddenAt = 0;
+  lastT = performance.now();                          // avoid a huge dt spike
+  if (away < 20) return;
+  const r = runOfflineSim(away);
+  if (r.waves > 0 || r.gold > 0){
+    buildHeroPanel(); updateHud(); save();
+    toast(`🌙 Away ${fmtDur(r.seconds)} — +${r.waves} waves, 🪙 +${fmt(r.gold)}`);
+  }
+});
 
 // ------------------------------------------------------------------ wiring
 el('btnPrestige').onclick = doPrestige;
