@@ -679,17 +679,16 @@ function draw(now){
   if (Spr().drawBackground) Spr().drawBackground(ctx, view.w, view.h, now);
   else { ctx.fillStyle = '#0a0e24'; ctx.fillRect(0,0,view.w,view.h); }
 
-  // crystal tower — static (first idle frame, no animation); size per user edit
+  // crystal tower — static; the 4 frames are burning states chosen by remaining
+  // HP: 100% = no fire, 70% = small, 30% = medium, 10% = big fire. size per user edit
   const towerH = size * 60;
-  const drewTower = window.Sheets && Sheets.draw(ctx, 'tower', view.crystalX, view.ground, towerH, 'idle', 0);
+  const hp = S.crystalHp;
+  const towerFrame = hp >= 0.70 ? 0 : hp >= 0.30 ? 1 : hp >= 0.10 ? 2 : 3;
+  const drewTower = window.Sheets && Sheets.draw(ctx, 'tower', view.crystalX, view.ground, towerH, 'idle', towerFrame * 1000);
   if (!drewTower){
     const pulse = 0.5 + 0.5*Math.sin(now/500);
     if (Spr().drawCrystal) Spr().drawCrystal(ctx, view.crystalX, view.ground - size*10, size*3, pulse, S.crystalHp);
     else { ctx.fillStyle = `rgba(123,211,255,${0.5+0.4*pulse})`; ctx.fillRect(view.crystalX-14, view.ground-70, 28, 44); }
-  } else if (S.crystalHp < 0.6){
-    // damage tint when the tower's crystal is low on HP
-    ctx.save(); ctx.globalAlpha = (0.6 - S.crystalHp) * 0.7; ctx.fillStyle = '#c81818';
-    ctx.fillRect(view.crystalX - towerH*0.45, view.ground - towerH, towerH*0.9, towerH); ctx.restore();
   }
 
   // enemies

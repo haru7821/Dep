@@ -38,8 +38,9 @@ window.Sheets = (function () {
     mira:   { file:'wizard.png',   rows:2, cols:3, fit:HFIT, anim:bmob(2,3) },  // Mage
     faye:   { file:'archer.png',   rows:2, cols:5, fit:HFIT, anim:bmob(2,5) },  // Archer
     rai:    { file:'sorcerer.png', rows:2, cols:3, fit:HFIT, anim:bmob(2,3) },  // Sorcerer
-    // the defended crystal, as an animated tower (idle glow / attack fires a bolt)
-    tower:  { file:'tower.png',    rows:2, cols:4, fit:1.0,  anim:bmob(4,4) },
+    // the defended crystal, as a static tower. 1 row × 4 frames, chosen by HP
+    // bucket (100%→no fire, 70/30/10%→more fire), not animated over time.
+    tower:  { file:'tower.png',    rows:1, cols:4, fit:1.0,  anim:{ idle:{row:0,frames:4,fps:1} } },
     // monsters — extracted from the bestiary (idle + attack rows). Face left
     // = the direction they march, so no flip.
     slime:      { file:'slime.png',      rows:2, cols:11, fit:1.0, flip:true, anim:bmob(6,11) },  // earth
