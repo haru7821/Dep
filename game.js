@@ -680,7 +680,7 @@ function draw(now){
   else { ctx.fillStyle = '#0a0e24'; ctx.fillRect(0,0,view.w,view.h); }
 
   // crystal tower — idle glow normally, attack (fires a bolt) when foes are near
-  const towerH = size * 26;
+  const towerH = size * 60;
   const nearFoe = enemies.some(e => e.x < view.crystalX + 240 * px);
   const drewTower = window.Sheets && Sheets.draw(ctx, 'tower', view.crystalX, view.ground, towerH, nearFoe ? 'attack' : 'idle', now);
   if (!drewTower){
