@@ -48,6 +48,7 @@ const ENEMY_TYPES = {
 // which bestiary monster each enemy type uses (falls back to canvas art)
 const ENEMY_SPRITE = { normal:'slime', fast:'zombie', runner:'zombie', tank:'skeleton', golem:'skeleton', wraith:'specter' };
 const SLOW_FACTOR = 0.42;              // movement multiplier while frozen
+const BURN_DUR = 1.6;                  // seconds an enemy shows the burning FX
 const PARTY_BUFF_MUL = 1.30;           // Aunel's Dawn Blessing damage buff
 
 // Permanent shard-shop upgrades (persist through prestige)
@@ -550,7 +551,7 @@ function castSkill(def, slot, lvl){
     spawnParticles(t.x, t.y - 14, 'fire', 1.6);
     spawnParticles(t.x, t.y - 14, 'smoke', 1.0);
     for (let i = enemies.length - 1; i >= 0; i--){
-      if (Math.abs(enemies[i].x - t.x) <= R){ if (damageEnemy(enemies[i], dmg, roll.crit)) enemies.splice(i, 1); }
+      if (Math.abs(enemies[i].x - t.x) <= R){ enemies[i].burn = BURN_DUR; if (damageEnemy(enemies[i], dmg, roll.crit)) enemies.splice(i, 1); }
     }
     GA('explosion');
   }
@@ -605,6 +606,7 @@ function simulate(dt){
     const e = enemies[i];
     e.frame = (Math.floor(waveTime*4) % 2);
     if (e.slow > 0) e.slow -= dt;
+    if (e.burn > 0) e.burn -= dt;
     if (e.type === 'wraith' && Math.random() < dt * 2.5) spawnParticles(e.x, e.y - 20, 'poison', 0.25);  // 독 trail
     const reach = view.crystalX + 34*px;
     if (e.x > reach){
@@ -772,6 +774,27 @@ function pathRoundRect(x, y, w, h, r){
 // hasn't loaded, fall back to the procedural crystal cube below.
 let _iceImg = null, _iceOk = false;
 function iceImage(){ if (!_iceImg){ _iceImg = new Image(); _iceImg.onload = () => _iceOk = true; _iceImg.src = 'assets/ice.png'; } return _iceOk ? _iceImg : null; }
+
+// Burning FX for fire-damaged enemies: the fire sprite at 50% alpha, animated
+// (flicker + scale pulse + bob + subtle horizontal flip) over the enemy.
+let _fireImg = null, _fireOk = false;
+function fireImage(){ if (!_fireImg){ _fireImg = new Image(); _fireImg.onload = () => _fireOk = true; _fireImg.src = 'assets/fire.png'; } return _fireOk ? _fireImg : null; }
+function drawBurnFire(cx, feetY, h, now, seed){
+  const img = fireImage(); if (!img) return;
+  const t = now / 1000;
+  const flick = 0.82 + 0.18*Math.sin(t*15 + seed) + 0.08*Math.sin(t*27 + seed*1.7);
+  const dh = h * 1.3 * (1 + 0.08*Math.sin(t*9 + seed));
+  const dw = dh * (img.width / img.height);
+  const bob = Math.sin(t*6 + seed) * h * 0.03;
+  const dx = cx - dw/2, dy = feetY - dh + h*0.14 + bob;
+  const flip = Math.sin(t*8 + seed) > 0 ? 1 : -1;      // occasional mirror for life
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, Math.min(1, 0.5 * flick));
+  ctx.imageSmoothingEnabled = false;
+  ctx.translate(cx, 0); ctx.scale(flip, 1); ctx.translate(-cx, 0);
+  ctx.drawImage(img, dx, dy, dw, dh);
+  ctx.restore();
+}
 function drawIceBlock(cx, topY, w, h, now){
   const img = iceImage();
   if (img){
@@ -995,6 +1018,7 @@ function draw(now){
     const spH = drew ? th : es*15;                    // overlays/hp-bar sized to the sprite
     const ow = spH * 0.62;
     if (e.slow > 0) drawIceBlock(e.x, by - spH, ow, spH, now);
+    if (e.burn > 0) drawBurnFire(e.x, by, spH, now, e.x);
     if (e.golden){
       ctx.save();
       ctx.globalAlpha = 0.28 + 0.12*Math.sin(now/120 + e.x);
