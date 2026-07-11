@@ -761,7 +761,7 @@ function resize(){
   ctx.setTransform(dpr,0,0,dpr,0,0);
   view.w = cw; view.h = ch;
   view.ground = ch * 0.78;
-  view.crystalX = cw * 0.10;
+  view.crystalX = cw * 0.14;
   view.laneRight = cw - 20;
 }
 window.addEventListener('resize', resize);
