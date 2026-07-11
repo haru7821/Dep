@@ -172,6 +172,8 @@ function freshState(){
     achievements: {},       // id -> true when unlocked
     talents: {},            // talent node id -> level
     talentPoints: 0,        // spendable talent points
+    kills: {},              // bestiary sprite id -> lifetime kill count
+    bestCombo: 0,           // highest kill-streak combo reached
   };
 }
 
@@ -184,6 +186,7 @@ function load(){
     return Object.assign(base, d, {
       heroLevels: Object.assign(base.heroLevels, d.heroLevels || {}),
       shardUpg:   Object.assign(base.shardUpg,   d.shardUpg   || {}),
+      kills:      Object.assign(base.kills,      d.kills      || {}),
     });
   }catch(e){ return null; }
 }
@@ -218,6 +221,13 @@ const heroFlash = {};        // attack-flash timer per hero id (survives heroSlo
 const heroAnim = {};         // per-hero sprite-sheet animation state {name, t}
 let spawnTimer = 0, spawnedThisWave = 0, waveKills = 0, waveGoldAccum = 0, waveTime = 0;
 let partyBuffT = 0;          // remaining seconds of Aunel's damage buff
+// kill-streak combo: rapid consecutive kills build a gold bonus
+let combo = 0, comboT = 0;   // current streak + seconds left before it resets
+const COMBO_WINDOW = 2.6;    // seconds to land the next kill and keep the streak
+const COMBO_MAX = 60;        // combo count where the gold bonus caps
+// gold bonus from the current streak: up to +150% at COMBO_MAX
+function comboMul(){ return 1 + Math.min(combo, COMBO_MAX) / COMBO_MAX * 1.5; }
+function comboTier(){ return combo>=50?4 : combo>=30?3 : combo>=15?2 : combo>=5?1 : 0; }
 
 // Layout (in canvas coords, set on resize)
 const view = { w: 900, h: 460, ground: 380, crystalX: 90, laneRight: 880 };
@@ -364,10 +374,16 @@ function damageEnemy(e, dmg, crit){
   addDamageNumber(e, dmg, crit);
   e.hp -= dmg;
   if (e.hp <= 0){
-    const g = goldPerKill(S.wave) * e.goldMul * goldMulAll();
+    // extend the kill-streak combo (bosses give a bigger jump)
+    combo += e.boss ? 5 : 1; comboT = COMBO_WINDOW;
+    if (combo > S.bestCombo) S.bestCombo = combo;
+    const g = goldPerKill(S.wave) * e.goldMul * goldMulAll() * comboMul();
     grantGold(g);
     waveKills++;
     S.totalKills++;
+    // record the kill in the bestiary (discovers the monster on first slay)
+    const monId = e.boss ? (e.bossKind || 'dragon') : ENEMY_SPRITE[e.type];
+    if (monId) S.kills[monId] = (S.kills[monId] || 0) + 1;
     if (e.golden){
       S.goldenKills++;
       addFloater(e.x, e.y - 34*(view.h/460), '💰 +' + fmt(g), '#ffe14d'); GA('prestige');
@@ -551,6 +567,9 @@ function simulate(dt){
     showWaveBanner(S.wave);
     GA(isBossWave(S.wave) ? 'boss' : 'wave');
   }
+
+  // kill-streak combo decay
+  if (comboT > 0){ comboT -= dt; if (comboT <= 0){ combo = 0; comboT = 0; } }
 
   // fx + particles + floaters
   updateParticles(dt);
@@ -921,6 +940,30 @@ function draw(now){
     ctx.save(); ctx.globalAlpha = 0.10 + 0.05*Math.sin(now/120);
     ctx.fillStyle = '#ffe9a0'; ctx.fillRect(0, 0, view.w, view.h); ctx.restore();
   }
+
+  // kill-streak combo meter (top-right), grows/colours with the streak tier
+  if (combo >= 3){
+    const tier = comboTier();
+    const cols = ['#ffd75e','#ff9d3c','#ff6b6b','#ff4fa0','#c58bff'];
+    const col = cols[tier];
+    const s = view.h/460, pop = 1 + 0.10*Math.max(0, comboT/COMBO_WINDOW - 0.78)*4.5;
+    const cx = view.w - 14, cy = 26*s;
+    ctx.save();
+    ctx.textAlign = 'right';
+    ctx.fillStyle = col;
+    ctx.shadowColor = col; ctx.shadowBlur = 10;
+    ctx.font = `900 ${Math.round((15 + tier*3) * s * pop)}px system-ui`;
+    ctx.fillText(`${combo}× COMBO`, cx, cy);
+    ctx.shadowBlur = 0;
+    ctx.font = `bold ${Math.round(10*s)}px system-ui`;
+    ctx.fillStyle = '#e8ecff';
+    ctx.fillText(`+${Math.round((comboMul()-1)*100)}% gold`, cx, cy + 13*s);
+    // streak timer bar
+    const bw = 104*s, bx = cx - bw, byy = cy + 19*s;
+    ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(bx, byy, bw, 4*s);
+    ctx.fillStyle = col; ctx.fillRect(bx, byy, bw * Math.max(0, comboT/COMBO_WINDOW), 4*s);
+    ctx.restore();
+  }
 }
 
 // ------------------------------------------------------------------ loop
@@ -1169,6 +1212,7 @@ function openStats(){
       <div class="shard-item"><div class="info"><b>Lifetime Gold</b><div class="lv">🪙 ${fmt(S.totalGoldEarned)}</div></div></div>
       <div class="shard-item"><div class="info"><b>Shards Earned</b><div class="lv">💠 ${S.shardsEarned}</div></div></div>
       <div class="shard-item"><div class="info"><b>Critical Chance</b><div class="lv">${Math.round(critChance()*100)}%</div></div></div>
+      <div class="shard-item"><div class="info"><b>Best Combo</b><div class="lv">🔥 ${S.bestCombo}× streak</div></div></div>
     </div>
     <button class="btn" id="closeStats" style="width:100%">Close</button>`);
   el('closeStats').onclick = closeModal;
@@ -1249,8 +1293,9 @@ const BESTIARY = [
     lore:'Boss. An ancient void-spirit that commands the darker waves.' },
 ];
 
-// draw the monster's real sprite (sheet frame 0) into a codex portrait canvas
-function drawMonThumb(cv, entry){
+// draw the monster's real sprite (sheet frame 0) into a codex portrait canvas.
+// undiscovered monsters render as a black silhouette.
+function drawMonThumb(cv, entry, discovered){
   const ctx2 = cv.getContext('2d');
   const W = cv.width, H = cv.height;
   ctx2.clearRect(0, 0, W, H);
@@ -1259,6 +1304,18 @@ function drawMonThumb(cv, entry){
     const S2 = window.Sprites;
     if (entry.boss && S2 && S2.drawBoss) S2.drawBoss(ctx2, W/2, H-10, 6, 0);
     else if (S2 && S2.drawEnemy) S2.drawEnemy(ctx2, W/2, H-10, 6, 'normal', 0, 1);
+    if (!discovered) silhouette();
+  };
+  const silhouette = () => {          // paint every opaque pixel solid black
+    try {
+      const d = ctx2.getImageData(0, 0, W, H); const p = d.data;
+      for (let i = 0; i < p.length; i += 4){ if (p[i+3] > 20){ p[i]=8; p[i+1]=8; p[i+2]=14; p[i+3]=255; } }
+      ctx2.putImageData(d, 0, 0);
+    } catch (e) {                      // tainted canvas (file://): just veil it
+      ctx2.fillStyle = 'rgba(6,6,12,.9)'; ctx2.fillRect(0, 0, W, H);
+    }
+    ctx2.fillStyle = '#d9c491'; ctx2.textAlign = 'center';
+    ctx2.font = '900 64px system-ui'; ctx2.fillText('?', W/2, H/2 + 24);
   };
   const cfg = window.Sheets && Sheets.CONFIG && Sheets.CONFIG[entry.sprite];
   if (!cfg){ fallback(); return; }
@@ -1269,32 +1326,46 @@ function drawMonThumb(cv, entry){
     const dw = cw * scale, dh = ch * scale;
     ctx2.imageSmoothingEnabled = false;
     ctx2.drawImage(img, 0, 0, cw, ch, (W-dw)/2, (H-dh)/2, dw, dh);
+    if (!discovered) silhouette();
   };
   img.onerror = fallback;
   img.src = 'assets/' + cfg.file;
 }
 
 function openBestiary(){
-  const cards = BESTIARY.map((m, i) => `
-    <div class="mon-card" style="--fc:${m.fc}">
+  const seen = BESTIARY.filter(m => (S.kills[m.sprite] || 0) > 0).length;
+  const cards = BESTIARY.map((m, i) => {
+    const n = S.kills[m.sprite] || 0, disc = n > 0;
+    const nm  = disc ? `${m.name.toUpperCase()}${m.boss ? ' 👑' : ''}` : '??? ??? ???';
+    const hp  = disc ? `${m.hp}/${m.hp}` : '???';
+    const mp  = disc ? `${m.mp}/${m.mp}` : '???';
+    const elm = disc ? m.el : '?????';
+    return `
+    <div class="mon-card${disc ? '' : ' locked'}" style="--fc:${m.fc}">
       <div class="mon-frame" style="--fc:${m.fc}">
         <canvas class="mon-portrait" width="220" height="130" data-i="${i}"></canvas>
+        ${disc ? `<span class="mon-kills">☠ ${fmt(n)}</span>` : ''}
       </div>
       <div class="mon-plaque">
-        <div class="nm">LV ${m.lv}&nbsp; ${m.name.toUpperCase()}${m.boss ? ' 👑' : ''}</div>
-        <div class="st">HP: ${m.hp}/${m.hp}&nbsp;&nbsp; MP: ${m.mp}/${m.mp}</div>
-        <div class="el">ELEMENT: ${m.el}</div>
+        <div class="nm">LV ${disc ? m.lv : '?'}&nbsp; ${nm}</div>
+        <div class="st">HP: ${hp}&nbsp;&nbsp; MP: ${mp}</div>
+        <div class="el">ELEMENT: ${elm}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   openModal(`
     <div class="bestiary">
       <div class="bestiary-title">⚔ Bestiary: Monster Entries ⚔</div>
+      <div class="bestiary-sub">Discovered ${seen}/${BESTIARY.length} · defeat a monster to unlock its entry</div>
       <div class="bestiary-grid">${cards}</div>
       <button class="btn bestiary-close" id="closeBest">Close</button>
     </div>`);
   el('modalBox').classList.add('wide');
   el('closeBest').onclick = closeModal;
-  el('modalBox').querySelectorAll('.mon-portrait').forEach(cv => drawMonThumb(cv, BESTIARY[+cv.dataset.i]));
+  el('modalBox').querySelectorAll('.mon-portrait').forEach(cv => {
+    const m = BESTIARY[+cv.dataset.i];
+    drawMonThumb(cv, m, (S.kills[m.sprite] || 0) > 0);
+  });
 }
 if (el('btnBestiary')) el('btnBestiary').onclick = openBestiary;
 
