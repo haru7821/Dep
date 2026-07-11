@@ -1032,7 +1032,7 @@ function showWaveBanner(w){
 
 // ------------------------------------------------------------------ modals
 function openModal(html){ el('modalBox').innerHTML = html; el('modal').classList.add('show'); }
-function closeModal(){ el('modal').classList.remove('show'); }
+function closeModal(){ el('modal').classList.remove('show'); el('modalBox').classList.remove('wide'); }
 el('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
 
 function doPrestige(){
@@ -1230,6 +1230,73 @@ function openAchievements(){
   el('closeAch').onclick = closeModal;
 }
 if (el('btnAch')) el('btnAch').onclick = openAchievements;
+
+// ------------------------------------------------------------------ bestiary
+// One codex entry per in-game monster sprite. Lore stats (LV/HP/MP/ELEMENT)
+// styled like a classic RPG bestiary; portraits render the real sprite art.
+const BESTIARY = [
+  { sprite:'slime',      name:'Slime',            lv:1,  hp:10,  mp:2,  el:'EARTH',  fc:'#5aa03a',
+    lore:'A gelatinous crystal-eater. Slow, but they swarm the front line.' },
+  { sprite:'zombie',     name:'Rotting Zombie',   lv:2,  hp:18,  mp:4,  el:'POISON', fc:'#6cbf3a',
+    lore:'Reanimated fodder that leaves a toxic cloud when destroyed.' },
+  { sprite:'skeleton',   name:'Skeleton Warrior', lv:3,  hp:45,  mp:10, el:'DARK',   fc:'#9a6bd0',
+    lore:'Armoured bonelord. High HP — a proper tank of the horde.' },
+  { sprite:'specter',    name:'Wraith',           lv:4,  hp:26,  mp:12, el:'DARK',   fc:'#8f8be0',
+    lore:'A floating shade, immune to frost and hard to pin down.' },
+  { sprite:'dragon',     name:'Red Dragon',       lv:5,  hp:150, mp:30, el:'FIRE',   fc:'#e0632a', boss:true,
+    lore:'Boss. Wreathed in flame; appears on the fifth-wave assaults.' },
+  { sprite:'elderghost', name:'Elder Ghost',      lv:10, hp:300, mp:60, el:'VOID',   fc:'#a05ad0', boss:true,
+    lore:'Boss. An ancient void-spirit that commands the darker waves.' },
+];
+
+// draw the monster's real sprite (sheet frame 0) into a codex portrait canvas
+function drawMonThumb(cv, entry){
+  const ctx2 = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  ctx2.clearRect(0, 0, W, H);
+  ctx2.imageSmoothingEnabled = false;
+  const fallback = () => {
+    const S2 = window.Sprites;
+    if (entry.boss && S2 && S2.drawBoss) S2.drawBoss(ctx2, W/2, H-10, 6, 0);
+    else if (S2 && S2.drawEnemy) S2.drawEnemy(ctx2, W/2, H-10, 6, 'normal', 0, 1);
+  };
+  const cfg = window.Sheets && Sheets.CONFIG && Sheets.CONFIG[entry.sprite];
+  if (!cfg){ fallback(); return; }
+  const img = new Image();
+  img.onload = () => {
+    const cw = img.width / cfg.cols, ch = img.height / cfg.rows;
+    const scale = Math.min((W-14) / cw, (H-14) / ch);
+    const dw = cw * scale, dh = ch * scale;
+    ctx2.imageSmoothingEnabled = false;
+    ctx2.drawImage(img, 0, 0, cw, ch, (W-dw)/2, (H-dh)/2, dw, dh);
+  };
+  img.onerror = fallback;
+  img.src = 'assets/' + cfg.file;
+}
+
+function openBestiary(){
+  const cards = BESTIARY.map((m, i) => `
+    <div class="mon-card" style="--fc:${m.fc}">
+      <div class="mon-frame" style="--fc:${m.fc}">
+        <canvas class="mon-portrait" width="220" height="130" data-i="${i}"></canvas>
+      </div>
+      <div class="mon-plaque">
+        <div class="nm">LV ${m.lv}&nbsp; ${m.name.toUpperCase()}${m.boss ? ' 👑' : ''}</div>
+        <div class="st">HP: ${m.hp}/${m.hp}&nbsp;&nbsp; MP: ${m.mp}/${m.mp}</div>
+        <div class="el">ELEMENT: ${m.el}</div>
+      </div>
+    </div>`).join('');
+  openModal(`
+    <div class="bestiary">
+      <div class="bestiary-title">⚔ Bestiary: Monster Entries ⚔</div>
+      <div class="bestiary-grid">${cards}</div>
+      <button class="btn bestiary-close" id="closeBest">Close</button>
+    </div>`);
+  el('modalBox').classList.add('wide');
+  el('closeBest').onclick = closeModal;
+  el('modalBox').querySelectorAll('.mon-portrait').forEach(cv => drawMonThumb(cv, BESTIARY[+cv.dataset.i]));
+}
+if (el('btnBestiary')) el('btnBestiary').onclick = openBestiary;
 
 // audio buttons + unlock-on-first-gesture
 const btnMute = el('btnMute'), btnMusic = el('btnMusic');
