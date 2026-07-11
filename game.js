@@ -65,7 +65,7 @@ const SHARD_UPGRADES = [
 ];
 
 const CRIT_MULT = 2.5;                  // base critical hit damage multiplier
-function critChance(){ return Math.min(0.75, 0.03 + 0.03 * S.shardUpg.crit); }
+function critChance(){ return Math.min(0.75, 0.03 + 0.03 * S.shardUpg.crit + relicBonus('crit')); }
 function critMultiplier(){ return CRIT_MULT + 0.1 * talent('precision'); }
 function critRoll(dmg){
   return Math.random() < critChance() ? { dmg: dmg * critMultiplier(), crit:true } : { dmg, crit:false };
@@ -90,8 +90,48 @@ const talent = id => (S.talents[id] || 0);
 function effInterval(def){ return Math.max(0.05, def.atkInterval * (1 - 0.05 * talent('haste'))); }
 function effSkillCd(def){ return def.skill.cd * (1 - 0.04 * talent('focus')); }
 function wardMul(){ return shardMul('ward') * (1 + 0.10 * talent('bulwark')); }
-function goldMulAll(){ return shardMul('gold') * (1 + 0.08 * talent('greed')); }
+function goldMulAll(){ return shardMul('gold') * (1 + 0.08 * talent('greed')) * (1 + relicBonus('gold')); }
 function goldenChance(){ return 0.03 + 0.01 * talent('fortune'); }
+
+// --- Relics: boss drops that grant a global bonus. Rarity scales the roll.
+const RELIC_SLOTS = 4;
+const RELIC_TYPES = {
+  power:   { name:'Ember Sigil',    icon:'🔥', stat:'dmg',  per:0.08, fmt:v=>`+${Math.round(v*100)}% damage` },
+  fortune: { name:'Gilded Idol',    icon:'🪙', stat:'gold', per:0.12, fmt:v=>`+${Math.round(v*100)}% gold` },
+  edge:    { name:'Keen Talisman',  icon:'🗡️', stat:'crit', per:0.05, fmt:v=>`+${Math.round(v*100)}% crit chance` },
+  bulwark: { name:'Aegis Rune',     icon:'🛡️', stat:'ward', per:0.10, fmt:v=>`+${Math.round(v*100)}% crystal HP` },
+};
+const RELIC_RARITY = [
+  { id:'common',    name:'Common',    color:'#9fb0d8', mul:1 },
+  { id:'rare',      name:'Rare',      color:'#5bc8ff', mul:2 },
+  { id:'epic',      name:'Epic',      color:'#c58bff', mul:3.2 },
+  { id:'legendary', name:'Legendary', color:'#ffb93c', mul:5 },
+];
+function rollRarity(wave){
+  const r = Math.random() + Math.min(0.25, wave/800);   // deeper waves skew higher
+  return r>1.15 ? RELIC_RARITY[3] : r>0.9 ? RELIC_RARITY[2] : r>0.55 ? RELIC_RARITY[1] : RELIC_RARITY[0];
+}
+function relicValue(rel){ return RELIC_TYPES[rel.type].per * (RELIC_RARITY.find(r=>r.id===rel.rarity)?.mul || 1); }
+// summed bonus of equipped relics for a given stat
+function relicBonus(stat){
+  let v = 0;
+  for (const id of (S.equipped||[])){
+    const rel = (S.relics||[]).find(r=>r.id===id);
+    if (rel && RELIC_TYPES[rel.type].stat === stat) v += relicValue(rel);
+  }
+  return v;
+}
+function grantRelic(wave){
+  const types = Object.keys(RELIC_TYPES);
+  const type = types[(Math.random()*types.length)|0];
+  const rar = rollRarity(wave);
+  const rel = { id: ++S.relicSeq, type, rarity: rar.id };
+  S.relics.push(rel);
+  if (S.equipped.length < RELIC_SLOTS) S.equipped.push(rel.id);   // auto-equip while slots free
+  const t = RELIC_TYPES[type];
+  toast(`${t.icon} ${rar.name} ${t.name} dropped! (${t.fmt(relicValue(rel))})`);
+  GA('prestige');
+}
 
 // --- Achievements: one-time unlocks that pay Talent Points + spendable Shards
 const ACHIEVEMENTS = [
@@ -174,6 +214,9 @@ function freshState(){
     talentPoints: 0,        // spendable talent points
     kills: {},              // bestiary sprite id -> lifetime kill count
     bestCombo: 0,           // highest kill-streak combo reached
+    relics: [],             // owned relics [{id,type,rarity}]
+    equipped: [],           // relic ids equipped (max RELIC_SLOTS)
+    relicSeq: 0,            // running id counter for relics
   };
 }
 
@@ -187,6 +230,8 @@ function load(){
       heroLevels: Object.assign(base.heroLevels, d.heroLevels || {}),
       shardUpg:   Object.assign(base.shardUpg,   d.shardUpg   || {}),
       kills:      Object.assign(base.kills,      d.kills      || {}),
+      relics:   Array.isArray(d.relics)   ? d.relics   : [],
+      equipped: Array.isArray(d.equipped) ? d.equipped : [],
     });
   }catch(e){ return null; }
 }
@@ -205,10 +250,11 @@ function globalDmgMul(){
   let m = shardMul('power') * (1 + 0.02 * S.shardsEarned);
   const aunelLv = S.heroLevels.aunel;
   if (aunelLv > 0) m *= 1 + 0.03 * aunelLv;          // Aunel passive damage aura
+  m *= 1 + relicBonus('dmg');                         // equipped relics
   return m;
 }
 function combatMul(){ return globalDmgMul() * (partyBuffT > 0 ? PARTY_BUFF_MUL : 1) * (1 + 0.05 * talent('might')); }
-function crystalMaxHp(){ return 100 * wardMul(); }
+function crystalMaxHp(){ return 100 * wardMul() * (1 + relicBonus('ward')); }
 function gameSpeed(){ return S.speed * shardMul('speed'); }
 
 // ------------------------------------------------------------------ combat sim
@@ -392,7 +438,8 @@ function damageEnemy(e, dmg, crit){
     }
     else addFloater(e.x, e.y - 30*(view.h/460), '+' + fmt(g), '#ffd75e');
     // element-themed death burst
-    if (e.boss){ spawnParticles(e.x, e.y - 24, 'fire', 2.2); spawnParticles(e.x, e.y - 24, 'earth', 1.4); GA('explosion'); }
+    if (e.boss){ spawnParticles(e.x, e.y - 24, 'fire', 2.2); spawnParticles(e.x, e.y - 24, 'earth', 1.4); GA('explosion');
+      grantRelic(S.wave); spawnParticles(e.x, e.y - 24, 'holy', 1.6); }
     else if (e.type === 'wraith') spawnParticles(e.x, e.y - 16, 'poison', 1.3);   // 독 cloud
     return true;
   }
@@ -1368,6 +1415,46 @@ function openBestiary(){
   });
 }
 if (el('btnBestiary')) el('btnBestiary').onclick = openBestiary;
+
+// ------------------------------------------------------------------ relics
+function relicColor(rel){ return (RELIC_RARITY.find(r=>r.id===rel.rarity)||RELIC_RARITY[0]).color; }
+function relicRarityName(rel){ return (RELIC_RARITY.find(r=>r.id===rel.rarity)||RELIC_RARITY[0]).name; }
+function toggleEquip(id){
+  const i = S.equipped.indexOf(id);
+  if (i >= 0) S.equipped.splice(i, 1);
+  else { if (S.equipped.length >= RELIC_SLOTS){ toast('All relic slots full — unequip one first'); return; } S.equipped.push(id); }
+  save(); openRelics();
+}
+function openRelics(){
+  const slots = Array.from({length:RELIC_SLOTS}, (_,i) => {
+    const id = S.equipped[i]; const rel = id && S.relics.find(r=>r.id===id);
+    if (!rel) return `<div class="relic-slot">＋</div>`;
+    return `<div class="relic-slot filled" style="border-color:${relicColor(rel)}" data-eq="${rel.id}">${RELIC_TYPES[rel.type].icon}</div>`;
+  }).join('');
+  const owned = [...S.relics].sort((a,b)=>{
+    const ra = RELIC_RARITY.findIndex(r=>r.id===a.rarity), rb = RELIC_RARITY.findIndex(r=>r.id===b.rarity);
+    return rb-ra || b.id-a.id;
+  });
+  const list = owned.length ? owned.map(rel => {
+    const t = RELIC_TYPES[rel.type], eq = S.equipped.includes(rel.id);
+    return `<div class="relic ${eq?'eq':''}" style="--rc:${relicColor(rel)}" data-rel="${rel.id}">
+      <span class="ic">${t.icon}</span>
+      <div style="flex:1"><div class="rn">${t.name}</div><div class="rd">${t.fmt(relicValue(rel))}</div>
+        <div class="rr">${relicRarityName(rel)}${eq?' · EQUIPPED':''}</div></div>
+    </div>`;
+  }).join('') : `<p style="grid-column:1/-1;color:var(--muted)">No relics yet. Defeat bosses (every ${BOSS_EVERY} waves) to find them.</p>`;
+  openModal(`
+    <h2>🗡️ Relics</h2>
+    <p>Bosses drop relics that grant permanent global bonuses. Equip up to
+       <b>${RELIC_SLOTS}</b>. Tap a relic to equip / unequip.</p>
+    <div class="relic-slots">${slots}</div>
+    <div class="relic-list">${list}</div>
+    <button class="btn" id="closeRelic" style="width:100%;margin-top:12px">Close</button>`);
+  el('closeRelic').onclick = closeModal;
+  el('modalBox').querySelectorAll('[data-rel]').forEach(n => n.onclick = () => toggleEquip(+n.dataset.rel));
+  el('modalBox').querySelectorAll('[data-eq]').forEach(n => n.onclick = () => toggleEquip(+n.dataset.eq));
+}
+if (el('btnRelics')) el('btnRelics').onclick = openRelics;
 
 // audio buttons + unlock-on-first-gesture
 const btnMute = el('btnMute'), btnMusic = el('btnMusic');
