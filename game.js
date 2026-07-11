@@ -351,8 +351,17 @@ function grantGold(amount){
   waveGoldAccum += amount;
 }
 
+// floating combat number: crit = red, normal = orange; 1000+ shown as K/M… by fmt
+function addDamageNumber(e, dmg, crit){
+  if (dmg <= 0) return;
+  const jx = (Math.random() - 0.5) * 14;
+  const s = view.h / 460;
+  addFloater(e.x + jx, e.y - 28 * s, fmt(dmg), crit ? '#ff3b3b' : '#ff9d3c');
+}
+
 // Deal damage to a specific enemy; returns true if it died
-function damageEnemy(e, dmg){
+function damageEnemy(e, dmg, crit){
+  addDamageNumber(e, dmg, crit);
   e.hp -= dmg;
   if (e.hp <= 0){
     const g = goldPerKill(S.wave) * e.goldMul * goldMulAll();
@@ -388,14 +397,13 @@ function castSkill(def, slot, lvl){
   const dmg = roll.dmg;
   const hx = slot.x, hy = slot.y - 22;
   heroAnim[def.id] = { name:'cast', t:0.6 };
-  if (roll.crit && s.kind !== 'blessing') addFloater(hx, hy - 20, 'CRIT!', '#ffa03c');
 
   if (s.kind === 'shock'){
     // earthen shockwave: dust + amber debris
     addFx({ kind:'nova', x: hx + 34, y: slot.y - 12, r0:8, r:150, dur:0.5, color:s.fx });
     spawnParticles(hx + 34, slot.y - 8, 'earth', 1.3);
     spawnParticles(hx + 34, slot.y - 8, 'fire', 0.5);
-    for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], dmg)) enemies.splice(i, 1);
+    for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], dmg, roll.crit)) enemies.splice(i, 1);
     GA('explosion');
   }
   else if (s.kind === 'frost'){
@@ -407,7 +415,7 @@ function castSkill(def, slot, lvl){
     for (let i = enemies.length - 1; i >= 0; i--){
       const e = enemies[i];
       if (!ENEMY_TYPES[e.type] || !ENEMY_TYPES[e.type].slowImmune){ e.slow = 3; spawnParticles(e.x, e.y-14, 'frost', 0.4); }  // freeze
-      if (damageEnemy(e, dmg)) enemies.splice(i, 1);
+      if (damageEnemy(e, dmg, roll.crit)) enemies.splice(i, 1);
     }
     GA('ice');
   }
@@ -420,7 +428,7 @@ function castSkill(def, slot, lvl){
     spawnParticles(t.x, t.y - 14, 'fire', 1.6);
     spawnParticles(t.x, t.y - 14, 'smoke', 1.0);
     for (let i = enemies.length - 1; i >= 0; i--){
-      if (Math.abs(enemies[i].x - t.x) <= R){ if (damageEnemy(enemies[i], dmg)) enemies.splice(i, 1); }
+      if (Math.abs(enemies[i].x - t.x) <= R){ if (damageEnemy(enemies[i], dmg, roll.crit)) enemies.splice(i, 1); }
     }
     GA('explosion');
   }
@@ -431,7 +439,7 @@ function castSkill(def, slot, lvl){
     const segs = []; let px = hx, py = hy;
     for (const e of targets){ segs.push([px, py, e.x, e.y - 14]); px = e.x; py = e.y - 14; spawnParticles(e.x, e.y-14, 'spark', 0.7); }
     addFx({ kind:'chain', segs, dur:0.3, color:s.fx });
-    for (const e of targets) if (damageEnemy(e, dmg)) removeEnemy(e);
+    for (const e of targets) if (damageEnemy(e, dmg, roll.crit)) removeEnemy(e);
     GA('lightning');
   }
   else if (s.kind === 'blessing'){
@@ -569,9 +577,8 @@ function basicAttack(def, slot, lvl){
   if (def.target === 'all'){
     // Mira splash: hit every enemy + purple pulse (one crit roll for the volley)
     const r = critRoll(dmg);
-    if (r.crit) addFloater(hx, hy - 18, 'CRIT!', '#ffa03c');
     addFx({ kind:'nova', x: hx, y: hy, r0:4, r:60, dur:0.3, color:def.color });
-    for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], r.dmg)) enemies.splice(i, 1);
+    for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], r.dmg, r.crit)) enemies.splice(i, 1);
     basicSfx('shoot');
     heroFlash[def.id] = 0.15;
   } else {
@@ -582,8 +589,7 @@ function basicAttack(def, slot, lvl){
     else if (def.id === 'rai')  { addFx({ kind:'bolt',  x:hx, y:hy, x2:t.x, y2:t.y-14, dur:0.12, color:def.color }); basicSfx('shoot'); }
     else                        { addFx({ kind:'slash', x:t.x, y:t.y-14, dur:0.16, color:'#dfe7ff' }); basicSfx('slash'); }
     const r = critRoll(dmg);
-    if (r.crit) addFloater(t.x, t.y - 40, 'CRIT!', '#ffa03c');
-    if (damageEnemy(t, r.dmg)) removeEnemy(t);
+    if (damageEnemy(t, r.dmg, r.crit)) removeEnemy(t);
     heroFlash[def.id] = 0.15;
   }
 }
@@ -621,6 +627,64 @@ function drawFallbackChar(x, y, size, color){
   ctx.fillRect(x - size*3, y - size*12, size*6, size*12);
   ctx.fillStyle = '#ffe0b0';
   ctx.fillRect(x - size*2.5, y - size*16, size*5, size*4);
+}
+
+function pathRoundRect(x, y, w, h, r){
+  r = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y,     x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x,     y + h, r);
+  ctx.arcTo(x,     y + h, x,     y,     r);
+  ctx.arcTo(x,     y,     x + w, y,     r);
+  ctx.closePath();
+}
+
+// Encase a frozen enemy in a crystalline ice cube (matches the reference art):
+// translucent blue block over the sprite, facet lines, base shards, twinkles.
+function drawIceBlock(cx, topY, w, h, now){
+  const pad = Math.max(4, w * 0.16);
+  const x0 = cx - w/2 - pad, y0 = topY - pad*0.7;
+  const bw = w + pad*2, bh = h + pad*1.2, r = Math.min(bw, bh) * 0.14;
+  ctx.save();
+  // frosty body — lighter at the top, deeper blue at the base
+  const g = ctx.createLinearGradient(0, y0, 0, y0 + bh);
+  g.addColorStop(0,   'rgba(224,248,255,0.60)');
+  g.addColorStop(0.5, 'rgba(150,214,245,0.42)');
+  g.addColorStop(1,   'rgba(116,186,232,0.55)');
+  pathRoundRect(x0, y0, bw, bh, r);
+  ctx.fillStyle = g; ctx.fill();
+  // bright rim
+  ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(236,251,255,0.9)'; ctx.stroke();
+  // internal facet / crack highlights
+  ctx.save(); ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x0 + bw*0.18, y0);        ctx.lineTo(x0 + bw*0.52, y0 + bh*0.58);
+  ctx.moveTo(x0 + bw*0.72, y0);        ctx.lineTo(x0 + bw*0.46, y0 + bh);
+  ctx.moveTo(x0,           y0 + bh*0.42); ctx.lineTo(x0 + bw*0.4, y0 + bh*0.72);
+  ctx.stroke();
+  ctx.restore();
+  // jagged ice shards jutting from the base
+  ctx.fillStyle = 'rgba(206,240,255,0.9)';
+  const baseY = y0 + bh;
+  for (const t of [0.12, 0.34, 0.55, 0.74, 0.9]){
+    const sx = x0 + bw*t, hh = pad*(0.7 + 0.5*Math.abs(Math.sin(t*9)));
+    ctx.beginPath(); ctx.moveTo(sx - pad*0.5, baseY); ctx.lineTo(sx, baseY + hh); ctx.lineTo(sx + pad*0.5, baseY); ctx.closePath(); ctx.fill();
+  }
+  // twinkling frost sparkles orbiting the cube
+  ctx.strokeStyle = 'rgba(255,255,255,0.92)'; ctx.lineWidth = 1.4;
+  for (let k = 0; k < 4; k++){
+    const a = now/600 + k*1.7 + cx;
+    const px = cx + Math.cos(a) * bw*0.6;
+    const py = y0 + bh*0.4 + Math.sin(a*1.3) * bh*0.42;
+    const s = 2 + 1.6*Math.abs(Math.sin(now/300 + k));
+    ctx.beginPath();
+    ctx.moveTo(px - s, py); ctx.lineTo(px + s, py);
+    ctx.moveTo(px, py - s); ctx.lineTo(px, py + s);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function jaggedLine(x1, y1, x2, y2){
@@ -710,10 +774,7 @@ function draw(now){
     }
     const spH = drew ? th : es*15;                    // overlays/hp-bar sized to the sprite
     const ow = spH * 0.62;
-    if (e.slow > 0){
-      ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#9fe4ff';
-      ctx.fillRect(e.x - ow/2, by - spH, ow, spH); ctx.restore();
-    }
+    if (e.slow > 0) drawIceBlock(e.x, by - spH, ow, spH, now);
     if (e.golden){
       ctx.save();
       ctx.globalAlpha = 0.28 + 0.12*Math.sin(now/120 + e.x);
