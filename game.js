@@ -687,6 +687,74 @@ function drawIceBlock(cx, topY, w, h, now){
   ctx.restore();
 }
 
+// Living fire on the burning tower: flickering flame tongues + pulsing glow +
+// rising embers, layered over the static sprite. level 1..3 = small/med/big.
+let _towerEmberT = 0;
+function drawTowerFire(cx, topY, tH, level, now){
+  if (level <= 0) return;
+  const dw = tH * 0.602;                 // on-screen tower width (cell 153/254)
+  const baseY = topY + tH * 0.30;        // flames sit at the top battlement
+  const scale = [0, 0.72, 1.0, 1.3][level];
+  const spread = dw * 0.30 * (0.7 + 0.3*level);
+  const t = now / 1000;
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  // pulsing warm glow behind the flames
+  const gy = baseY - tH*0.08;
+  const glowR = tH * (0.15 + 0.05*level) * (0.9 + 0.12*Math.sin(now/110));
+  const gg = ctx.createRadialGradient(cx, gy, 0, cx, gy, glowR);
+  gg.addColorStop(0,   'rgba(255,180,70,0.5)');
+  gg.addColorStop(0.5, 'rgba(255,110,30,0.24)');
+  gg.addColorStop(1,   'rgba(255,80,20,0)');
+  ctx.fillStyle = gg;
+  ctx.beginPath(); ctx.arc(cx, gy, glowR, 0, PI2); ctx.fill();
+
+  // flame tongues — taller in the middle, each with its own flicker/sway
+  const flames = 3 + level;
+  for (let i = 0; i < flames; i++){
+    const fp = flames > 1 ? i/(flames-1) - 0.5 : 0;    // -0.5..0.5 across the top
+    const flick = 0.7 + 0.3*Math.sin(t*(7+i*1.3) + i*2);
+    const fh = tH * (0.14 + 0.13*(1 - Math.abs(fp*1.5))) * scale * flick;
+    const fw = dw * 0.11 * scale * (0.82 + 0.18*Math.sin(t*5 + i));
+    const fx = cx + fp*spread + Math.sin(t*3 + i)*dw*0.03;
+    const by = baseY - Math.abs(fp)*tH*0.03;
+    const sway = Math.sin(t*4 + i*1.7) * fw*0.7;        // flame tip leans
+    const grad = ctx.createLinearGradient(0, by - fh, 0, by);
+    grad.addColorStop(0,   'rgba(255,255,225,0.85)');
+    grad.addColorStop(0.35,'rgba(255,196,80,0.8)');
+    grad.addColorStop(0.7, 'rgba(255,110,30,0.6)');
+    grad.addColorStop(1,   'rgba(210,45,10,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(fx - fw, by);
+    ctx.quadraticCurveTo(fx - fw*0.85, by - fh*0.5, fx + sway, by - fh);
+    ctx.quadraticCurveTo(fx + fw*0.85, by - fh*0.5, fx + fw, by);
+    ctx.quadraticCurveTo(fx, by + fh*0.06, fx - fw, by);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+
+  // rising embers — throttled so the rate is framerate-independent
+  if (now - _towerEmberT > 55){
+    _towerEmberT = now;
+    for (let k = 0; k < level; k++){
+      if (particles.length >= MAX_PARTICLES) particles.shift();
+      const life = 0.5 + Math.random()*0.6;
+      particles.push({
+        x: cx + (Math.random()-0.5)*spread*1.2,
+        y: baseY - Math.random()*tH*0.05,
+        vx: (Math.random()-0.5)*22,
+        vy: -(55 + Math.random()*75),
+        life, max: life,
+        size: 1.6 + Math.random()*2.4,
+        color: ['#ffe27a','#ff9d3c','#ff5a1a'][(Math.random()*3)|0],
+        shape:'circle', grav:-26, drag:0.93, glow:true,
+      });
+    }
+  }
+}
+
 function jaggedLine(x1, y1, x2, y2){
   const segs = 5;
   ctx.beginPath(); ctx.moveTo(x1, y1);
@@ -753,6 +821,9 @@ function draw(now){
     const pulse = 0.5 + 0.5*Math.sin(now/500);
     if (Spr().drawCrystal) Spr().drawCrystal(ctx, view.crystalX, view.ground - size*10, size*3, pulse, S.crystalHp);
     else { ctx.fillStyle = `rgba(123,211,255,${0.5+0.4*pulse})`; ctx.fillRect(view.crystalX-14, view.ground-70, 28, 44); }
+  } else {
+    // animate the burning tower's fire (more intense as HP drops)
+    drawTowerFire(view.crystalX, view.ground - towerH, towerH, towerFrame, now);
   }
 
   // enemies
