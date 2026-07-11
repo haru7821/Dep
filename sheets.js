@@ -38,6 +38,8 @@ window.Sheets = (function () {
     mira:   { file:'wizard.png',   rows:2, cols:3, fit:HFIT, anim:bmob(2,3) },  // Mage
     faye:   { file:'archer.png',   rows:2, cols:5, fit:HFIT, anim:bmob(2,5) },  // Archer
     rai:    { file:'sorcerer.png', rows:2, cols:3, fit:HFIT, anim:bmob(2,3) },  // Sorcerer
+    // the defended crystal, as an animated tower (idle glow / attack fires a bolt)
+    tower:  { file:'tower.png',    rows:2, cols:4, fit:1.0,  anim:bmob(4,4) },
     // monsters — extracted from the bestiary (idle + attack rows). Face left
     // = the direction they march, so no flip.
     slime:      { file:'slime.png',      rows:2, cols:11, fit:1.0, flip:true, anim:bmob(6,11) },  // earth
