@@ -24,9 +24,9 @@ window.Sheets = (function () {
   // (idle/walk/attack/cast); frame counts per row vary and are set below.
   const rows4 = (i,w,a,c) => ({ idle:{row:0,frames:i,fps:7}, walk:{row:1,frames:w,fps:9},
                                 attack:{row:2,frames:a,fps:12}, cast:{row:3,frames:c,fps:11} });
-  // monster: one looping row used for every state
-  const mob = n => ({ idle:{row:0,frames:n,fps:8}, walk:{row:0,frames:n,fps:8},
-                      attack:{row:0,frames:n,fps:8}, cast:{row:0,frames:n,fps:8} });
+  // bestiary monster: row 0 = idle (used for walking), row 1 = attack
+  const bmob = (ir,ar) => ({ idle:{row:0,frames:ir,fps:6}, walk:{row:0,frames:ir,fps:6},
+                             attack:{row:1,frames:ar,fps:10}, cast:{row:1,frames:ar,fps:10} });
   // flip:true mirrors the sprite horizontally so it faces the incoming enemies
   // (right). Aunel has no sheet and uses the built-in canvas art.
   // sliced sheets pack every character at the same body height, so heroes share
@@ -37,12 +37,14 @@ window.Sheets = (function () {
     mira:   { file:'wizard.png',   rows:4, cols:8, fit:HFIT, flip:true, anim:rows4(5,8,2,2) },  // Mage    (purple wizard art)
     faye:   { file:'archer.png',   rows:4, cols:5, fit:HFIT,            anim:rows4(5,5,1,2) },  // Archer  (art already faces right)
     rai:    { file:'sorcerer.png', rows:4, cols:5, fit:HFIT, flip:true, anim:rows4(5,1,1,1) },  // Ronin   (elemental sorcerer art)
-    // monsters — single-row procedural loops (make-mobs.mjs); enemies play row 0
-    slime:    { file:'slime.png',    rows:1, cols:8, fit:1.0,            anim:mob(8) },
-    ghost:    { file:'ghost.png',    rows:1, cols:8, fit:1.0,            anim:mob(8) },
-    skeleton: { file:'skeleton.png', rows:1, cols:8, fit:1.0, flip:true, anim:mob(8) },
-    orc:      { file:'orc.png',      rows:1, cols:8, fit:1.0, flip:true, anim:mob(8) },
-    dragon:   { file:'dragon.png',   rows:1, cols:8, fit:1.0,            anim:mob(8) },  // Boss
+    // monsters — extracted from the bestiary (idle + attack rows). Face left
+    // = the direction they march, so no flip.
+    slime:      { file:'slime.png',      rows:2, cols:11, fit:1.0, anim:bmob(6,11) },  // earth
+    zombie:     { file:'zombie.png',     rows:2, cols:5,  fit:1.0, anim:bmob(3,5)  },  // poison
+    specter:    { file:'specter.png',    rows:2, cols:5,  fit:1.0, anim:bmob(2,5)  },  // dark
+    skeleton:   { file:'skeleton.png',   rows:2, cols:7,  fit:1.0, anim:bmob(2,7)  },  // tank
+    dragon:     { file:'dragon.png',     rows:2, cols:4,  fit:1.0, anim:bmob(4,4)  },  // Boss (fire)
+    elderghost: { file:'elderghost.png', rows:2, cols:5,  fit:1.0, anim:bmob(3,5)  },  // Boss (dark)
   };
 
   const imgs = {};   // id -> { img, ok, failed }

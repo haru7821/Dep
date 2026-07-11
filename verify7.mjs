@@ -17,18 +17,20 @@ const R = []; const check = (n,c) => R.push((c?'PASS':'FAIL')+' — '+n);
   await page.reload(); await page.waitForTimeout(600);   // let sheet images load
 
   check('Sheets API loaded, enabled by default', await page.evaluate(() => !!window.Sheets && Sheets.isEnabled()===true));
-  check('Heroes + monster sprites configured', await page.evaluate(() =>
-    ['garran','mira','faye','rai','slime','ghost','skeleton','orc','dragon'].every(id => !!Sheets.CONFIG[id])));
+  check('Heroes + bestiary monster sprites configured', await page.evaluate(() =>
+    ['garran','mira','faye','rai','slime','zombie','specter','skeleton','dragon','elderghost'].every(id => !!Sheets.CONFIG[id])));
   check('🎨 toggle button present', await page.evaluate(() => !!document.getElementById('btnSheets')));
   check('Healer sheet removed → Aunel uses canvas fallback', await page.evaluate(() =>
     !Sheets.CONFIG.aunel && Sheets.draw(document.getElementById('stage').getContext('2d'),'aunel',100,300,60,'idle',0)===false));
-  check('Flip: garran/mira/rai + skeleton/orc flipped; faye/dragon/slime/ghost not', await page.evaluate(() =>
-    ['garran','mira','rai','skeleton','orc'].every(id=>Sheets.CONFIG[id].flip===true) &&
-    !Sheets.CONFIG.faye.flip && !Sheets.CONFIG.dragon.flip && !Sheets.CONFIG.slime.flip && !Sheets.CONFIG.ghost.flip));
+  check('Flip: garran/mira/rai flipped; faye + all monsters not', await page.evaluate(() =>
+    ['garran','mira','rai'].every(id=>Sheets.CONFIG[id].flip===true) && !Sheets.CONFIG.faye.flip &&
+    !['slime','zombie','specter','skeleton','dragon','elderghost'].some(id=>Sheets.CONFIG[id].flip)));
+  check('Monsters have idle + attack rows', await page.evaluate(() =>
+    ['slime','zombie','specter','skeleton','dragon','elderghost'].every(id => Sheets.CONFIG[id].rows===2 && Sheets.CONFIG[id].anim.attack.row===1)));
   check('Sheet images load (ready after load)', await page.evaluate(async () => {
-    const ids=['garran','mira','faye','rai','slime','ghost','skeleton','orc','dragon'];
+    const ids=['garran','mira','faye','rai','slime','zombie','specter','skeleton','dragon','elderghost'];
     ids.forEach(id => Sheets.load(id));
-    await new Promise(r => setTimeout(r, 700));
+    await new Promise(r => setTimeout(r, 800));
     return ids.every(id => Sheets.ready(id));
   }));
   check('Sheets.draw renders from image (returns true)', await page.evaluate(() => {

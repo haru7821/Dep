@@ -45,8 +45,8 @@ const ENEMY_TYPES = {
   golem:  { hp:4.5, spd:13, size:2.0,  gold:4 },
   wraith: { hp:1.3, spd:34, size:1.1,  gold:2, slowImmune:true, float:true },
 };
-// which monster sprite each enemy type uses (falls back to canvas art)
-const ENEMY_SPRITE = { normal:'slime', fast:'slime', runner:'orc', tank:'skeleton', golem:'orc', wraith:'ghost' };
+// which bestiary monster each enemy type uses (falls back to canvas art)
+const ENEMY_SPRITE = { normal:'slime', fast:'zombie', runner:'zombie', tank:'skeleton', golem:'skeleton', wraith:'specter' };
 const SLOW_FACTOR = 0.42;              // movement multiplier while frozen
 const PARTY_BUFF_MUL = 1.30;           // Aunel's Dawn Blessing damage buff
 
@@ -246,8 +246,9 @@ function pickType(w){
 function spawnEnemy(w){
   if (isBossWave(w)){
     const hp = enemyHP(w) * 8;
+    const bossKind = (Math.floor(w / BOSS_EVERY) % 2 === 0) ? 'elderghost' : 'dragon';
     enemies.push({ x: view.laneRight, y: view.ground, hp, maxHp: hp,
-      type:'boss', speed:18, frame:0, boss:true, slow:0, goldMul:10, atkTimer:0 });
+      type:'boss', speed:18, frame:0, boss:true, bossKind, slow:0, goldMul:10, atkTimer:0 });
     return;
   }
   const type = pickType(w);
@@ -686,10 +687,12 @@ function draw(now){
   for (const e of enemies){
     const t = ENEMY_TYPES[e.type] || ENEMY_TYPES.normal;
     const es = size * (e.boss ? 3 : t.size);
-    const sid = e.boss ? 'dragon' : ENEMY_SPRITE[e.type];
-    const th = es * (e.boss ? 24 : 14);               // sprite target height (boss dragon 2x)
+    const sid = e.boss ? (e.bossKind || 'dragon') : ENEMY_SPRITE[e.type];
+    const th = es * (e.boss ? (e.bossKind === 'elderghost' ? 15 : 24) : 14);   // dragon 2x, elder ghost a bit smaller
+    const atCrystal = e.x <= view.crystalX + 42 * px;
+    const anim = atCrystal ? 'attack' : 'idle';       // play the attack animation at the crystal
     let drew = false, by = e.y;
-    if (window.Sheets && sid) drew = Sheets.draw(ctx, sid, e.x, e.y, th, 'idle', now);
+    if (window.Sheets && sid) drew = Sheets.draw(ctx, sid, e.x, e.y, th, anim, now);
     if (!drew){
       const floatOff = t.float ? (10 + Math.sin(now/300)*4) : 0;
       by = e.y - floatOff;
