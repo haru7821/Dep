@@ -2,8 +2,8 @@
 
 The game sheets here are **sliced from the uploaded source art in `raw/`** by
 `../slice-sheets.mjs` (it auto-detects sprite rows/frames, drops the baked-in
-titles and row labels, and re-packs them into clean uniform grids). `healer.png`
-is a generated placeholder (no Healer art was provided). Filenames map to
+titles and row labels, and re-packs them into clean uniform grids). Aunel the
+Healer has no sheet and uses the built-in canvas art. Filenames map to
 characters in `../sheets.js`:
 
 | File | Character in game | Source sheet |

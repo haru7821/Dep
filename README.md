@@ -120,13 +120,14 @@ toggle with the **🎨** button (or `?sheets=0` to force the built-in canvas art
 | `wizard.png` | Mira (Mage) |
 | `archer.png` | Faye (Archer) |
 | `sorcerer.png` | Rai (Storm Ronin) |
-| `healer.png` | Aunel (Healer) |
 | `shadow.png` | Boss |
 
 The hero/boss sheets are **sliced from uploaded source art** in `assets/raw/`
 (via `slice-sheets.mjs`, which strips the baked-in titles/labels and re-packs
-clean grids); `healer.png` is a generated placeholder. Any missing/broken sheet
-falls back to the built-in canvas art automatically, so the game always runs.
+clean grids); Aunel (Healer) has no sheet and uses the built-in canvas art.
+Non-archer heroes and the boss are mirrored to face the incoming enemies. Any
+missing/broken sheet falls back to the built-in canvas art, so the game always
+runs.
 
 ## Files
 

@@ -16,10 +16,9 @@ const CHARS = {
   wizard:   { primary:'#4a1f7a', cape:'#37135e', metal:'#7a5230', skin:'#f0c9a0', hair:'#2a1240', trim:'#c0392b', accent:'#f2c14e', gear:'wizhat', weapon:'staff', orb:'#5cd8ff' },
   archer:   { primary:'#3f8f3a', cape:'#2c6b2a', metal:'#7a4a24', skin:'#f0c9a0', hair:'#5b3a1e', trim:'#caa06a', accent:'#f2c14e', gear:'hood',   weapon:'bow' },
   sorcerer: { primary:'#2a2740', cape:'#191630', metal:'#caa050', skin:'#f0c9a0', hair:'#241a12', trim:'#ff8a1a', accent:'#ffb347', gear:'hood',   weapon:'orbs' },
-  healer:   { primary:'#f2efe2', cape:'#d8d2be', metal:'#caa03a', skin:'#f0c9a0', hair:'#a06a2c', trim:'#f2c14e', accent:'#fff2b0', gear:'hood',   weapon:'staff', orb:'#ffd766', aura:'#ffe9a0' },
   shadow:   { primary:'#241233', cape:'#150a1f', metal:'#4a1f5c', skin:'#20142c', hair:'#140a20', trim:'#7a2fb0', accent:'#a44bff', gear:'cowl',   weapon:'wisp', eyes:'#ff3b3b', aura:'#a44bff' },
 };
-const FILE = { warrior:'warrior.png', wizard:'wizard.png', archer:'archer.png', sorcerer:'sorcerer.png', healer:'healer.png', shadow:'shadow.png' };
+const FILE = { warrior:'warrior.png', wizard:'wizard.png', archer:'archer.png', sorcerer:'sorcerer.png', shadow:'shadow.png' };
 
 for (const [name, cfg] of Object.entries(CHARS)){
   const dataUrl = await page.evaluate((cfg) => {

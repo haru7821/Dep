@@ -18,12 +18,16 @@ const R = []; const check = (n,c) => R.push((c?'PASS':'FAIL')+' — '+n);
 
   check('Sheets API loaded, enabled by default', await page.evaluate(() => !!window.Sheets && Sheets.isEnabled()===true));
   check('All hero + boss sheets configured', await page.evaluate(() =>
-    ['garran','mira','faye','rai','aunel','boss'].every(id => !!Sheets.CONFIG[id])));
+    ['garran','mira','faye','rai','boss'].every(id => !!Sheets.CONFIG[id])));
   check('🎨 toggle button present', await page.evaluate(() => !!document.getElementById('btnSheets')));
+  check('Healer sheet removed → Aunel uses canvas fallback', await page.evaluate(() =>
+    !Sheets.CONFIG.aunel && Sheets.draw(document.getElementById('stage').getContext('2d'),'aunel',100,300,60,'idle',0)===false));
+  check('Flip flags: garran/mira/rai/boss flipped, faye not', await page.evaluate(() =>
+    ['garran','mira','rai','boss'].every(id=>Sheets.CONFIG[id].flip===true) && !Sheets.CONFIG.faye.flip));
   check('Sheet images load (ready after load)', await page.evaluate(async () => {
-    ['garran','mira','faye','rai','aunel','boss'].forEach(id => Sheets.load(id));
+    ['garran','mira','faye','rai','boss'].forEach(id => Sheets.load(id));
     await new Promise(r => setTimeout(r, 600));
-    return ['garran','mira','faye','rai','aunel','boss'].every(id => Sheets.ready(id));
+    return ['garran','mira','faye','rai','boss'].every(id => Sheets.ready(id));
   }));
   check('Sheets.draw renders from image (returns true)', await page.evaluate(() => {
     const ctx = document.getElementById('stage').getContext('2d');
