@@ -164,9 +164,12 @@ function checkAchievements(){
 // ------------------------------------------------------------------ formulas
 const enemyHP    = w => 10 * Math.pow(1.12, w - 1);
 const enemyCount = w => Math.min(5 + Math.floor(w / 3), 20);
-const goldPerKill= w => Math.ceil(2 * Math.pow(1.10, w - 1));
+// gold now grows with the HP wall (was 1.10 — income fell behind every wave)
+const goldPerKill= w => Math.ceil(2 * Math.pow(1.12, w - 1));
 const isBossWave = w => w % BOSS_EVERY === 0;
-const heroDmg    = (def, lvl) => def.baseDmg * (1 + 0.25 * lvl);
+// linear per level + a ×2 milestone every 25 levels, so leveling keeps pace
+// with exponential enemy HP instead of decaying to worthless mid-game
+const heroDmg    = (def, lvl) => def.baseDmg * (1 + 0.25 * lvl) * Math.pow(2, Math.floor(lvl / 25));
 const heroCost   = (def, lvl) => Math.ceil(def.baseCost * Math.pow(1.15, lvl));
 const prestigeShards = totalGold => Math.floor(Math.sqrt(totalGold / 1e6));
 // support heroes (baseDmg 0) still get a scaling number for their skill
