@@ -217,6 +217,7 @@ function freshState(){
     relics: [],             // owned relics [{id,type,rarity}]
     equipped: [],           // relic ids equipped (max RELIC_SLOTS)
     relicSeq: 0,            // running id counter for relics
+    towerLv: 0,             // gold-bought Fortify Tower level (resets on reseal)
   };
 }
 
@@ -254,7 +255,9 @@ function globalDmgMul(){
   return m;
 }
 function combatMul(){ return globalDmgMul() * (partyBuffT > 0 ? PARTY_BUFF_MUL : 1) * (1 + 0.05 * talent('might')) * (odActive() ? OD_DMG : 1); }
-function crystalMaxHp(){ return 100 * wardMul() * (1 + relicBonus('ward')); }
+function towerHpMul(){ return 1 + 0.15 * S.towerLv; }          // Fortify Tower (gold)
+function towerCost(){ return Math.ceil(60 * Math.pow(1.55, S.towerLv)); }
+function crystalMaxHp(){ return 100 * wardMul() * (1 + relicBonus('ward')) * towerHpMul(); }
 function gameSpeed(){ return S.speed * shardMul('speed'); }
 
 // ------------------------------------------------------------------ combat sim
@@ -594,7 +597,7 @@ function simulate(dt){
       e.atkTimer += dt;
       if (e.atkTimer >= 1){
         e.atkTimer -= 1;
-        const dmgFrac = (e.boss ? 0.20 : 0.05) / wardMul();
+        const dmgFrac = (e.boss ? 0.20 : 0.05) / (wardMul() * towerHpMul());
         S.crystalHp = Math.max(0, S.crystalHp - dmgFrac);
         addFloater(view.crystalX, view.ground - 60*px, '-' + Math.round(dmgFrac*100) + '%', '#ff6b6b');
       }
@@ -1214,6 +1217,8 @@ function doPrestige(){
       bestWave: S.bestWave, totalKills: S.totalKills, goldenKills: S.goldenKills,
       prestiges: S.prestiges + 1, achievements: S.achievements,
       talents: S.talents, talentPoints: S.talentPoints + 2,   // +2 TP per reseal
+      relics: S.relics, equipped: S.equipped, relicSeq: S.relicSeq,
+      kills: S.kills, bestCombo: S.bestCombo,                 // lifetime records
     };
     S = freshState();
     Object.assign(S, keep);
@@ -1539,6 +1544,36 @@ function openRelics(){
   el('modalBox').querySelectorAll('[data-del]').forEach(n => n.onclick = e => { e.stopPropagation(); destroyRelic(+n.dataset.del); });
 }
 if (el('btnRelics')) el('btnRelics').onclick = openRelics;
+
+// Fortify Tower — repeatable gold upgrade that raises the crystal's max HP
+function buyTower(){
+  const c = towerCost();
+  if (S.gold < c){ toast('Not enough gold to fortify the tower'); return; }
+  S.gold -= c; S.towerLv++;
+  S.crystalHp = Math.min(1, S.crystalHp + 0.04);   // small repair on fortify
+  GA('upgrade'); save(); openTower(); updateHud();
+}
+function openTower(){
+  const c = towerCost(), afford = S.gold >= c;
+  openModal(`
+    <h2>🏰 Fortify Tower</h2>
+    <p>Reinforce the Crystal Tower to raise its maximum HP — each level adds
+       <b>+15% effective HP</b>, so enemies chip away less with every hit.
+       Fortify levels reset when you reseal the Crystal.</p>
+    <div class="shard-shop">
+      <div class="shard-item"><div class="info"><b>Tower Level</b>
+        <div class="lv">Lv ${S.towerLv} · +${Math.round((towerHpMul()-1)*100)}% HP</div></div></div>
+      <div class="shard-item"><div class="info"><b>Effective Max HP</b>
+        <div class="lv">💎 ${fmt(Math.round(crystalMaxHp()))}</div></div></div>
+    </div>
+    <button class="btn" id="buyTower" ${afford?'':'disabled'}
+      style="width:100%;background:linear-gradient(#f2c14a,#e0a72e);color:#3a2a00;border:0">
+      🏰 Fortify — 🪙 ${fmt(c)}</button>
+    <button class="btn" id="closeTower" style="width:100%;margin-top:8px">Close</button>`);
+  el('buyTower').onclick = buyTower;
+  el('closeTower').onclick = closeModal;
+}
+if (el('btnTower')) el('btnTower').onclick = openTower;
 
 // audio buttons + unlock-on-first-gesture
 const btnMute = el('btnMute'), btnMusic = el('btnMusic');
