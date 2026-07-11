@@ -47,7 +47,7 @@ window.Sheets = (function () {
     zombie:     { file:'zombie.png',     rows:2, cols:5,  fit:1.0, flip:true, anim:bmob(3,5)  },  // poison
     specter:    { file:'specter.png',    rows:2, cols:5,  fit:1.0, flip:true, anim:bmob(2,5)  },  // dark
     skeleton:   { file:'skeleton.png',   rows:2, cols:7,  fit:1.0, flip:true, anim:bmob(2,7)  },  // tank
-    dragon:     { file:'dragon.png',     rows:2, cols:4,  fit:1.0, flip:true, anim:bmob(4,4)  },  // Boss (fire)
+    dragon:     { file:'dragon.png',     rows:2, cols:1,  fit:1.0, flip:false, anim:bmob(1,1) },  // Boss (fire) — hi-res 2-pose art, already faces the crystal
     elderghost: { file:'elderghost.png', rows:2, cols:5,  fit:1.0, flip:true, anim:bmob(3,5)  },  // Boss (dark)
   };
 
