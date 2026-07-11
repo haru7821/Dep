@@ -1,7 +1,8 @@
 /* Turns the single-image monsters in assets/raw/ into looping animation strips.
-   Extracts the sprite(s) from each image (ghost.png -> ghost + skeleton), then
-   procedurally animates each into an 8-frame strip with type-specific motion
-   (slime squash, ghost float, orc/skeleton breathe, dragon breathe+bob).
+   Isolates the monster with connected-component labelling (keeps only the main
+   blob, so detached swords / flags / stray artifacts are removed), then
+   procedurally animates it (slime squash, ghost float, orc/skeleton breathe,
+   dragon breathe). ghost.png -> ghost + skeleton (its two largest blobs).
    Served over HTTP so getImageData isn't tainted. */
 import { chromium } from 'playwright-core';
 import { fileURLToPath } from 'url';
@@ -21,7 +22,6 @@ const page = await browser.newPage();
 await page.goto(`http://127.0.0.1:${PORT}/index.html`);
 await page.waitForTimeout(150);
 
-// src file -> list of outputs (name + motion). Multi-subject files split by blob.
 const JOBS = [
   { src:'raw/slime.png',  out:[{name:'slime',   motion:'squash',  th:120}] },
   { src:'raw/ghost.png',  out:[{name:'ghost',   motion:'float',   th:150}, {name:'skeleton', motion:'breathe', th:160}] },
@@ -32,41 +32,52 @@ const JOBS = [
 const results = await page.evaluate(async ({JOBS}) => {
   const out = {};
   const load = f => new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src='assets/'+f;});
-  const seg=(d,thr,g)=>{const r=[];let s=-1,gap=0;for(let i=0;i<d.length;i++){if(d[i]>=thr){if(s<0)s=i;gap=0;}else if(s>=0){gap++;if(gap>=g){r.push([s,i-gap]);s=-1;}}}if(s>=0)r.push([s,d.length-1]);return r;};
 
   for (const job of JOBS){
     const img = await load(job.src); if(!img){ out[job.src]='load-fail'; continue; }
     const W=img.width,H=img.height;
     const c=document.createElement('canvas'); c.width=W;c.height=H;
-    const x=c.getContext('2d'); x.drawImage(img,0,0);
-    const A=x.getImageData(0,0,W,H).data; const al=(px,py)=>A[(py*W+px)*4+3]; const AT=24;
-    // column blobs
-    const colDen=new Array(W).fill(0);
-    for(let px=0;px<W;px++){let n=0;for(let py=0;py<H;py++)if(al(px,py)>AT)n++;colDen[px]=n;}
-    const maxCol=Math.max(...colDen);
-    let blobs=seg(colDen,maxCol*0.05,14).filter(([a,b])=>b-a>=18).map(([x0,x1])=>{
-      let ty0=H,ty1=0,area=0;
-      for(let py=0;py<H;py++)for(let px=x0;px<=x1;px++)if(al(px,py)>AT){area++;if(py<ty0)ty0=py;if(py>ty1)ty1=py;}
-      return {x0,x1,y0:ty0,y1:ty1,area};
-    });
-    blobs.sort((a,b)=>b.area-a.area);
-    const need=job.out.length;
-    let chosen=blobs.slice(0,need).sort((a,b)=>a.x0-b.x0);
-    // need 2 but the subjects touch -> split the widest blob at its density valley
-    if(need===2 && chosen.length<2){
-      const b=blobs[0]||{x0:0,x1:W-1,y0:0,y1:H-1};
-      const lo=Math.floor(b.x0+(b.x1-b.x0)*0.30), hi=Math.ceil(b.x0+(b.x1-b.x0)*0.70);
-      let vx=lo, vmin=Infinity; for(let px=lo;px<=hi;px++){ if(colDen[px]<vmin){vmin=colDen[px];vx=px;} }
-      const mk=(x0,x1)=>{let ty0=H,ty1=0;for(let py=0;py<H;py++)for(let px=x0;px<=x1;px++)if(al(px,py)>AT){if(py<ty0)ty0=py;if(py>ty1)ty1=py;}return {x0,y0:ty0,x1,y1:ty1};};
-      chosen=[mk(b.x0,vx-1), mk(vx+1,b.x1)];
+    const cx=c.getContext('2d'); cx.drawImage(img,0,0);
+    const A=cx.getImageData(0,0,W,H).data; const AT=40;
+
+    // connected components (8-conn) over opaque pixels
+    const labels=new Int32Array(W*H).fill(-1);
+    const comps=[]; let id=0;
+    for(let sy=0;sy<H;sy++) for(let sx=0;sx<W;sx++){
+      const si=sy*W+sx;
+      if(A[si*4+3]<=AT || labels[si]!==-1) continue;
+      const cid=id++; let area=0,x0=sx,x1=sx,y0=sy,y1=sy;
+      const st=[si]; labels[si]=cid;
+      while(st.length){
+        const p=st.pop(); const py=(p/W)|0, px=p-py*W;
+        area++; if(px<x0)x0=px; if(px>x1)x1=px; if(py<y0)y0=py; if(py>y1)y1=py;
+        for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+          if(!dx&&!dy)continue; const nx=px+dx,ny=py+dy;
+          if(nx<0||ny<0||nx>=W||ny>=H)continue; const ni=ny*W+nx;
+          if(A[ni*4+3]>AT && labels[ni]===-1){ labels[ni]=cid; st.push(ni); }
+        }
+      }
+      comps.push({id:cid,area,x0,y0,x1,y1});
     }
-    if(chosen.length<need) while(chosen.length<need) chosen.push(chosen[chosen.length-1]);
+    comps.sort((a,b)=>b.area-a.area);
+    const need=job.out.length;
+    let chosen=comps.slice(0,need).sort((a,b)=>a.x0-b.x0);   // largest N, left->right
+    while(chosen.length<need) chosen.push(chosen[chosen.length-1]||{id:0,x0:0,y0:0,x1:W-1,y1:H-1});
 
     job.out.forEach((spec, idx) => {
-      const bb = chosen[Math.min(idx,chosen.length-1)];
-      const cw=bb.x1-bb.x0+1, ch=bb.y1-bb.y0+1;
-      const sc = (spec.th||150)/ch;                 // downscale to a game-friendly size
-      const cw2=cw*sc, ch2=ch*sc;
+      const comp = chosen[Math.min(idx,chosen.length-1)];
+      const cw=comp.x1-comp.x0+1, ch=comp.y1-comp.y0+1;
+      // masked sprite: only this component's pixels (drop everything else)
+      const mc=document.createElement('canvas'); mc.width=cw; mc.height=ch;
+      const mx=mc.getContext('2d'); const md=mx.createImageData(cw,ch);
+      for(let py=comp.y0;py<=comp.y1;py++) for(let px=comp.x0;px<=comp.x1;px++){
+        const gi=py*W+px; if(labels[gi]!==comp.id) continue;
+        const di=((py-comp.y0)*cw+(px-comp.x0))*4, gj=gi*4;
+        md.data[di]=A[gj]; md.data[di+1]=A[gj+1]; md.data[di+2]=A[gj+2]; md.data[di+3]=A[gj+3];
+      }
+      mx.putImageData(md,0,0);
+
+      const sc=(spec.th||150)/ch, cw2=cw*sc, ch2=ch*sc;
       const N=8, PADX=Math.round(cw2*0.16), PADT=Math.round(ch2*0.16), PADB=Math.round(ch2*0.10);
       const CW=Math.round(cw2+PADX*2), CH=Math.round(ch2+PADT+PADB);
       const o=document.createElement('canvas'); o.width=CW*N; o.height=CH;
@@ -78,17 +89,15 @@ const results = await page.evaluate(async ({JOBS}) => {
         else if(spec.motion==='float'){ centered=true; yoff=s*ch2*0.07; xoff=Math.sin(ph*0.7)*cw2*0.02; alpha=0.78+0.22*(0.5+0.5*s); }
         else if(spec.motion==='breathe'){ sy=1+0.04*s; sx=1-0.02*s; yoff=-s*ch2*0.015; xoff=Math.sin(ph*0.5)*cw2*0.012; }
         else if(spec.motion==='dragon'){ sy=1+0.05*s; sx=1+0.02*Math.sin(ph+Math.PI); yoff=s*ch2*0.025; }
-        const cellX=f*CW;
-        const ax = cellX + CW/2 + xoff;
-        const ay = centered ? (CH/2 + yoff) : (CH - PADB + yoff);
+        const cellX=f*CW, ax=cellX+CW/2+xoff, ay=centered?(CH/2+yoff):(CH-PADB+yoff);
         oc.save();
         oc.beginPath(); oc.rect(cellX,0,CW,CH); oc.clip();
         oc.globalAlpha=alpha;
-        oc.translate(ax, ay); oc.scale(sc*sx, sc*sy);
-        oc.drawImage(img, bb.x0,bb.y0,cw,ch, -cw/2, centered?-ch/2:-ch, cw, ch);
+        oc.translate(ax,ay); oc.scale(sc*sx, sc*sy);
+        oc.drawImage(mc, 0,0,cw,ch, -cw/2, centered?-ch/2:-ch, cw,ch);
         oc.restore();
       }
-      out[spec.name] = { url:o.toDataURL('image/png'), frames:N, cw:CW, ch:CH };
+      out[spec.name]={ url:o.toDataURL('image/png'), frames:N, cw:CW, ch:CH };
     });
   }
   return out;
