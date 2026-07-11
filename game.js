@@ -223,6 +223,7 @@ function freshState(){
     relicSeq: 0,            // running id counter for relics
     towerLv: 0,             // gold-bought Fortify Tower level (resets on reseal)
     autoUp: false,          // auto-buy the cheapest affordable hero upgrade
+    seenIntro: false,       // shown the first-run tutorial yet?
   };
 }
 
@@ -652,11 +653,14 @@ function simulate(dt){
 
   // crystal broken -> fall back a few waves, restore
   if (S.crystalHp <= 0){
+    const brokeWave = S.wave;
+    if (brokeWave === lastBreakWave) breakStreak++; else { breakStreak = 1; lastBreakWave = brokeWave; }
     S.wave = Math.max(1, S.wave - 3);
     S.crystalHp = 1;
     enemies.length = 0; fx.length = 0; particles.length = 0;
     startWave(S.wave);
     toast('💥 The Crystal shattered! Fell back to Wave ' + S.wave);
+    maybeWallHint(brokeWave);
     return;
   }
 
@@ -679,6 +683,7 @@ function simulate(dt){
   // kill-streak combo decay
   if (comboT > 0){ comboT -= dt; if (comboT <= 0){ combo = 0; comboT = 0; } }
   if (odT > 0) odT = Math.max(0, odT - dt);
+  if (wallHintT > 0) wallHintT -= dt;
   // auto-upgrade: buy one cheapest affordable upgrade a few times per second
   if (S.autoUp){ autoUpT -= dt; if (autoUpT <= 0){ autoUpT = 0.3; autoUpgradeStep(); } }
 
@@ -1284,12 +1289,14 @@ function doPrestige(){
       talents: S.talents, talentPoints: S.talentPoints + 2,   // +2 TP per reseal
       relics: S.relics, equipped: S.equipped, relicSeq: S.relicSeq,
       kills: S.kills, bestCombo: S.bestCombo,                 // lifetime records
-      autoUp: S.autoUp,                                       // keep QoL toggle
+      autoUp: S.autoUp, seenIntro: S.seenIntro,               // keep QoL/tutorial flags
     };
     S = freshState();
     Object.assign(S, keep);
     enemies.length = 0; fx.length = 0; particles.length = 0; partyBuffT = 0;
     for (const k in skillTimers) skillTimers[k] = 0;
+    breakStreak = 0; lastBreakWave = 0;
+    const pb = el('btnPrestige'); if (pb) pb.classList.remove('nudge');
     startWave(1);
     checkAchievements();
     buildHeroPanel(); updateHud(); save();
@@ -1393,6 +1400,37 @@ function applyOffline(){
     </div>
     <button class="btn" id="collectOff" style="width:100%">Collect</button>`);
   el('collectOff').onclick = closeModal;
+}
+
+// ---- Wall signposting: nudge toward Reseal after repeated crystal breaks ----
+let lastBreakWave = 0, breakStreak = 0, wallHintT = 0;
+function prestigeGain(){ return prestigeShards(S.totalGoldEarned) - S.shardsEarned; }
+function maybeWallHint(brokeWave){
+  if (breakStreak < 2 || wallHintT > 0) return;
+  wallHintT = 40;                                   // cooldown before it can fire again
+  const gain = prestigeGain();
+  if (gain > 0){
+    toast(`🧱 Wall at Wave ${brokeWave}. Reseal the Crystal for +${gain}💠 to grow permanently stronger!`);
+    const pb = el('btnPrestige'); if (pb) pb.classList.add('nudge');
+  } else {
+    toast(`🧱 Stuck at Wave ${brokeWave}? Upgrade your heroes and Fortify the tower, then farm gold for your first Reseal.`);
+  }
+}
+
+// ---- First-run tutorial ----
+function showIntro(){
+  openModal(`
+    <h2>⟡ Defend the Aether Crystal</h2>
+    <p>Endless waves of monsters march from the right toward your Crystal on the left.
+       Your heroes attack on their own — you grow the defense.</p>
+    <p style="margin-top:10px">
+      • <b>Buy &amp; upgrade heroes</b> with 🪙 gold (cards below). More heroes unlock as you reach new waves.<br>
+      • Each hero has an <b>auto-casting skill</b> — <b>tap a hero</b> to fire it early.<br>
+      • ⚡ <b>Overdrive</b> charges from kills for a burst; 🅰️ <b>Auto</b> spends gold for you.<br>
+      • Hit a wall? <b>💠 Reseal (Prestige)</b> trades your run for permanent power — that's how you break through.
+    </p>
+    <button class="btn" id="introOk" style="width:100%;margin-top:12px">Begin the defense ⚔️</button>`);
+  el('introOk').onclick = () => { S.seenIntro = true; save(); closeModal(); };
 }
 
 // Catch up when a backgrounded tab regains focus (rAF is paused while hidden).
@@ -1742,7 +1780,8 @@ function boot(){
   S = load() || freshState();
   if (window.Sheets && Sheets.preload) Sheets.preload();   // avoid canvas→sheet size pop
   resize();
-  applyOffline();
+  if (!S.seenIntro) showIntro();      // first-run tutorial (before any offline popup)
+  else applyOffline();
   checkAchievements();
   startWave(S.wave);
   buildHeroPanel();

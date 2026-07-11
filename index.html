@@ -49,6 +49,8 @@
     border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:600}
   .btn:active{transform:scale(.97)}
   .btn.prestige{background:linear-gradient(#8b5cf6,#6d28d9);border-color:#8b5cf6}
+  .btn.prestige.nudge{animation:nudgePulse 1s ease-in-out infinite}
+  @keyframes nudgePulse{0%,100%{box-shadow:0 0 0 rgba(139,92,246,0)}50%{box-shadow:0 0 16px rgba(167,139,250,.95)}}
   .btn:disabled{opacity:.45;cursor:not-allowed}
   .btn.sel{outline:2px solid var(--accent);outline-offset:-1px}
   .btn.icon{padding:8px 11px;font-size:15px;line-height:1}
@@ -208,8 +210,8 @@
   <div class="box" id="modalBox"></div>
 </div>
 
-<script src="sprites.js?v=21"></script>
-<script src="dungeon.js?v=21"></script>
-<script src="sheets.js?v=21"></script>
-<script src="audio.js?v=21"></script>
-<script src="game.js?v=21"></script>
+<script src="sprites.js?v=22"></script>
+<script src="dungeon.js?v=22"></script>
+<script src="sheets.js?v=22"></script>
+<script src="audio.js?v=22"></script>
+<script src="game.js?v=22"></script>
