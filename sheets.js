@@ -31,7 +31,7 @@ window.Sheets = (function () {
   // (right). Aunel has no sheet and uses the built-in canvas art.
   // sliced sheets pack every character at the same body height, so heroes share
   // one fit for a consistent on-screen size.
-  const HFIT = 2.1;   // no-clip cells have headroom, so scale up to stay prominent
+  const HFIT = 1.05;  // hero on-screen scale (halved per request)
   const SHEET_CONFIG = {
     garran: { file:'warrior.png',  rows:4, cols:5, fit:HFIT, flip:true, anim:rows4(5,2,1,1) },  // Knight  (warrior art)
     mira:   { file:'wizard.png',   rows:4, cols:8, fit:HFIT, flip:true, anim:rows4(5,8,2,2) },  // Mage    (purple wizard art)

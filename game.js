@@ -687,7 +687,7 @@ function draw(now){
     const t = ENEMY_TYPES[e.type] || ENEMY_TYPES.normal;
     const es = size * (e.boss ? 3 : t.size);
     const sid = e.boss ? 'dragon' : ENEMY_SPRITE[e.type];
-    const th = es * (e.boss ? 12 : 14);               // sprite target height
+    const th = es * (e.boss ? 24 : 14);               // sprite target height (boss dragon 2x)
     let drew = false, by = e.y;
     if (window.Sheets && sid) drew = Sheets.draw(ctx, sid, e.x, e.y, th, 'idle', now);
     if (!drew){
@@ -739,7 +739,7 @@ function draw(now){
       if (fn){
         // scale the canvas art up so it matches the (larger) sheet heroes
         ctx.save();
-        ctx.translate(slot.x, slot.y); ctx.scale(2.0, 2.0);
+        ctx.translate(slot.x, slot.y); ctx.scale(1.0, 1.0);
         fn(ctx, 0, 0, size, frame);
         ctx.restore();
       } else drawFallbackChar(slot.x, slot.y, size, slot.def.color);
