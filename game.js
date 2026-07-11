@@ -1496,6 +1496,17 @@ function toggleEquip(id){
   else { if (S.equipped.length >= RELIC_SLOTS){ toast('All relic slots full — unequip one first'); return; } S.equipped.push(id); }
   save(); openRelics();
 }
+function relicSalvage(rel){ return Math.ceil((RELIC_RARITY.find(r=>r.id===rel.rarity)?.mul || 1) / 2); }
+function destroyRelic(id){
+  const rel = S.relics.find(r => r.id === id);
+  if (!rel) return;
+  const salv = relicSalvage(rel);
+  S.relics = S.relics.filter(r => r.id !== id);
+  const ei = S.equipped.indexOf(id); if (ei >= 0) S.equipped.splice(ei, 1);
+  S.shards += salv;
+  toast(`🗑️ Destroyed ${RELIC_TYPES[rel.type].name} — salvaged ${salv}💠`);
+  GA('upgrade'); save(); openRelics(); updateHud();
+}
 function openRelics(){
   const slots = Array.from({length:RELIC_SLOTS}, (_,i) => {
     const id = S.equipped[i]; const rel = id && S.relics.find(r=>r.id===id);
@@ -1508,10 +1519,11 @@ function openRelics(){
   });
   const list = owned.length ? owned.map(rel => {
     const t = RELIC_TYPES[rel.type], eq = S.equipped.includes(rel.id);
-    return `<div class="relic ${eq?'eq':''}" style="--rc:${relicColor(rel)}" data-rel="${rel.id}">
-      <span class="ic">${t.icon}</span>
-      <div style="flex:1"><div class="rn">${t.name}</div><div class="rd">${t.fmt(relicValue(rel))}</div>
+    return `<div class="relic ${eq?'eq':''}" style="--rc:${relicColor(rel)}">
+      <span class="ic" data-rel="${rel.id}">${t.icon}</span>
+      <div style="flex:1" data-rel="${rel.id}"><div class="rn">${t.name}</div><div class="rd">${t.fmt(relicValue(rel))}</div>
         <div class="rr">${relicRarityName(rel)}${eq?' · EQUIPPED':''}</div></div>
+      <button class="relic-del" data-del="${rel.id}" title="Destroy (salvage ${relicSalvage(rel)}💠)">🗑️</button>
     </div>`;
   }).join('') : `<p style="grid-column:1/-1;color:var(--muted)">No relics yet. Defeat bosses (every ${BOSS_EVERY} waves) to find them.</p>`;
   openModal(`
@@ -1524,6 +1536,7 @@ function openRelics(){
   el('closeRelic').onclick = closeModal;
   el('modalBox').querySelectorAll('[data-rel]').forEach(n => n.onclick = () => toggleEquip(+n.dataset.rel));
   el('modalBox').querySelectorAll('[data-eq]').forEach(n => n.onclick = () => toggleEquip(+n.dataset.eq));
+  el('modalBox').querySelectorAll('[data-del]').forEach(n => n.onclick = e => { e.stopPropagation(); destroyRelic(+n.dataset.del); });
 }
 if (el('btnRelics')) el('btnRelics').onclick = openRelics;
 
