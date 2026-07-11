@@ -608,6 +608,7 @@ function simulate(dt){
     e.frame = (Math.floor(waveTime*4) % 2);
     if (e.slow > 0) e.slow -= dt;
     if (e.burn > 0) e.burn -= dt;
+    if (e.lunge > 0) e.lunge -= dt * 4;              // dragon attack-lunge decay
     if (e.type === 'wraith' && Math.random() < dt * 2.5) spawnParticles(e.x, e.y - 20, 'poison', 0.25);  // 독 trail
     const reach = view.crystalX + 34*px;
     if (e.x > reach){
@@ -620,6 +621,14 @@ function simulate(dt){
         const dmgFrac = (e.boss ? 0.20 : 0.05) / (wardMul() * towerHpMul());
         S.crystalHp = Math.max(0, S.crystalHp - dmgFrac);
         addFloater(view.crystalX, view.ground - 60*px, '-' + Math.round(dmgFrac*100) + '%', '#ff6b6b');
+        if (e.boss && e.bossKind === 'dragon'){       // lunge + fire breath toward the crystal
+          e.lunge = 1;
+          const mx = e.x - 46*px, my = e.y - 52*px;
+          spawnParticles(mx, my, 'fire', 1.7);
+          spawnParticles(mx - 20*px, my, 'smoke', 0.6);
+          addFx({ kind:'nova', x: mx - 14*px, y: my, r0:5, r:70, dur:0.35, color:'#ff9d3c' });
+          GA('explosion');
+        }
       }
     }
   }
@@ -1012,7 +1021,26 @@ function draw(now){
     const atCrystal = e.x <= view.crystalX + 42 * px;
     const anim = atCrystal ? 'attack' : 'idle';       // play the attack animation at the crystal
     let drew = false, by = e.y;
-    if (window.Sheets && sid) drew = Sheets.draw(ctx, sid, e.x, e.y, th, anim, now);
+    if (window.Sheets && sid){
+      let ax = e.x, aby = e.y, ath = th;
+      if (e.boss && e.bossKind === 'dragon'){
+        aby = e.y + Math.sin(now/320 + e.x*0.05) * es * 0.45;      // gentle hover
+        ath = th * (1 + 0.03*Math.sin(now/260) + 0.14*(e.lunge||0)); // breathing + lunge grow
+        ax  = e.x - (e.lunge||0) * 16 * px;                         // thrust toward the crystal
+        by  = aby;
+        if (now - (e.emberT||0) > 70){                              // rising embers off the mane
+          e.emberT = now;
+          for (let k=0;k<2;k++){
+            if (particles.length >= MAX_PARTICLES) particles.shift();
+            const life = 0.4 + Math.random()*0.4;
+            particles.push({ x: e.x + (Math.random()-0.5)*th*0.5, y: aby - th*(0.35+Math.random()*0.4),
+              vx:(Math.random()-0.5)*20, vy:-(40+Math.random()*55), life, max:life,
+              size:1.4+Math.random()*2, color:['#ffe27a','#ff9d3c','#ff5a1a'][(Math.random()*3)|0], shape:'circle', grav:-24, drag:0.93, glow:true });
+          }
+        }
+      }
+      drew = Sheets.draw(ctx, sid, ax, aby, ath, anim, now);
+    }
     if (!drew){
       const floatOff = t.float ? (10 + Math.sin(now/300)*4) : 0;
       by = e.y - floatOff;
