@@ -768,9 +768,30 @@ function pathRoundRect(x, y, w, h, r){
   ctx.closePath();
 }
 
-// Encase a frozen enemy in a crystalline ice cube (matches the reference art):
-// translucent blue block over the sprite, facet lines, base shards, twinkles.
+// Encase a frozen enemy in ice. Prefer the uploaded ice-crystal art; if it
+// hasn't loaded, fall back to the procedural crystal cube below.
+let _iceImg = null, _iceOk = false;
+function iceImage(){ if (!_iceImg){ _iceImg = new Image(); _iceImg.onload = () => _iceOk = true; _iceImg.src = 'assets/ice.png'; } return _iceOk ? _iceImg : null; }
 function drawIceBlock(cx, topY, w, h, now){
+  const img = iceImage();
+  if (img){
+    const dh = h * 1.42, dw = dh * (img.width / img.height);
+    const dx = cx - dw/2, dy = (topY + h) - dh + h*0.05;   // crystal base near the feet
+    ctx.save();
+    ctx.globalAlpha = 0.9; ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(img, dx, dy, dw, dh);
+    ctx.restore();
+    // twinkling frost sparkles orbiting the crystal
+    ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,0.92)'; ctx.lineWidth = 1.4;
+    for (let k = 0; k < 4; k++){
+      const a = now/600 + k*1.7 + cx;
+      const px = cx + Math.cos(a) * dw*0.5, py = dy + dh*0.42 + Math.sin(a*1.3) * dh*0.42;
+      const s = 2 + 1.6*Math.abs(Math.sin(now/300 + k));
+      ctx.beginPath(); ctx.moveTo(px-s,py); ctx.lineTo(px+s,py); ctx.moveTo(px,py-s); ctx.lineTo(px,py+s); ctx.stroke();
+    }
+    ctx.restore();
+    return;
+  }
   const pad = Math.max(4, w * 0.16);
   const x0 = cx - w/2 - pad, y0 = topY - pad*0.7;
   const bw = w + pad*2, bh = h + pad*1.2, r = Math.min(bw, bh) * 0.14;
