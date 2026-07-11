@@ -12,11 +12,11 @@ import http from 'http';
 const dir = path.dirname(fileURLToPath(import.meta.url));
 // output sheet (in game) <- source showcase art (assets/raw, named by actual art)
 const JOBS = [
-  { out:'warrior.png',  src:'raw/warrior.png'  },  // Garran  – warrior
-  { out:'wizard.png',   src:'raw/wizard.png'   },  // Mira    – purple wizard
-  { out:'archer.png',   src:'raw/archer.png'   },  // Faye    – archer
-  { out:'sorcerer.png', src:'raw/sorcerer.png' },  // Rai     – elemental sorcerer
-  { out:'shadow.png',   src:'raw/shadow.png'   },  // Boss    – shadow mage
+  { out:'warrior.png',  src:'_reslice/warrior.png'  },  // Garran  – warrior
+  { out:'wizard.png',   src:'_reslice/wizard.png'   },  // Mira    – purple wizard
+  { out:'archer.png',   src:'_reslice/archer.png'   },  // Faye    – archer
+  { out:'sorcerer.png', src:'_reslice/sorcerer.png' },  // Rai     – elemental sorcerer
+  { out:'shadow.png',   src:'_reslice/shadow.png'   },  // Boss    – shadow mage (unused now)
 ];
 
 // tiny static server (same-origin http => canvas not tainted)
@@ -104,13 +104,11 @@ for (const job of JOBS){
     // ---- re-pack into clean uniform grid ----
     // ONE scale for the whole character (from the median frame height) so the
     // body stays the same size across every frame/row — no sudden shrinking.
-    const CW=132, CH=150, COLS=maxF, ROWS=use.length;
-    // base the scale on the IDLE row's body height (clean poses, no effects) so
-    // the body is sized right and identical across all rows; taller attack/cast
-    // frames (with effects) just overflow upward and get clipped to the cell.
-    const idleH = (use[0]||[]).map(f=>f.y1-f.y0+1).sort((a,b)=>a-b);
-    const refH = idleH[Math.floor(idleH.length/2)] || 1;
-    const scale = Math.min((CH-16)/refH, 3.2);
+    // Taller cell + scale by the TALLEST frame so raised weapons / effects fit
+    // fully inside the frame (no clipping). Uniform scale keeps size consistent.
+    const CW=140, CH=176, COLS=maxF, ROWS=use.length;
+    const maxFH = Math.max(...use.flat().map(f=>f.y1-f.y0+1));
+    const scale = Math.min((CH-10)/maxFH, 3.2);
     const o = document.createElement('canvas'); o.width=COLS*CW; o.height=ROWS*CH;
     const oc = o.getContext('2d'); oc.imageSmoothingEnabled=true;
     use.forEach((frames, r) => {

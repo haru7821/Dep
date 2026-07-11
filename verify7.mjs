@@ -17,17 +17,19 @@ const R = []; const check = (n,c) => R.push((c?'PASS':'FAIL')+' — '+n);
   await page.reload(); await page.waitForTimeout(600);   // let sheet images load
 
   check('Sheets API loaded, enabled by default', await page.evaluate(() => !!window.Sheets && Sheets.isEnabled()===true));
-  check('All hero + boss sheets configured', await page.evaluate(() =>
-    ['garran','mira','faye','rai','boss'].every(id => !!Sheets.CONFIG[id])));
+  check('Heroes + monster sprites configured', await page.evaluate(() =>
+    ['garran','mira','faye','rai','slime','ghost','skeleton','orc','dragon'].every(id => !!Sheets.CONFIG[id])));
   check('🎨 toggle button present', await page.evaluate(() => !!document.getElementById('btnSheets')));
   check('Healer sheet removed → Aunel uses canvas fallback', await page.evaluate(() =>
     !Sheets.CONFIG.aunel && Sheets.draw(document.getElementById('stage').getContext('2d'),'aunel',100,300,60,'idle',0)===false));
-  check('Flip flags: all sheet characters flipped to face right', await page.evaluate(() =>
-    ['garran','mira','faye','rai','boss'].every(id=>Sheets.CONFIG[id].flip===true)));
+  check('Flip: garran/mira/rai + skeleton/orc flipped; faye/dragon/slime/ghost not', await page.evaluate(() =>
+    ['garran','mira','rai','skeleton','orc'].every(id=>Sheets.CONFIG[id].flip===true) &&
+    !Sheets.CONFIG.faye.flip && !Sheets.CONFIG.dragon.flip && !Sheets.CONFIG.slime.flip && !Sheets.CONFIG.ghost.flip));
   check('Sheet images load (ready after load)', await page.evaluate(async () => {
-    ['garran','mira','faye','rai','boss'].forEach(id => Sheets.load(id));
-    await new Promise(r => setTimeout(r, 600));
-    return ['garran','mira','faye','rai','boss'].every(id => Sheets.ready(id));
+    const ids=['garran','mira','faye','rai','slime','ghost','skeleton','orc','dragon'];
+    ids.forEach(id => Sheets.load(id));
+    await new Promise(r => setTimeout(r, 700));
+    return ids.every(id => Sheets.ready(id));
   }));
   check('Sheets.draw renders from image (returns true)', await page.evaluate(() => {
     const ctx = document.getElementById('stage').getContext('2d');

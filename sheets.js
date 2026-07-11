@@ -24,17 +24,25 @@ window.Sheets = (function () {
   // (idle/walk/attack/cast); frame counts per row vary and are set below.
   const rows4 = (i,w,a,c) => ({ idle:{row:0,frames:i,fps:7}, walk:{row:1,frames:w,fps:9},
                                 attack:{row:2,frames:a,fps:12}, cast:{row:3,frames:c,fps:11} });
+  // monster: one looping row used for every state
+  const mob = n => ({ idle:{row:0,frames:n,fps:8}, walk:{row:0,frames:n,fps:8},
+                      attack:{row:0,frames:n,fps:8}, cast:{row:0,frames:n,fps:8} });
   // flip:true mirrors the sprite horizontally so it faces the incoming enemies
   // (right). Aunel has no sheet and uses the built-in canvas art.
   // sliced sheets pack every character at the same body height, so heroes share
   // one fit for a consistent on-screen size.
-  const HFIT = 1.6;
+  const HFIT = 2.1;   // no-clip cells have headroom, so scale up to stay prominent
   const SHEET_CONFIG = {
     garran: { file:'warrior.png',  rows:4, cols:5, fit:HFIT, flip:true, anim:rows4(5,2,1,1) },  // Knight  (warrior art)
     mira:   { file:'wizard.png',   rows:4, cols:8, fit:HFIT, flip:true, anim:rows4(5,8,2,2) },  // Mage    (purple wizard art)
-    faye:   { file:'archer.png',   rows:4, cols:5, fit:HFIT, flip:true, anim:rows4(5,5,1,2) },  // Archer
+    faye:   { file:'archer.png',   rows:4, cols:5, fit:HFIT,            anim:rows4(5,5,1,2) },  // Archer  (art already faces right)
     rai:    { file:'sorcerer.png', rows:4, cols:5, fit:HFIT, flip:true, anim:rows4(5,1,1,1) },  // Ronin   (elemental sorcerer art)
-    boss:   { file:'shadow.png',   rows:4, cols:5, fit:1.5,  flip:true, anim:rows4(2,5,1,2) },  // Boss    (shadow mage art)
+    // monsters — single-row procedural loops (make-mobs.mjs); enemies play row 0
+    slime:    { file:'slime.png',    rows:1, cols:8, fit:1.0,            anim:mob(8) },
+    ghost:    { file:'ghost.png',    rows:1, cols:8, fit:1.0,            anim:mob(8) },
+    skeleton: { file:'skeleton.png', rows:1, cols:8, fit:1.0, flip:true, anim:mob(8) },
+    orc:      { file:'orc.png',      rows:1, cols:8, fit:1.0, flip:true, anim:mob(8) },
+    dragon:   { file:'dragon.png',   rows:1, cols:8, fit:1.0,            anim:mob(8) },  // Boss
   };
 
   const imgs = {};   // id -> { img, ok, failed }

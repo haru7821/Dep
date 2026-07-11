@@ -45,6 +45,8 @@ const ENEMY_TYPES = {
   golem:  { hp:4.5, spd:13, size:2.0,  gold:4 },
   wraith: { hp:1.3, spd:34, size:1.1,  gold:2, slowImmune:true, float:true },
 };
+// which monster sprite each enemy type uses (falls back to canvas art)
+const ENEMY_SPRITE = { normal:'slime', fast:'slime', runner:'orc', tank:'skeleton', golem:'orc', wraith:'ghost' };
 const SLOW_FACTOR = 0.42;              // movement multiplier while frozen
 const PARTY_BUFF_MUL = 1.30;           // Aunel's Dawn Blessing damage buff
 
@@ -684,38 +686,36 @@ function draw(now){
   for (const e of enemies){
     const t = ENEMY_TYPES[e.type] || ENEMY_TYPES.normal;
     const es = size * (e.boss ? 3 : t.size);
-    const floatOff = t.float ? (10 + Math.sin(now/300)*4) : 0;
-    const by = e.y - floatOff;
-    if (e.boss){
-      const atCrystal = e.x <= view.crystalX + 40 * px;
-      const drew = window.Sheets && Sheets.draw(ctx, 'boss', e.x, by, es*16, atCrystal ? 'attack' : 'walk', now);
-      if (!drew){ if (Spr().drawBoss) Spr().drawBoss(ctx, e.x, by, es, e.frame); else drawFallbackChar(e.x, by, es, '#b3407a'); }
+    const sid = e.boss ? 'dragon' : ENEMY_SPRITE[e.type];
+    const th = es * (e.boss ? 12 : 14);               // sprite target height
+    let drew = false, by = e.y;
+    if (window.Sheets && sid) drew = Sheets.draw(ctx, sid, e.x, e.y, th, 'idle', now);
+    if (!drew){
+      const floatOff = t.float ? (10 + Math.sin(now/300)*4) : 0;
+      by = e.y - floatOff;
+      if (e.boss){ if (Spr().drawBoss) Spr().drawBoss(ctx, e.x, by, es, e.frame); else drawFallbackChar(e.x, by, es, '#b3407a'); }
+      else if (Spr().drawEnemy) Spr().drawEnemy(ctx, e.x, by, es, e.type, e.frame, e.hp/e.maxHp);
+      else drawFallbackChar(e.x, by, es, '#b3407a');
     }
-    else if (Spr().drawEnemy) Spr().drawEnemy(ctx, e.x, by, es, e.type, e.frame, e.hp/e.maxHp);
-    else drawFallbackChar(e.x, by, es, '#b3407a');
-    // frozen overlay
+    const spH = drew ? th : es*15;                    // overlays/hp-bar sized to the sprite
+    const ow = spH * 0.62;
     if (e.slow > 0){
       ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#9fe4ff';
-      ctx.fillRect(e.x - es*7, by - es*17, es*14, es*17); ctx.restore();
+      ctx.fillRect(e.x - ow/2, by - spH, ow, spH); ctx.restore();
     }
-    // golden shimmer overlay
     if (e.golden){
       ctx.save();
       ctx.globalAlpha = 0.28 + 0.12*Math.sin(now/120 + e.x);
-      ctx.fillStyle = '#ffe14d';
-      ctx.fillRect(e.x - es*7, by - es*17, es*14, es*17);
+      ctx.fillStyle = '#ffe14d'; ctx.fillRect(e.x - ow/2, by - spH, ow, spH);
       ctx.globalAlpha = 0.9; ctx.fillStyle = '#fff6c0';
-      for (let k = 0; k < 3; k++){
-        const a = now/200 + k*2.1;
-        ctx.fillRect(e.x + Math.cos(a)*es*8 - 1, by - es*9 + Math.sin(a)*es*8 - 1, 3, 3);
-      }
+      for (let k = 0; k < 3; k++){ const a = now/200 + k*2.1;
+        ctx.fillRect(e.x + Math.cos(a)*ow*0.5 - 1, by - spH*0.5 + Math.sin(a)*spH*0.4 - 1, 3, 3); }
       ctx.restore();
     }
-    // hp bar
     const bw = 22*px * (e.boss ? 2.2 : t.size);
-    ctx.fillStyle = '#000a'; ctx.fillRect(e.x-bw/2, by - es*15 - 8, bw, 4);
+    ctx.fillStyle = '#000a'; ctx.fillRect(e.x-bw/2, by - spH - 6, bw, 4);
     ctx.fillStyle = e.boss ? '#ff5db1' : '#ff6b6b';
-    ctx.fillRect(e.x-bw/2, by - es*15 - 8, bw*(e.hp/e.maxHp), 4);
+    ctx.fillRect(e.x-bw/2, by - spH - 6, bw*(e.hp/e.maxHp), 4);
   }
 
   // heroes
@@ -739,7 +739,7 @@ function draw(now){
       if (fn){
         // scale the canvas art up so it matches the (larger) sheet heroes
         ctx.save();
-        ctx.translate(slot.x, slot.y); ctx.scale(1.8, 1.8);
+        ctx.translate(slot.x, slot.y); ctx.scale(2.0, 2.0);
         fn(ctx, 0, 0, size, frame);
         ctx.restore();
       } else drawFallbackChar(slot.x, slot.y, size, slot.def.color);
