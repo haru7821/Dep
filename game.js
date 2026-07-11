@@ -736,8 +736,13 @@ function draw(now){
     if (!drewSheet){
       const frame = (heroFlash[slot.def.id] > 0) ? 1 : (Math.floor(now/350)%2);
       const fn = Spr()[slot.def.draw];
-      if (fn) fn(ctx, slot.x, slot.y, size, frame);
-      else drawFallbackChar(slot.x, slot.y, size, slot.def.color);
+      if (fn){
+        // scale the canvas art up so it matches the (larger) sheet heroes
+        ctx.save();
+        ctx.translate(slot.x, slot.y); ctx.scale(1.8, 1.8);
+        fn(ctx, 0, 0, size, frame);
+        ctx.restore();
+      } else drawFallbackChar(slot.x, slot.y, size, slot.def.color);
     }
   }
 
@@ -1108,6 +1113,7 @@ window.addEventListener('keydown', audioUnlock);
 // ------------------------------------------------------------------ boot
 function boot(){
   S = load() || freshState();
+  if (window.Sheets && Sheets.preload) Sheets.preload();   // avoid canvas→sheet size pop
   resize();
   applyOffline();
   checkAchievements();
