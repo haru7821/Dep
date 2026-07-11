@@ -218,6 +218,7 @@ function freshState(){
     equipped: [],           // relic ids equipped (max RELIC_SLOTS)
     relicSeq: 0,            // running id counter for relics
     towerLv: 0,             // gold-bought Fortify Tower level (resets on reseal)
+    autoUp: false,          // auto-buy the cheapest affordable hero upgrade
   };
 }
 
@@ -283,6 +284,19 @@ const OD_KILLS = 45;               // kills to fully charge
 const OD_DUR = 8;                  // active duration (s)
 const OD_DMG = 2.0, OD_RATE = 1.5; // damage ×2, attack speed ×1.5 while active
 function odActive(){ return odT > 0; }
+// auto-upgrade: periodically buy the single cheapest affordable hero upgrade
+let autoUpT = 0;
+function autoUpgradeStep(){
+  let best = null, bestCost = Infinity;
+  for (const def of HERO_DEFS){
+    const lvl = S.heroLevels[def.id];
+    const unlocked = lvl > 0 || def.unlockWave <= 1 || S.wave >= def.unlockWave;
+    if (!unlocked) continue;
+    const cost = heroCost(def, lvl);
+    if (cost <= S.gold && cost < bestCost){ best = def; bestCost = cost; }
+  }
+  if (best) buyHero(best);
+}
 function tryOverdrive(){
   if (odActive() || odCharge < 1) return false;
   odCharge = 0; odT = OD_DUR;
@@ -660,6 +674,8 @@ function simulate(dt){
   // kill-streak combo decay
   if (comboT > 0){ comboT -= dt; if (comboT <= 0){ combo = 0; comboT = 0; } }
   if (odT > 0) odT = Math.max(0, odT - dt);
+  // auto-upgrade: buy one cheapest affordable upgrade a few times per second
+  if (S.autoUp){ autoUpT -= dt; if (autoUpT <= 0){ autoUpT = 0.3; autoUpgradeStep(); } }
 
   // fx + particles + floaters
   updateParticles(dt);
@@ -1173,7 +1189,8 @@ function buyHero(def){
       : `${fmt(heroDmg(def,S.heroLevels[def.id])*globalDmgMul())} dmg`;
   }
   const btn = el('buy-'+def.id);
-  btn.innerHTML = `Upgrade <small>🪙 ${fmt(heroCost(def, S.heroLevels[def.id]))}</small>`;
+  if (btn) btn.innerHTML = `Upgrade <small>🪙 ${fmt(heroCost(def, S.heroLevels[def.id]))}</small>`;
+  else buildHeroPanel();   // card not rendered yet (e.g. just wave-unlocked) — rebuild
   checkAchievements();
   updateHud();
 }
@@ -1219,6 +1236,7 @@ function doPrestige(){
       talents: S.talents, talentPoints: S.talentPoints + 2,   // +2 TP per reseal
       relics: S.relics, equipped: S.equipped, relicSeq: S.relicSeq,
       kills: S.kills, bestCombo: S.bestCombo,                 // lifetime records
+      autoUp: S.autoUp,                                       // keep QoL toggle
     };
     S = freshState();
     Object.assign(S, keep);
@@ -1575,6 +1593,19 @@ function openTower(){
 }
 if (el('btnTower')) el('btnTower').onclick = openTower;
 
+// Auto-upgrade toggle
+function refreshAutoBtn(){
+  const b = el('btnAuto'); if (!b) return;
+  b.classList.toggle('sel', !!S.autoUp);
+  b.textContent = S.autoUp ? '🅰️ Auto: On' : '🅰️ Auto';
+}
+if (el('btnAuto')) el('btnAuto').onclick = () => {
+  S.autoUp = !S.autoUp; refreshAutoBtn();
+  toast(S.autoUp ? '🅰️ Auto-upgrade ON — spending gold on the cheapest upgrade'
+                 : '🅰️ Auto-upgrade OFF');
+  save();
+};
+
 // audio buttons + unlock-on-first-gesture
 const btnMute = el('btnMute'), btnMusic = el('btnMusic');
 if (btnMute) btnMute.onclick = () => { const m = window.GameAudio && GameAudio.toggleMute(); btnMute.textContent = m ? '🔇' : '🔊'; };
@@ -1608,6 +1639,7 @@ function boot(){
   buildHeroPanel();
   showWaveBanner(S.wave);
   updateHud();
+  refreshAutoBtn();
   document.querySelector('[data-spd="1"]').classList.add('sel');
   window.addEventListener('beforeunload', save);
   setInterval(save, 15000);
