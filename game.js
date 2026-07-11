@@ -679,10 +679,9 @@ function draw(now){
   if (Spr().drawBackground) Spr().drawBackground(ctx, view.w, view.h, now);
   else { ctx.fillStyle = '#0a0e24'; ctx.fillRect(0,0,view.w,view.h); }
 
-  // crystal tower — idle glow normally, attack (fires a bolt) when foes are near
+  // crystal tower — static (first idle frame, no animation); size per user edit
   const towerH = size * 60;
-  const nearFoe = enemies.some(e => e.x < view.crystalX + 240 * px);
-  const drewTower = window.Sheets && Sheets.draw(ctx, 'tower', view.crystalX, view.ground, towerH, nearFoe ? 'attack' : 'idle', now);
+  const drewTower = window.Sheets && Sheets.draw(ctx, 'tower', view.crystalX, view.ground, towerH, 'idle', 0);
   if (!drewTower){
     const pulse = 0.5 + 0.5*Math.sin(now/500);
     if (Spr().drawCrystal) Spr().drawCrystal(ctx, view.crystalX, view.ground - size*10, size*3, pulse, S.crystalHp);
