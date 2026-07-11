@@ -102,16 +102,26 @@ for (const job of JOBS){
     const maxF = Math.min(10, Math.max(...use.map(r=>r.length)));
 
     // ---- re-pack into clean uniform grid ----
-    const CW=120, CH=140, COLS=maxF, ROWS=use.length;
+    // ONE scale for the whole character (from the median frame height) so the
+    // body stays the same size across every frame/row — no sudden shrinking.
+    const CW=132, CH=150, COLS=maxF, ROWS=use.length;
+    // base the scale on the IDLE row's body height (clean poses, no effects) so
+    // the body is sized right and identical across all rows; taller attack/cast
+    // frames (with effects) just overflow upward and get clipped to the cell.
+    const idleH = (use[0]||[]).map(f=>f.y1-f.y0+1).sort((a,b)=>a-b);
+    const refH = idleH[Math.floor(idleH.length/2)] || 1;
+    const scale = Math.min((CH-16)/refH, 3.2);
     const o = document.createElement('canvas'); o.width=COLS*CW; o.height=ROWS*CH;
     const oc = o.getContext('2d'); oc.imageSmoothingEnabled=true;
     use.forEach((frames, r) => {
       frames.slice(0, maxF).forEach((f, c) => {
         const fw=f.x1-f.x0+1, fh=f.y1-f.y0+1;
-        const sc=Math.min((CW-8)/fw,(CH-8)/fh,3);
-        const dw=fw*sc, dh=fh*sc;
-        const dx=c*CW+(CW-dw)/2, dy=r*CH+(CH-dh)-2;   // bottom-aligned
-        oc.drawImage(img, f.x0,f.y0,fw,fh, dx,dy,dw,dh);
+        const dw=fw*scale, dh=fh*scale;
+        const cx0=c*CW, cy0=r*CH;
+        oc.save();
+        oc.beginPath(); oc.rect(cx0,cy0,CW,CH); oc.clip();      // keep each frame inside its cell
+        oc.drawImage(img, f.x0,f.y0,fw,fh, cx0+(CW-dw)/2, cy0+(CH-dh)-4, dw,dh);  // centered, bottom-aligned
+        oc.restore();
       });
     });
     return { url:o.toDataURL('image/png'), cols:COLS, rows:ROWS, frames:use.map(r=>Math.min(maxF,r.length)) };

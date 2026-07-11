@@ -22,8 +22,8 @@ const R = []; const check = (n,c) => R.push((c?'PASS':'FAIL')+' — '+n);
   check('🎨 toggle button present', await page.evaluate(() => !!document.getElementById('btnSheets')));
   check('Healer sheet removed → Aunel uses canvas fallback', await page.evaluate(() =>
     !Sheets.CONFIG.aunel && Sheets.draw(document.getElementById('stage').getContext('2d'),'aunel',100,300,60,'idle',0)===false));
-  check('Flip flags: garran/mira/rai/boss flipped, faye not', await page.evaluate(() =>
-    ['garran','mira','rai','boss'].every(id=>Sheets.CONFIG[id].flip===true) && !Sheets.CONFIG.faye.flip));
+  check('Flip flags: all sheet characters flipped to face right', await page.evaluate(() =>
+    ['garran','mira','faye','rai','boss'].every(id=>Sheets.CONFIG[id].flip===true)));
   check('Sheet images load (ready after load)', await page.evaluate(async () => {
     ['garran','mira','faye','rai','boss'].forEach(id => Sheets.load(id));
     await new Promise(r => setTimeout(r, 600));

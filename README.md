@@ -124,10 +124,11 @@ toggle with the **🎨** button (or `?sheets=0` to force the built-in canvas art
 
 The hero/boss sheets are **sliced from uploaded source art** in `assets/raw/`
 (via `slice-sheets.mjs`, which strips the baked-in titles/labels and re-packs
-clean grids); Aunel (Healer) has no sheet and uses the built-in canvas art.
-Non-archer heroes and the boss are mirrored to face the incoming enemies. Any
-missing/broken sheet falls back to the built-in canvas art, so the game always
-runs.
+clean grids); Aunel (Healer) has no sheet and uses the built-in canvas art. All
+sheet heroes and the boss are mirrored to face the enemies, and each character
+is packed at a single uniform scale so its size stays constant across frames.
+Any missing/broken sheet falls back to the built-in canvas art, so the game
+always runs.
 
 ## Files
 

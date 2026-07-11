@@ -25,12 +25,11 @@ window.Sheets = (function () {
   const rows4 = (i,w,a,c) => ({ idle:{row:0,frames:i,fps:7}, walk:{row:1,frames:w,fps:9},
                                 attack:{row:2,frames:a,fps:12}, cast:{row:3,frames:c,fps:11} });
   // flip:true mirrors the sprite horizontally so it faces the incoming enemies
-  // (right). The archer art already faces right, so it isn't flipped. Aunel has
-  // no sheet and uses the built-in canvas art.
+  // (right). Aunel has no sheet and uses the built-in canvas art.
   const SHEET_CONFIG = {
     garran: { file:'warrior.png',  rows:4, cols:5, fit:1.25, flip:true, anim:rows4(5,2,1,1) },  // Knight  (warrior art)
     mira:   { file:'wizard.png',   rows:4, cols:8, fit:1.20, flip:true, anim:rows4(5,8,2,2) },  // Mage    (purple wizard art)
-    faye:   { file:'archer.png',   rows:4, cols:5, fit:1.20,            anim:rows4(5,5,1,2) },  // Archer  (already faces right)
+    faye:   { file:'archer.png',   rows:4, cols:5, fit:1.20, flip:true, anim:rows4(5,5,1,2) },  // Archer
     rai:    { file:'sorcerer.png', rows:4, cols:5, fit:1.22, flip:true, anim:rows4(5,1,1,1) },  // Ronin   (elemental sorcerer art)
     boss:   { file:'shadow.png',   rows:4, cols:5, fit:1.6,  flip:true, anim:rows4(2,5,1,2) },  // Boss    (shadow mage art)
   };
