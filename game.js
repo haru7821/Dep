@@ -1472,7 +1472,11 @@ function updateHud(){
       const showN = aff.count > 0 ? aff.count : 1;
       const showCost = aff.count > 0 ? aff.cost : heroCost(def, lvl);
       const verb = lvl === 0 ? 'Recruit' : (S.buyMode === 1 ? 'Upgrade' : `Upgrade ×${showN}`);
-      btn.innerHTML = `${verb} <small>🪙 ${fmt(showCost)}</small>`;
+      // update in place (stable DOM) so a rebuild never cancels an in-flight tap
+      const vEl = btn.querySelector('.buy-verb'), cEl = btn.querySelector('.buy-cost');
+      if (vEl && vEl.textContent !== verb) vEl.textContent = verb;
+      const costTxt = '🪙 ' + fmt(showCost);
+      if (cEl && cEl.textContent !== costTxt) cEl.textContent = costTxt;
       btn.disabled = aff.count <= 0;
       const lvEl = el('lv-'+def.id);
       if (lvEl) lvEl.textContent = lvl;
@@ -1514,7 +1518,7 @@ function buildHeroPanel(){
       <div class="skill-row" title="Auto-cast area skill">${def.skill.icon} ${def.skill.name}</div>
       <div class="cd-bar"><div class="cd-fill" id="cd-${def.id}" style="background:${def.color}"></div></div>
       <button class="buy" id="buy-${def.id}" ${aff.count>0?'':'disabled'}>
-        ${verb} <small>🪙 ${fmt(showCost)}</small>
+        <span class="buy-verb">${verb}</span> <small class="buy-cost">🪙 ${fmt(showCost)}</small>
       </button>`;
     panel.appendChild(card);
     card.querySelector('.buy').addEventListener('click', () => buyHero(def));
