@@ -1666,19 +1666,47 @@ function draw(now){
 // ------------------------------------------------------------------ loop
 let lastT = performance.now();
 let acc = 0;
+const CATCHUP_MAX = 25;   // seconds of real time to live-simulate in one go; beyond → fast estimate
+// Consume `dt` seconds of real time so no progress is lost when the frame loop
+// was throttled or paused (minimised / backgrounded window). Big gaps use the
+// offline estimator; smaller ones are stepped live in fixed slices.
+function catchUp(dt){
+  if (dt <= 0) return;
+  if (dt > CATCHUP_MAX){ runOfflineSim(dt); return; }
+  let rem = dt;
+  while (rem > 1e-3){ const s = Math.min(rem, 0.1); simulate(s * gameSpeed()); rem -= s; }
+}
 function frame(now){
   let dt = (now - lastT) / 1000;
   lastT = now;
-  if (dt > 0.25) dt = 0.25;
+  if (dt < 0) dt = 0;
   if (bossIntroT > 0) bossIntroT = Math.max(0, bossIntroT - dt);   // real-time countdown
-  const slowmo = bossIntroT > 0 ? 0.35 : 1;                         // dramatic slow entry
-  simulate(dt * gameSpeed() * slowmo);
+  if (dt > 0.25){
+    catchUp(dt);                                                    // fell behind → don't drop the time
+  } else {
+    simulate(dt * gameSpeed() * (bossIntroT > 0 ? 0.35 : 1));       // dramatic slow entry when a boss lands
+  }
   draw(now);
   acc += dt;
   if (acc > 5){ acc = 0; save(); }
   updateHud();
   requestAnimationFrame(frame);
 }
+// Background driver: keeps the sim advancing while the window is minimised or
+// hidden and requestAnimationFrame is paused/throttled. Fires ~1×/s (browsers
+// throttle it when hidden, but it still ticks); each tick advances the real
+// elapsed time and saves periodically.
+let bgSaveAcc = 0;
+setInterval(() => {
+  if (!S) return;
+  const nowP = performance.now(), behind = (nowP - lastT) / 1000;
+  if (!document.hidden && behind < 1.2) return;   // rAF is driving; nothing to do
+  lastT = nowP;
+  if (bossIntroT > 0) bossIntroT = Math.max(0, bossIntroT - behind);
+  catchUp(behind);
+  bgSaveAcc += behind;
+  if (bgSaveAcc > 15){ bgSaveAcc = 0; save(); }
+}, 1000);
 
 // ------------------------------------------------------------------ HUD / UI
 const el = id => document.getElementById(id);
@@ -2003,18 +2031,11 @@ function showIntro(){
 }
 
 // Catch up when a backgrounded tab regains focus (rAF is paused while hidden).
-let hiddenAt = 0;
+// The background driver + frame catch-up keep progress running while hidden, so
+// here we only persist on the way out and refresh the panel on the way back.
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden){ hiddenAt = Date.now(); save(); return; }
-  if (!hiddenAt) return;
-  const away = (Date.now() - hiddenAt) / 1000; hiddenAt = 0;
-  lastT = performance.now();                          // avoid a huge dt spike
-  if (away < 20) return;
-  const r = runOfflineSim(away);
-  if (r.waves > 0 || r.gold > 0){
-    buildHeroPanel(); updateHud(); save();
-    toast(`🌙 Away ${fmtDur(r.seconds)} — +${r.waves} waves, 🪙 +${fmt(r.gold)}`);
-  }
+  if (document.hidden){ save(); return; }
+  buildHeroPanel(); updateHud();
 });
 
 // ------------------------------------------------------------------ wiring
