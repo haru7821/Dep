@@ -348,7 +348,7 @@ const isBossWave = w => w % BOSS_EVERY === 0;
 // linear per level + a ×2 milestone every 25 levels, so leveling keeps pace
 // with exponential enemy HP instead of decaying to worthless mid-game
 const heroDmg    = (def, lvl) => def.baseDmg * (1 + 0.25 * lvl) * Math.pow(2, Math.floor(lvl / 25));
-const heroCost   = (def, lvl) => Math.ceil(def.baseCost * Math.pow(1.15, lvl));
+const heroCost   = (def, lvl) => Math.ceil(def.baseCost * 1.2 * Math.pow(1.15, lvl));
 const prestigeShards = totalGold => Math.floor(Math.sqrt(totalGold / 1e6));
 // support heroes (baseDmg 0) still get a scaling number for their skill
 const skillBase  = (def, lvl) => def.baseDmg > 0 ? heroDmg(def, lvl) : (8 + 6 * lvl);
