@@ -38,6 +38,7 @@ window.Sheets = (function () {
     mira:   { file:'wizard.png',   rows:2, cols:3, fit:HFIT, anim:bmob(2,3) },  // Mage
     faye:   { file:'archer.png',   rows:2, cols:5, fit:HFIT, anim:bmob(2,5) },  // Archer
     rai:    { file:'sorcerer.png', rows:2, cols:3, fit:HFIT, anim:bmob(2,3) },  // Sorcerer
+    aunel:  { file:'healer.png',   rows:2, cols:3, fit:HFIT, anim:bmob(1,3) },  // Healer (idle + 3 cast frames)
     // the defended crystal, as a static tower. 1 row × 4 frames, chosen by HP
     // bucket (100%→no fire, 70/30/10%→more fire), not animated over time.
     tower:  { file:'tower.png',    rows:1, cols:4, fit:1.0,  anim:{ idle:{row:0,frames:4,fps:1} } },
