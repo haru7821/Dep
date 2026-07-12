@@ -1259,6 +1259,45 @@ function drawFx(o, now){
 }
 
 const Spr = () => (window.Sprites || {});
+// ---- Atmosphere: per-stage biome tint, cinematic vignette, drifting motes ----
+// Each 10-stage band gets its own colour grade + ambient particle colour, so
+// climbing the stages reads visually as moving through new biomes.
+const BIOMES = [
+  { name:'Verdant Halls', tint:null,      mote:'#9be36a' },  // Stage 1–10
+  { name:'Frostspire',    tint:'#3a6bd0', mote:'#cbeaff' },  // 11–20
+  { name:'Emberdepths',   tint:'#c0392b', mote:'#ff9d3c' },  // 21–30
+  { name:'Blightmarsh',   tint:'#2f9e5a', mote:'#b6ff8a' },  // 31–40
+  { name:'Voidreach',     tint:'#7a3cc0', mote:'#d9a6ff' },  // 41–50
+  { name:'Sunscorch',     tint:'#c58b2e', mote:'#ffd98a' },  // 51–60
+  { name:'Abyssal Tide',  tint:'#2b8fb0', mote:'#bff0ff' },  // 61–70
+  { name:'Duskvault',     tint:'#b0347a', mote:'#ffb3e6' },  // 71–80
+];
+const biomeOf = w => BIOMES[Math.floor((dispStage(w) - 1) / 10) % BIOMES.length];
+const MOTES = Array.from({ length: 30 }, () => ({
+  x: Math.random(), y: Math.random(), r: 0.6 + Math.random() * 1.8,
+  sx: (Math.random() - 0.5) * 0.006, sy: -(0.004 + Math.random() * 0.010),
+  ph: Math.random() * Math.PI * 2, tw: 0.5 + Math.random() * 1.5,
+}));
+function drawMotes(now){
+  if (!S.settings.fx) return;                       // respect the particle-effects toggle
+  const col = biomeOf(S.wave).mote, sc = view.h / 460;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = col;
+  for (const m of MOTES){
+    const mx = ((((m.x + m.sx * now / 1000) % 1) + 1) % 1) * view.w;
+    const my = ((((m.y + m.sy * now / 1000) % 1) + 1) % 1) * view.h;
+    ctx.globalAlpha = 0.10 + 0.30 * (0.5 + 0.5 * Math.sin(now / 700 * m.tw + m.ph));
+    ctx.beginPath(); ctx.arc(mx, my, m.r * sc * 1.4, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawAtmosphere(now){
+  const tint = biomeOf(S.wave).tint;
+  if (tint){ ctx.save(); ctx.globalAlpha = 0.07; ctx.fillStyle = tint; ctx.fillRect(0, 0, view.w, view.h); ctx.restore(); }
+  const vg = ctx.createRadialGradient(view.w/2, view.h*0.52, view.h*0.30, view.w/2, view.h*0.52, view.h*0.90);
+  vg.addColorStop(0, 'transparent'); vg.addColorStop(1, 'rgba(0,0,0,0.38)');
+  ctx.save(); ctx.fillStyle = vg; ctx.fillRect(0, 0, view.w, view.h); ctx.restore();
+}
+
 function draw(now){
   const px = view.w / 900;
   const size = Math.max(2, Math.round(3 * (view.h/460)));
@@ -1273,6 +1312,7 @@ function draw(now){
 
   if (Spr().drawBackground) Spr().drawBackground(ctx, view.w, view.h, now);
   else { ctx.fillStyle = '#0a0e24'; ctx.fillRect(0,0,view.w,view.h); }
+  drawMotes(now);                                   // ambient drifting light motes (behind characters)
 
   // crystal tower — static; the 4 frames are burning states chosen by remaining
   // HP: 100% = no fire, 70% = small, 30% = medium, 10% = big fire. size per user edit
@@ -1426,6 +1466,7 @@ function draw(now){
   // attack effects + glowing particles on top
   for (const o of fx) drawFx(o, now);
   drawParticles();
+  drawAtmosphere(now);                               // biome colour grade + vignette (under HUD/floaters)
 
   // floaters
   for (const f of floaters){
