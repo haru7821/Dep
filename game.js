@@ -749,7 +749,10 @@ function simulate(dt){
     if (e.burn > 0) e.burn -= dt;
     if (e.lunge > 0) e.lunge -= dt * 4;              // dragon attack-lunge decay
     if (e.type === 'wraith' && Math.random() < dt * 2.5) spawnParticles(e.x, e.y - 20, 'poison', 0.25);  // 독 trail
-    const reach = view.crystalX + 34*px;
+    // big bosses stop further right so their wide sprite halts at the tower's
+    // entrance instead of sliding across it (dragon is the widest)
+    const reachOff = e.boss ? (e.bossKind === 'dragon' ? 150 : 80) : 34;
+    const reach = view.crystalX + reachOff*px;
     if (e.x > reach){
       const sp = e.speed * (e.slow > 0 ? SLOW_FACTOR : 1);
       e.x -= sp * px * dt;
@@ -1204,6 +1207,25 @@ function draw(now){
         }
       }
       drew = Sheets.draw(ctx, sid, ax, aby, ath, anim, now);
+      // twinkling glints over the dragon's fiery mane/tail
+      if (drew && e.boss && e.bossKind === 'dragon' && S.settings.fx){
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        const top = aby - ath, dw = ath * 1.05, sScale = view.h/460;
+        const pts = [[-0.14,0.30],[0.05,0.22],[0.25,0.30],[0.41,0.42],[-0.28,0.44],[0.16,0.52]];
+        pts.forEach((p, i) => {
+          const tw = 0.5 + 0.5*Math.sin(now/180 + i*1.7 + e.x*0.02);
+          if (tw < 0.18) return;
+          const sx = ax + p[0]*dw, sy = top + p[1]*ath, s = (2 + 2.3*tw) * sScale, d = s*0.5;
+          const col = i % 2 ? '#fff2a0' : '#ffd75e';
+          ctx.globalAlpha = tw; ctx.strokeStyle = col; ctx.lineWidth = 1.6;
+          ctx.shadowColor = col; ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.moveTo(sx-s,sy); ctx.lineTo(sx+s,sy); ctx.moveTo(sx,sy-s); ctx.lineTo(sx,sy+s);
+          ctx.moveTo(sx-d,sy-d); ctx.lineTo(sx+d,sy+d); ctx.moveTo(sx-d,sy+d); ctx.lineTo(sx+d,sy-d);
+          ctx.stroke();
+        });
+        ctx.restore();
+      }
     }
     if (!drew){
       const floatOff = t.float ? (10 + Math.sin(now/300)*4) : 0;
