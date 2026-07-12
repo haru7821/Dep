@@ -1787,12 +1787,96 @@ document.addEventListener('visibilitychange', () => {
 // ------------------------------------------------------------------ wiring
 el('btnPrestige').onclick = doPrestige;
 el('btnShop').onclick = openShardShop;
-// Manual save — write immediately and confirm.
-if (el('btnSave')) el('btnSave').onclick = () => {
-  const ok = save();
-  toast(ok ? '💾 Progress saved' : '⚠️ Save failed (storage blocked)');
-  GA(ok ? 'upgrade' : 'hit');
-};
+// ---- Save slots: up to 5 named saves you can store into and load from.
+// The game still autosaves continuously to SAVE_KEY; slots are explicit copies.
+const SLOT_COUNT = 5;
+const SLOT_KEY = n => 'aether_crystal_slot_' + n;
+function slotInfo(n){
+  try{
+    const raw = localStorage.getItem(SLOT_KEY(n));
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    return { best:d.bestWave||1, wave:d.wave||1, prestiges:d.prestiges||0,
+             gold:d.totalGoldEarned||0, savedAt:d.savedAt||0 };
+  }catch(e){ return null; }
+}
+function writeSlot(n){
+  try{ localStorage.setItem(SLOT_KEY(n), JSON.stringify(Object.assign({}, S, { savedAt: Date.now() }))); return true; }
+  catch(e){ return false; }
+}
+function loadSlot(n){
+  const raw = localStorage.getItem(SLOT_KEY(n));
+  if (!raw) return;
+  skipSave = true;                         // stop autosave/beforeunload clobbering during reload
+  try{ localStorage.setItem(SAVE_KEY, raw); }catch(e){}
+  location.reload();                       // clean boot loads the slot as the active game
+}
+function saveAgo(ts){
+  if (!ts) return '';
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+let savePending = null;                    // {act:'load'|'overwrite'|'delete', slot}
+function openSaves(){
+  let head = '';
+  if (savePending){
+    const { act, slot } = savePending;
+    const label = act === 'load'
+        ? `Load <b>Slot ${slot}</b>? Your current game will be replaced — save it to a slot first if you want to keep it.`
+      : act === 'overwrite'
+        ? `Overwrite <b>Slot ${slot}</b> with your current game? The old save there is lost.`
+        : `Delete <b>Slot ${slot}</b>? This can't be undone.`;
+    const danger = act !== 'overwrite';
+    head = `<div class="save-confirm"><p style="margin:0 0 8px">${label}</p>
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="saveYes" style="flex:1${danger?';background:var(--danger);border-color:var(--danger)':''}">Confirm</button>
+        <button class="btn" id="saveNo" style="flex:1">Cancel</button></div></div>`;
+  }
+  const rows = [];
+  for (let n = 1; n <= SLOT_COUNT; n++){
+    const s = slotInfo(n);
+    if (!s){
+      rows.push(`<div class="shard-item"><div class="info"><b>Slot ${n}</b>
+        <div class="lv">— Empty —</div></div>
+        <button class="btn slot-save" data-n="${n}">💾 Save</button></div>`);
+    } else {
+      rows.push(`<div class="shard-item"><div class="info"><b>Slot ${n}</b>
+        <div class="lv">Stage ${dispStage(s.best)} · Wave ${waveInStage(s.wave)}/${STAGE_WAVES} · 💠${s.prestiges} · ${saveAgo(s.savedAt)}</div></div>
+        <div style="display:flex;gap:4px">
+          <button class="btn slot-load" data-n="${n}">📂 Load</button>
+          <button class="btn slot-save" data-n="${n}">💾</button>
+          <button class="btn slot-del"  data-n="${n}">🗑</button></div></div>`);
+    }
+  }
+  openModal(`<h2>💾 Save Slots</h2>
+    <p>Store up to ${SLOT_COUNT} games and load any of them anytime. Your game also autosaves on its own.</p>
+    ${head}
+    <div class="shard-shop">${rows.join('')}</div>
+    <button class="btn" id="closeSaves" style="width:100%;margin-top:6px">Close</button>`);
+  el('closeSaves').onclick = () => { savePending = null; closeModal(); };
+  const box = el('modalBox');
+  if (savePending){
+    el('saveYes').onclick = () => {
+      const { act, slot } = savePending; savePending = null;
+      if (act === 'load'){ loadSlot(slot); return; }              // reloads the page
+      if (act === 'overwrite'){ toast(writeSlot(slot) ? '💾 Saved to Slot '+slot : '⚠️ Save failed'); }
+      else { try{ localStorage.removeItem(SLOT_KEY(slot)); }catch(e){} toast('🗑 Slot '+slot+' deleted'); }
+      openSaves();
+    };
+    el('saveNo').onclick = () => { savePending = null; openSaves(); };
+  }
+  box.querySelectorAll('.slot-save').forEach(b => b.onclick = () => {
+    const n = +b.dataset.n;
+    if (slotInfo(n)){ savePending = { act:'overwrite', slot:n }; openSaves(); }   // occupied → confirm
+    else { toast(writeSlot(n) ? '💾 Saved to Slot '+n : '⚠️ Save failed'); openSaves(); }
+  });
+  box.querySelectorAll('.slot-load').forEach(b => b.onclick = () => { savePending = { act:'load',   slot:+b.dataset.n }; openSaves(); });
+  box.querySelectorAll('.slot-del').forEach(b => b.onclick  = () => { savePending = { act:'delete', slot:+b.dataset.n }; openSaves(); });
+}
+if (el('btnSave')) el('btnSave').onclick = () => { savePending = null; openSaves(); };
 // New Start — wipe the save and reload into a fresh game. skipSave stops the
 // beforeunload handler from writing the current state back on the way out.
 if (el('btnNewStart')) el('btnNewStart').onclick = () => {
