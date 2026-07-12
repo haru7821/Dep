@@ -445,10 +445,13 @@ function spawnEnemy(w){
   const golden = (ev && ev.golden) || (w >= 8 && Math.random() < goldenChance());
   let goldMul = t.gold * (ev ? ev.gold : 1);
   if (golden) goldMul *= 30;
+  // special abilities: slimes split (from wave 15), golems carry a shield
+  const split = type === 'normal' && w >= 15 && !golden;
+  const shield = type === 'golem' ? hp * 0.5 : 0;
   enemies.push({
     x: view.laneRight + Math.random()*40, y: view.ground,
     hp, maxHp: hp, type, speed: t.spd * (ev ? ev.spd : 1), frame:0, boss:false,
-    element: t.element, armor: t.armor || 0,
+    element: t.element, armor: t.armor || 0, split, shield, maxShield: shield,
     slow:0, goldMul, golden, atkTimer:0,
   });
 }
@@ -551,6 +554,21 @@ function grantGold(amount){
   waveGoldAccum += amount;
 }
 
+// spawn two smaller, faster copies when a splitter dies (they don't split again)
+function spawnChildren(e){
+  const t = ENEMY_TYPES[e.type] || ENEMY_TYPES.normal;
+  const chp = Math.max(1, e.maxHp * 0.30);
+  for (let k = 0; k < 2; k++){
+    enemies.push({
+      x: e.x + (k ? 20 : -20) * (view.w/900), y: view.ground,
+      hp: chp, maxHp: chp, type: e.type, speed: t.spd * 1.3, frame: 0, boss: false,
+      element: e.element, armor: 0, mini: true, split: false,
+      slow: 0, goldMul: Math.max(1, Math.round(e.goldMul * 0.4)), atkTimer: 0,
+    });
+  }
+  spawnParticles(e.x, e.y - 14, 'earth', 0.8);
+}
+
 // floating combat number: crit = red, normal = orange; 1000+ shown as K/M… by fmt
 function addDamageNumber(e, dmg, crit, kind){
   if (dmg <= 0 || !S.settings.dmgNums) return;
@@ -568,8 +586,13 @@ function damageEnemy(e, dmg, crit, element){
   dmg *= vs.mult;
   if (e.armor) dmg *= (1 - e.armor);
   addDamageNumber(e, dmg, crit, vs.kind);
+  if (e.shield > 0){                       // shield soaks damage before HP
+    if (dmg <= e.shield){ e.shield -= dmg; dmg = 0; }
+    else { dmg -= e.shield; e.shield = 0; }
+  }
   e.hp -= dmg;
   if (e.hp <= 0){
+    if (e.split) spawnChildren(e);         // slimes split into two on death
     // extend the kill-streak combo (bosses give a bigger jump)
     combo += e.boss ? 5 : 1; comboT = COMBO_WINDOW;
     if (combo > S.bestCombo) S.bestCombo = combo;
@@ -1119,7 +1142,7 @@ function draw(now){
   // enemies
   for (const e of enemies){
     const t = ENEMY_TYPES[e.type] || ENEMY_TYPES.normal;
-    const es = size * (e.boss ? 3 : t.size);
+    const es = size * (e.boss ? 3 : t.size) * (e.mini ? 0.58 : 1);
     const sid = e.boss ? (e.bossKind || 'dragon') : ENEMY_SPRITE[e.type];
     const th = es * (e.boss ? (e.bossKind === 'elderghost' ? 15 : 24) : 14);   // dragon 2x, elder ghost a bit smaller
     const atCrystal = e.x <= view.crystalX + 42 * px;
@@ -1165,10 +1188,14 @@ function draw(now){
         ctx.fillRect(e.x + Math.cos(a)*ow*0.5 - 1, by - spH*0.5 + Math.sin(a)*spH*0.4 - 1, 3, 3); }
       ctx.restore();
     }
-    const bw = 22*px * (e.boss ? 2.2 : t.size);
+    const bw = 22*px * (e.boss ? 2.2 : t.size) * (e.mini ? 0.6 : 1);
     ctx.fillStyle = '#000a'; ctx.fillRect(e.x-bw/2, by - spH - 6, bw, 4);
     ctx.fillStyle = e.boss ? '#ff5db1' : '#ff6b6b';
     ctx.fillRect(e.x-bw/2, by - spH - 6, bw*(e.hp/e.maxHp), 4);
+    if (e.shield > 0 && e.maxShield > 0){        // cyan shield bar above the HP bar
+      ctx.fillStyle = '#000a'; ctx.fillRect(e.x-bw/2, by - spH - 11, bw, 3);
+      ctx.fillStyle = '#7bd3ff'; ctx.fillRect(e.x-bw/2, by - spH - 11, bw*(e.shield/e.maxShield), 3);
+    }
   }
 
   // heroes
@@ -1825,13 +1852,15 @@ if (el('btnAch')) el('btnAch').onclick = openAchievements;
 // styled like a classic RPG bestiary; portraits render the real sprite art.
 const BESTIARY = [
   { sprite:'slime',      name:'Slime',            lv:1,  hp:10,  mp:2,  el:'EARTH',  fc:'#5aa03a',
+    ability:'Splits into two minis when destroyed (Wave 15+)',
     lore:'A gelatinous crystal-eater. Slow, but they swarm the front line.' },
   { sprite:'zombie',     name:'Rotting Zombie',   lv:2,  hp:18,  mp:4,  el:'POISON', fc:'#6cbf3a',
     lore:'Reanimated fodder that leaves a toxic cloud when destroyed.' },
   { sprite:'skeleton',   name:'Skeleton Warrior', lv:3,  hp:45,  mp:10, el:'DARK',   fc:'#9a6bd0',
+    ability:'Armoured; the Golem variant also carries a shield',
     lore:'Armoured bonelord. High HP — a proper tank of the horde.' },
   { sprite:'specter',    name:'Wraith',           lv:4,  hp:26,  mp:12, el:'DARK',   fc:'#8f8be0',
-    lore:'A floating shade, immune to frost and hard to pin down.' },
+    ability:'Immune to freeze', lore:'A floating shade, immune to frost and hard to pin down.' },
   { sprite:'dragon',     name:'Red Dragon',       lv:5,  hp:150, mp:30, el:'FIRE',   fc:'#e0632a', boss:true,
     lore:'Boss. Wreathed in flame; appears on the fifth-wave assaults.' },
   { sprite:'elderghost', name:'Elder Ghost',      lv:10, hp:300, mp:60, el:'VOID',   fc:'#a05ad0', boss:true,
@@ -1889,6 +1918,7 @@ function openBestiary(){
     const wr = disc && mm
       ? `<div class="wr">WEAK ${ELEM_ICON[mm.weak]||''}${mm.weak.toUpperCase()} · RESIST ${ELEM_ICON[mm.resist]||''}${mm.resist.toUpperCase()}</div>`
       : '';
+    const ab = disc && m.ability ? `<div class="ab">✦ ${m.ability}</div>` : '';
     return `
     <div class="mon-card${disc ? '' : ' locked'}" style="--fc:${m.fc}">
       <div class="mon-frame" style="--fc:${m.fc}">
@@ -1900,6 +1930,7 @@ function openBestiary(){
         <div class="st">HP: ${hp}&nbsp;&nbsp; MP: ${mp}</div>
         <div class="el">ELEMENT: ${elm}</div>
         ${wr}
+        ${ab}
       </div>
     </div>`;
   }).join('');
