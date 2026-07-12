@@ -476,8 +476,8 @@ function shake(amt){ if (S && S.settings && S.settings.shake){ shakeAmt = Math.m
 let combo = 0, comboT = 0;   // current streak + seconds left before it resets
 const COMBO_WINDOW = 2.6;    // seconds to land the next kill and keep the streak
 const COMBO_MAX = 10;        // combo caps at 10 (both the count and its bonus)
-// gold bonus from the current streak: up to +150% at COMBO_MAX
-function comboMul(){ return 1 + Math.min(combo, COMBO_MAX) / COMBO_MAX * 1.5 * (ksIs('momentum') ? 2 : 1); }
+// gold bonus from the current streak: up to +50% at COMBO_MAX (Momentum doubles it)
+function comboMul(){ return 1 + Math.min(combo, COMBO_MAX) / COMBO_MAX * 0.5 * (ksIs('momentum') ? 2 : 1); }
 function comboTier(){ return combo>=10?4 : combo>=8?3 : combo>=6?2 : combo>=3?1 : 0; }
 // Overdrive: kills charge a gauge; when full, activate for a burst of power
 let odCharge = 0, odT = 0;         // gauge 0..1, active seconds remaining
