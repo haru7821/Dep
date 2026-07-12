@@ -451,7 +451,8 @@ function ksDmgMul(){
 }
 function combatMul(){ return globalDmgMul() * (partyBuffT > 0 ? PARTY_BUFF_MUL : 1) * (1 + 0.05 * talent('might')) * (odActive() ? OD_DMG : 1) * ksDmgMul(); }
 function towerHpMul(){ return 1 + 0.15 * S.towerLv; }          // Fortify Tower (gold)
-function towerCost(){ return Math.ceil(60 * Math.pow(1.55, S.towerLv)); }
+// Fortify is a premium sink: first upgrade costs 50K, then climbs steeply.
+function towerCost(){ return Math.ceil(50000 * Math.pow(1.6, S.towerLv)); }
 function crystalMaxHp(){ return 100 * wardMul() * (1 + relicBonus('ward')) * towerHpMul(); }
 function gameSpeed(){ return S.speed * shardMul('speed'); }
 
