@@ -36,15 +36,37 @@ const HERO_DEFS = [
     skill:{ name:'Dawn Blessing',   icon:'🌅', cd:12, mult:0,   kind:'blessing', fx:'#ffe9a0' } },
 ];
 
-// Enemy archetypes: hp/speed/render-size multipliers, gold bonus, slow immunity.
+// Enemy archetypes: hp/speed/render-size multipliers, gold bonus, slow immunity,
+// element (drives weakness/resist) and armor (flat damage reduction).
 const ENEMY_TYPES = {
-  normal: { hp:1.0, spd:26, size:1.0,  gold:1 },
-  fast:   { hp:0.6, spd:46, size:0.9,  gold:1 },
-  runner: { hp:0.4, spd:62, size:0.85, gold:1 },
-  tank:   { hp:2.2, spd:18, size:1.5,  gold:2 },
-  golem:  { hp:4.5, spd:13, size:2.0,  gold:4 },
-  wraith: { hp:1.3, spd:34, size:1.1,  gold:2, slowImmune:true, float:true },
+  normal: { hp:1.0, spd:26, size:1.0,  gold:1, element:'earth'  },
+  fast:   { hp:0.6, spd:46, size:0.9,  gold:1, element:'poison' },
+  runner: { hp:0.4, spd:62, size:0.85, gold:1, element:'poison' },
+  tank:   { hp:2.2, spd:18, size:1.5,  gold:2, element:'dark',  armor:0.25 },
+  golem:  { hp:4.5, spd:13, size:2.0,  gold:4, element:'earth', armor:0.40 },
+  wraith: { hp:1.3, spd:34, size:1.1,  gold:2, element:'dark', slowImmune:true, float:true },
 };
+// Element matchups: attacking an enemy with its `weak` element deals +60%,
+// with its `resist` element deals -50%. Bosses: dragon=fire, elderghost=void.
+const ELEM_MATCH = {
+  earth:    { weak:'fire',      resist:'physical'  },
+  poison:   { weak:'fire',      resist:'poison'    },
+  dark:     { weak:'holy',      resist:'dark'      },
+  fire:     { weak:'frost',     resist:'fire'      },
+  void:     { weak:'holy',      resist:'dark'      },
+};
+const ELEM_ICON = { physical:'⚔️', fire:'🔥', frost:'❄️', lightning:'⚡', holy:'✨', earth:'🪨', dark:'🌑', poison:'☠️', void:'🌀' };
+// hero attack elements (one per hero, used for basic + skill)
+const HERO_ELEM = { garran:'physical', mira:'frost', faye:'fire', rai:'lightning', aunel:'holy' };
+function bossElement(kind){ return kind === 'dragon' ? 'fire' : 'void'; }
+// returns {mult, kind} for an attack element vs an enemy's element
+function elemVs(enemyEl, atkEl){
+  const m = ELEM_MATCH[enemyEl];
+  if (!m || !atkEl) return { mult:1, kind:null };
+  if (m.weak === atkEl)   return { mult:1.6, kind:'weak' };
+  if (m.resist === atkEl) return { mult:0.5, kind:'resist' };
+  return { mult:1, kind:null };
+}
 // which bestiary monster each enemy type uses (falls back to canvas art)
 const ENEMY_SPRITE = { normal:'slime', fast:'zombie', runner:'zombie', tank:'skeleton', golem:'skeleton', wraith:'specter' };
 const SLOW_FACTOR = 0.42;              // movement multiplier while frozen
@@ -353,7 +375,8 @@ function spawnEnemy(w){
     const hp = enemyHP(w) * 8;
     const bossKind = (Math.floor(w / BOSS_EVERY) % 2 === 0) ? 'elderghost' : 'dragon';
     enemies.push({ x: view.laneRight, y: view.ground, hp, maxHp: hp,
-      type:'boss', speed:18, frame:0, boss:true, bossKind, slow:0, goldMul:10, atkTimer:0 });
+      type:'boss', speed:18, frame:0, boss:true, bossKind, element: bossElement(bossKind),
+      slow:0, goldMul:10, atkTimer:0 });
     return;
   }
   const ev = curEvent;
@@ -366,6 +389,7 @@ function spawnEnemy(w){
   enemies.push({
     x: view.laneRight + Math.random()*40, y: view.ground,
     hp, maxHp: hp, type, speed: t.spd * (ev ? ev.spd : 1), frame:0, boss:false,
+    element: t.element, armor: t.armor || 0,
     slow:0, goldMul, golden, atkTimer:0,
   });
 }
@@ -468,16 +492,22 @@ function grantGold(amount){
 }
 
 // floating combat number: crit = red, normal = orange; 1000+ shown as K/M… by fmt
-function addDamageNumber(e, dmg, crit){
+function addDamageNumber(e, dmg, crit, kind){
   if (dmg <= 0) return;
   const jx = (Math.random() - 0.5) * 14;
   const s = view.h / 460;
-  addFloater(e.x + jx, e.y - 28 * s, fmt(dmg), crit ? '#ff3b3b' : '#ff9d3c');
+  const color = kind === 'weak' ? '#7CFC55' : kind === 'resist' ? '#9aa4c4' : (crit ? '#ff3b3b' : '#ff9d3c');
+  const pre = kind === 'weak' ? '▲' : kind === 'resist' ? '▼' : '';
+  addFloater(e.x + jx, e.y - 28 * s, pre + fmt(dmg), color);
 }
 
-// Deal damage to a specific enemy; returns true if it died
-function damageEnemy(e, dmg, crit){
-  addDamageNumber(e, dmg, crit);
+// Deal damage to a specific enemy; returns true if it died.
+// `element` (attacker's element) applies weakness/resist; enemy armor reduces further.
+function damageEnemy(e, dmg, crit, element){
+  const vs = elemVs(e.element, element);
+  dmg *= vs.mult;
+  if (e.armor) dmg *= (1 - e.armor);
+  addDamageNumber(e, dmg, crit, vs.kind);
   e.hp -= dmg;
   if (e.hp <= 0){
     // extend the kill-streak combo (bosses give a bigger jump)
@@ -527,7 +557,7 @@ function castSkill(def, slot, lvl){
     addFx({ kind:'nova', x: hx + 34, y: slot.y - 12, r0:8, r:150, dur:0.5, color:s.fx });
     spawnParticles(hx + 34, slot.y - 8, 'earth', 1.3);
     spawnParticles(hx + 34, slot.y - 8, 'fire', 0.5);
-    for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], dmg, roll.crit)) enemies.splice(i, 1);
+    for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], dmg, roll.crit, HERO_ELEM[def.id])) enemies.splice(i, 1);
     GA('explosion');
   }
   else if (s.kind === 'frost'){
@@ -539,7 +569,7 @@ function castSkill(def, slot, lvl){
     for (let i = enemies.length - 1; i >= 0; i--){
       const e = enemies[i];
       if (!ENEMY_TYPES[e.type] || !ENEMY_TYPES[e.type].slowImmune){ e.slow = 3; spawnParticles(e.x, e.y-14, 'frost', 0.4); }  // freeze
-      if (damageEnemy(e, dmg, roll.crit)) enemies.splice(i, 1);
+      if (damageEnemy(e, dmg, roll.crit, HERO_ELEM[def.id])) enemies.splice(i, 1);
     }
     GA('ice');
   }
@@ -552,7 +582,7 @@ function castSkill(def, slot, lvl){
     spawnParticles(t.x, t.y - 14, 'fire', 1.6);
     spawnParticles(t.x, t.y - 14, 'smoke', 1.0);
     for (let i = enemies.length - 1; i >= 0; i--){
-      if (Math.abs(enemies[i].x - t.x) <= R){ enemies[i].burn = BURN_DUR; if (damageEnemy(enemies[i], dmg, roll.crit)) enemies.splice(i, 1); }
+      if (Math.abs(enemies[i].x - t.x) <= R){ enemies[i].burn = BURN_DUR; if (damageEnemy(enemies[i], dmg, roll.crit, HERO_ELEM[def.id])) enemies.splice(i, 1); }
     }
     GA('explosion');
   }
@@ -563,7 +593,7 @@ function castSkill(def, slot, lvl){
     const segs = []; let px = hx, py = hy;
     for (const e of targets){ segs.push([px, py, e.x, e.y - 14]); px = e.x; py = e.y - 14; spawnParticles(e.x, e.y-14, 'spark', 0.7); }
     addFx({ kind:'chain', segs, dur:0.3, color:s.fx });
-    for (const e of targets) if (damageEnemy(e, dmg, roll.crit)) removeEnemy(e);
+    for (const e of targets) if (damageEnemy(e, dmg, roll.crit, HERO_ELEM[def.id])) removeEnemy(e);
     GA('lightning');
   }
   else if (s.kind === 'blessing'){
@@ -574,7 +604,7 @@ function castSkill(def, slot, lvl){
     addFx({ kind:'nova', x: view.crystalX, y: slot.y - 18, r0:8, r:220, dur:0.7, color:s.fx });
     addFx({ kind:'heal', x: view.crystalX, y: view.ground - 40, dur:0.9, color:s.fx });
     spawnParticles(view.crystalX, slot.y - 18, 'holy', 1.6);
-    for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], holy)) enemies.splice(i, 1);
+    for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], holy, HERO_ELEM[def.id])) enemies.splice(i, 1);
     GA('heal');
   }
   heroFlash[def.id] = 0.22;
@@ -722,7 +752,7 @@ function basicAttack(def, slot, lvl){
     // Mira splash: hit every enemy + purple pulse (one crit roll for the volley)
     const r = critRoll(dmg);
     addFx({ kind:'nova', x: hx, y: hy, r0:4, r:60, dur:0.3, color:def.color });
-    for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], r.dmg, r.crit)) enemies.splice(i, 1);
+    for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], r.dmg, r.crit, HERO_ELEM[def.id])) enemies.splice(i, 1);
     basicSfx('shoot');
     heroFlash[def.id] = 0.15;
   } else {
@@ -733,7 +763,7 @@ function basicAttack(def, slot, lvl){
     else if (def.id === 'rai')  { addFx({ kind:'bolt',  x:hx, y:hy, x2:t.x, y2:t.y-14, dur:0.12, color:def.color }); basicSfx('shoot'); }
     else                        { addFx({ kind:'slash', x:t.x, y:t.y-14, dur:0.16, color:'#dfe7ff' }); basicSfx('slash'); }
     const r = critRoll(dmg);
-    if (damageEnemy(t, r.dmg, r.crit)) removeEnemy(t);
+    if (damageEnemy(t, r.dmg, r.crit, HERO_ELEM[def.id])) removeEnemy(t);
     heroFlash[def.id] = 0.15;
   }
 }
@@ -1656,6 +1686,10 @@ function openBestiary(){
     const hp  = disc ? `${m.hp}/${m.hp}` : '???';
     const mp  = disc ? `${m.mp}/${m.mp}` : '???';
     const elm = disc ? m.el : '?????';
+    const mm = ELEM_MATCH[m.el.toLowerCase()];
+    const wr = disc && mm
+      ? `<div class="wr">WEAK ${ELEM_ICON[mm.weak]||''}${mm.weak.toUpperCase()} · RESIST ${ELEM_ICON[mm.resist]||''}${mm.resist.toUpperCase()}</div>`
+      : '';
     return `
     <div class="mon-card${disc ? '' : ' locked'}" style="--fc:${m.fc}">
       <div class="mon-frame" style="--fc:${m.fc}">
@@ -1666,6 +1700,7 @@ function openBestiary(){
         <div class="nm">LV ${disc ? m.lv : '?'}&nbsp; ${nm}</div>
         <div class="st">HP: ${hp}&nbsp;&nbsp; MP: ${mp}</div>
         <div class="el">ELEMENT: ${elm}</div>
+        ${wr}
       </div>
     </div>`;
   }).join('');
