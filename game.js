@@ -294,6 +294,7 @@ function freshState(){
     autoUp: false,          // auto-buy the cheapest affordable hero upgrade
     seenIntro: false,       // shown the first-run tutorial yet?
     keystone: null,         // chosen build-defining keystone id (or null)
+    settings: { dmgNums:true, fx:true, shake:true },   // display/perf toggles
   };
 }
 
@@ -307,6 +308,7 @@ function load(){
       heroLevels: Object.assign(base.heroLevels, d.heroLevels || {}),
       shardUpg:   Object.assign(base.shardUpg,   d.shardUpg   || {}),
       kills:      Object.assign(base.kills,      d.kills      || {}),
+      settings:   Object.assign(base.settings,   d.settings   || {}),
       relics:   Array.isArray(d.relics)   ? d.relics   : [],
       equipped: Array.isArray(d.equipped) ? d.equipped : [],
     });
@@ -351,6 +353,8 @@ const heroFlash = {};        // attack-flash timer per hero id (survives heroSlo
 const heroAnim = {};         // per-hero sprite-sheet animation state {name, t}
 let spawnTimer = 0, spawnedThisWave = 0, waveKills = 0, waveGoldAccum = 0, waveTime = 0;
 let partyBuffT = 0;          // remaining seconds of Aunel's damage buff
+let shakeT = 0, shakeAmt = 0;   // screen-shake timer + magnitude
+function shake(amt){ if (S && S.settings && S.settings.shake){ shakeAmt = Math.max(shakeAmt, amt); shakeT = 0.22; } }
 // kill-streak combo: rapid consecutive kills build a gold bonus
 let combo = 0, comboT = 0;   // current streak + seconds left before it resets
 const COMBO_WINDOW = 2.6;    // seconds to land the next kill and keep the streak
@@ -479,6 +483,7 @@ const PARTICLE_PRESETS = {
   earth:  { n:18, colors:['#e0b877','#a06a34','#ffcc66'],           shape:'shard',  spMin:40,  spMax:180, sizeMin:2, sizeMax:5, life:[0.35,0.8],grav:150, drag:0.9,  rise:0,  glow:false },
 };
 function spawnParticles(x, y, name, scale = 1){
+  if (S && S.settings && !S.settings.fx) return;      // "reduced effects" perf toggle
   const p = PARTICLE_PRESETS[name]; if (!p) return;
   const n = Math.max(1, Math.round(p.n * scale));
   for (let i = 0; i < n; i++){
@@ -546,7 +551,7 @@ function grantGold(amount){
 
 // floating combat number: crit = red, normal = orange; 1000+ shown as K/M… by fmt
 function addDamageNumber(e, dmg, crit, kind){
-  if (dmg <= 0) return;
+  if (dmg <= 0 || !S.settings.dmgNums) return;
   const jx = (Math.random() - 0.5) * 14;
   const s = view.h / 460;
   const color = kind === 'weak' ? '#7CFC55' : kind === 'resist' ? '#9aa4c4' : (crit ? '#ff3b3b' : '#ff9d3c');
@@ -582,7 +587,7 @@ function damageEnemy(e, dmg, crit, element){
     }
     else addFloater(e.x, e.y - 30*(view.h/460), '+' + fmt(g), '#ffd75e');
     // element-themed death burst
-    if (e.boss){ spawnParticles(e.x, e.y - 24, 'fire', 2.2); spawnParticles(e.x, e.y - 24, 'earth', 1.4); GA('explosion');
+    if (e.boss){ spawnParticles(e.x, e.y - 24, 'fire', 2.2); spawnParticles(e.x, e.y - 24, 'earth', 1.4); GA('explosion'); shake(9);
       grantRelic(S.wave); spawnParticles(e.x, e.y - 24, 'holy', 1.6); }
     else if (e.type === 'wraith') spawnParticles(e.x, e.y - 16, 'poison', 1.3);   // 독 cloud
     return true;
@@ -637,7 +642,7 @@ function castSkill(def, slot, lvl){
     for (let i = enemies.length - 1; i >= 0; i--){
       if (Math.abs(enemies[i].x - t.x) <= R){ enemies[i].burn = BURN_DUR; if (damageEnemy(enemies[i], dmg, roll.crit, HERO_ELEM[def.id])) enemies.splice(i, 1); }
     }
-    GA('explosion');
+    GA('explosion'); shake(5);
   }
   else if (s.kind === 'chain'){
     // LIGHTNING: arcs + electric sparks at each struck enemy
@@ -704,6 +709,7 @@ function simulate(dt){
         const ksTake = ksIs('cannon') ? 1.6 : ksIs('fortress') ? 0.4 : 1;
         const dmgFrac = (e.boss ? 0.20 : 0.05) * ksTake / (wardMul() * towerHpMul());
         S.crystalHp = Math.max(0, S.crystalHp - dmgFrac);
+        if (e.boss) shake(6);
         addFloater(view.crystalX, view.ground - 60*px, '-' + Math.round(dmgFrac*100) + '%', '#ff6b6b');
         if (e.boss && e.bossKind === 'dragon'){       // lunge + fire breath toward the crystal
           e.lunge = 1;
@@ -776,6 +782,7 @@ function simulate(dt){
   // kill-streak combo decay
   if (comboT > 0){ comboT -= dt; if (comboT <= 0){ combo = 0; comboT = 0; } }
   if (odT > 0) odT = Math.max(0, odT - dt);
+  if (shakeT > 0){ shakeT -= dt; if (shakeT <= 0){ shakeT = 0; shakeAmt = 0; } }
   if (wallHintT > 0) wallHintT -= dt;
   // auto-upgrade: buy one cheapest affordable upgrade a few times per second
   if (S.autoUp){ autoUpT -= dt; if (autoUpT <= 0){ autoUpT = 0.3; autoUpgradeStep(); } }
@@ -1078,6 +1085,14 @@ function draw(now){
   const px = view.w / 900;
   const size = Math.max(2, Math.round(3 * (view.h/460)));
 
+  // screen shake: cover the frame then offset the whole scene by a decaying jitter
+  let _shk = false;
+  if (shakeT > 0){
+    const k = shakeAmt * (shakeT / 0.22);
+    ctx.fillStyle = '#05060f'; ctx.fillRect(0, 0, view.w, view.h);
+    ctx.save(); ctx.translate((Math.random()-0.5)*k, (Math.random()-0.5)*k); _shk = true;
+  }
+
   if (Spr().drawBackground) Spr().drawBackground(ctx, view.w, view.h, now);
   else { ctx.fillStyle = '#0a0e24'; ctx.fillRect(0,0,view.w,view.h); }
 
@@ -1255,6 +1270,8 @@ function draw(now){
     ctx.fillStyle = col; ctx.fillRect(bx, byy, bw * Math.max(0, comboT/COMBO_WINDOW), 4*s);
     ctx.restore();
   }
+
+  if (_shk) ctx.restore();     // end screen-shake transform
 }
 
 // ------------------------------------------------------------------ loop
@@ -1680,6 +1697,31 @@ function openKeystones(){
   el('modalBox').querySelectorAll('[data-ks]').forEach(n => n.onclick = () => pickKeystone(n.dataset.ks));
 }
 if (el('btnKeystone')) el('btnKeystone').onclick = openKeystones;
+
+// Settings — display / performance toggles
+const SETTING_DEFS = [
+  { id:'dmgNums', name:'Damage numbers', desc:'Show floating damage numbers over enemies.' },
+  { id:'fx',      name:'Particle effects', desc:'Elemental bursts, embers and sparkles. Turn off to boost performance.' },
+  { id:'shake',   name:'Screen shake',    desc:'Camera shake on big hits, explosions and boss deaths.' },
+];
+function openSettings(){
+  const rows = SETTING_DEFS.map(s => {
+    const on = !!S.settings[s.id];
+    return `<div class="shard-item">
+      <div class="info"><b>${s.name}</b> — ${s.desc}</div>
+      <button class="btn" data-set="${s.id}" style="min-width:56px;${on?'background:var(--hp);border-color:var(--hp);color:#062':''}">${on?'ON':'OFF'}</button>
+    </div>`;
+  }).join('');
+  openModal(`
+    <h2>⚙️ Settings</h2>
+    <div class="shard-shop">${rows}</div>
+    <button class="btn" id="closeSet" style="width:100%">Close</button>`);
+  el('closeSet').onclick = closeModal;
+  el('modalBox').querySelectorAll('[data-set]').forEach(b => b.onclick = () => {
+    S.settings[b.dataset.set] = !S.settings[b.dataset.set]; save(); openSettings();
+  });
+}
+if (el('btnSettings')) el('btnSettings').onclick = openSettings;
 
 // achievements panel
 function openAchievements(){
