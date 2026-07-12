@@ -1338,6 +1338,24 @@ function drawMotes(now){
   }
   ctx.restore();
 }
+// Parallax depth: soft fog puffs drifting at varied speeds behind the action.
+const FOG = Array.from({ length: 11 }, () => ({
+  x: Math.random(), y: 0.55 + Math.random()*0.4, r: 0.16 + Math.random()*0.22,
+  sp: (0.004 + Math.random()*0.012) * (Math.random() < 0.5 ? -1 : 1), ph: Math.random()*9,
+}));
+function drawFog(now){
+  if (!S.settings.fx) return;
+  const col = biomeOf(S.wave).mote, t = now/1000;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (const f of FOG){
+    const x = ((((f.x + f.sp*t) % 1) + 1) % 1) * view.w, y = f.y*view.h, r = f.r*view.w;
+    ctx.globalAlpha = 0.035 + 0.025 * Math.sin(t*0.5 + f.ph);
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, col); g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r*2, r*2);
+  }
+  ctx.restore();
+}
 function drawAtmosphere(now){
   const tint = biomeOf(S.wave).tint;
   if (tint){ ctx.save(); ctx.globalAlpha = 0.07; ctx.fillStyle = tint; ctx.fillRect(0, 0, view.w, view.h); ctx.restore(); }
@@ -1416,6 +1434,7 @@ function draw(now){
 
   if (Spr().drawBackground) Spr().drawBackground(ctx, view.w, view.h, now);
   else { ctx.fillStyle = '#0a0e24'; ctx.fillRect(0,0,view.w,view.h); }
+  drawFog(now);                                     // parallax fog depth (drifts at varied speeds)
   drawMotes(now);                                   // ambient drifting light motes (behind characters)
 
   // crystal tower — static; the 4 frames are burning states chosen by remaining
