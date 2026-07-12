@@ -2399,18 +2399,6 @@ if (el('btnAuto')) el('btnAuto').onclick = () => {
 const btnMute = el('btnMute'), btnMusic = el('btnMusic');
 if (btnMute) btnMute.onclick = () => { const m = window.GameAudio && GameAudio.toggleMute(); btnMute.textContent = m ? '🔇' : '🔊'; };
 if (btnMusic) btnMusic.onclick = () => { const on = window.GameAudio && GameAudio.toggleMusic(); btnMusic.textContent = on ? '♪' : '♪̶'; btnMusic.style.opacity = on ? '1' : '0.5'; };
-// HD sprite-sheet toggle (uses assets/*.png if present; reloads to apply)
-const btnSheets = el('btnSheets');
-if (btnSheets){
-  if (window.Sheets && Sheets.isEnabled()) btnSheets.classList.add('sel');
-  btnSheets.onclick = () => {
-    if (!window.Sheets) return;
-    const on = !Sheets.isEnabled();
-    Sheets.setEnabled(on);
-    toast(on ? '🎨 HD sprites ON — place PNGs in assets/ (reloading…)' : '🎨 HD sprites off (reloading…)');
-    setTimeout(() => location.reload(), 700);
-  };
-}
 
 function audioUnlock(){ if (window.GameAudio) GameAudio.unlock(); window.removeEventListener('pointerdown', audioUnlock); window.removeEventListener('keydown', audioUnlock); window.removeEventListener('touchstart', audioUnlock); }
 window.addEventListener('pointerdown', audioUnlock);

@@ -59,9 +59,9 @@ window.Sheets = (function () {
   function detectEnabled(){
     // On by default now that sprite sheets ship in assets/; explicit off wins.
     try {
+      // HD sprites are always on now (the toggle was removed); ?sheets=0 stays
+      // as a dev/test escape hatch for the canvas fallback.
       if (typeof location !== 'undefined' && /[?&]sheets=0/.test(location.search)) return false;
-      if (typeof location !== 'undefined' && /[?&]sheets=1/.test(location.search)) return true;
-      if (typeof localStorage !== 'undefined' && localStorage.getItem('use_sheets') === '0') return false;
     } catch (e) {}
     return true;
   }

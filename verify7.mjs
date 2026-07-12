@@ -19,7 +19,6 @@ const R = []; const check = (n,c) => R.push((c?'PASS':'FAIL')+' — '+n);
   check('Sheets API loaded, enabled by default', await page.evaluate(() => !!window.Sheets && Sheets.isEnabled()===true));
   check('Heroes + bestiary monster sprites configured', await page.evaluate(() =>
     ['garran','mira','faye','rai','slime','zombie','specter','skeleton','dragon','elderghost'].every(id => !!Sheets.CONFIG[id])));
-  check('🎨 toggle button present', await page.evaluate(() => !!document.getElementById('btnSheets')));
   check('Aunel (healer) now has a sprite sheet', await page.evaluate(() =>
     !!Sheets.CONFIG.aunel && Sheets.CONFIG.aunel.file==='healer.png'));
   check('Heroes face right (no flip); flipped monsters face the crystal (dragon art already faces left)', await page.evaluate(() =>
