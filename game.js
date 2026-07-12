@@ -89,6 +89,45 @@ const KEYSTONES = {
 function ksIs(id){ return S && S.keystone === id; }
 function enemyHpMul(){ return ksIs('avarice') ? 1.35 : 1; }     // Avarice: tougher enemies
 
+// Progressive feature reveal — systems stay hidden until you clear the stage
+// that unlocks them, so a fresh run starts simple (just recruit + fight) and
+// opens up as you climb. Gate is on lifetime best stage (dispStage(S.bestWave)).
+const FEATURE_UNLOCKS = [
+  { sel:'#btnTower',      stage:2,  name:'🏰 Fortify' },
+  { sel:'#btnBestiary',   stage:2,  name:'📖 Bestiary' },
+  { sel:'[data-spd="2"]', stage:2,  name:'2× Speed' },
+  { sel:'#odBtn',         stage:3,  name:'⚡ Overdrive' },
+  { sel:'#btnBuyMode',    stage:3,  name:'🛒 Bulk Buy' },
+  { sel:'#btnRelics',     stage:3,  name:'🗡️ Relics', flag:'relics' },
+  { sel:'#btnAuto',       stage:4,  name:'🅰️ Auto-Upgrade' },
+  { sel:'[data-spd="3"]', stage:4,  name:'3× Speed' },
+  { sel:'#btnAch',        stage:4,  name:'🏆 Achievements' },
+  { sel:'#btnPrestige',   stage:5,  name:'💠 Reseal (Prestige)' },
+  { sel:'#btnShop',       stage:5,  name:'💠 Shard Shop' },
+  { sel:'#btnTalents',    stage:5,  name:'🌳 Talents' },
+  { sel:'#btnKeystone',   stage:10, name:'⭐ Keystone' },
+];
+const bestStage = () => dispStage(S ? S.bestWave : 1);
+function featureOpen(flag){                    // gate for non-DOM systems (e.g. relic drops)
+  const f = FEATURE_UNLOCKS.find(u => u.flag === flag);
+  return !f || bestStage() >= f.stage;
+}
+// hide every not-yet-unlocked control; called on load + whenever best stage grows
+function refreshFeatureLocks(){
+  const st = bestStage();
+  for (const u of FEATURE_UNLOCKS){
+    document.querySelectorAll(u.sel).forEach(nEl => { nEl.style.display = st >= u.stage ? '' : 'none'; });
+  }
+}
+// announce features crossed when the best stage advances from `from`→`to`
+function announceFeatureUnlocks(from, to){
+  const a = dispStage(from), b = dispStage(to);
+  if (b <= a) return;
+  for (const u of FEATURE_UNLOCKS){
+    if (u.stage > a && u.stage <= b) toast('🔓 Unlocked: ' + u.name);
+  }
+}
+
 function elemVs(enemyEl, atkEl){
   const m = ELEM_MATCH[enemyEl];
   if (!m || !atkEl) return { mult:1, kind:null };
@@ -183,6 +222,7 @@ function relicBonus(stat){
   return v;
 }
 function grantRelic(wave){
+  if (!featureOpen('relics')) return;          // relics start dropping once the system unlocks
   const types = Object.keys(RELIC_TYPES);
   if (Math.random() < MYTHIC_CHANCE){           // 0.1% golden dual-stat Mythic
     const a = (Math.random()*types.length)|0;
@@ -248,11 +288,19 @@ function awardMilestones(from, to){
   GA('prestige');
 }
 // advance the lifetime best wave, paying any milestones crossed
-function reachWave(w){ if (w > S.bestWave){ awardMilestones(S.bestWave, w); S.bestWave = w; } }
+function reachWave(w){
+  if (w > S.bestWave){
+    const prev = S.bestWave;
+    awardMilestones(prev, w);
+    S.bestWave = w;
+    announceFeatureUnlocks(prev, w);   // toast any newly-opened systems
+    refreshFeatureLocks();             // reveal their buttons
+  }
+}
 
 // ------------------------------------------------------------------ formulas
-const enemyHP    = w => 10 * Math.pow(1.12, w - 1);
-const enemyCount = w => Math.min(5 + Math.floor(w / 3), 20);
+const enemyHP    = w => 12 * Math.pow(1.12, w - 1);
+const enemyCount = w => Math.min(6 + Math.floor(w / 2.7), 24);
 // gold now grows with the HP wall (was 1.10 — income fell behind every wave)
 const goldPerKill= w => Math.ceil(2 * Math.pow(1.12, w - 1));
 const isBossWave = w => w % BOSS_EVERY === 0;
@@ -457,7 +505,7 @@ function waveSpawnCount(w){
 
 function spawnEnemy(w){
   if (isBossWave(w)){
-    const hp = enemyHP(w) * 8 * enemyHpMul();
+    const hp = enemyHP(w) * 10 * enemyHpMul();
     const bossKind = (Math.floor(w / BOSS_EVERY) % 2 === 0) ? 'elderghost' : 'dragon';
     enemies.push({ x: view.laneRight, y: view.ground, hp, maxHp: hp,
       type:'boss', speed:18, frame:0, boss:true, bossKind, element: bossElement(bossKind),
@@ -1685,8 +1733,8 @@ function showIntro(){
     <p style="margin-top:10px">
       • <b>Buy &amp; upgrade heroes</b> with 🪙 gold (cards below). More heroes unlock as you reach new waves.<br>
       • Each hero has an <b>auto-casting skill</b> — <b>tap a hero</b> to fire it early.<br>
-      • ⚡ <b>Overdrive</b> charges from kills for a burst; 🅰️ <b>Auto</b> spends gold for you.<br>
-      • Hit a wall? <b>💠 Reseal (Prestige)</b> trades your run for permanent power — that's how you break through.
+      • <b>New systems unlock as you clear stages</b> — Fortify &amp; Bestiary at Stage 2, Overdrive &amp; Relics at Stage 3, Auto at Stage 4, Reseal &amp; Talents at Stage 5, and more beyond.<br>
+      • Hit a wall? Once <b>💠 Reseal (Prestige)</b> opens, it trades your run for permanent power — that's how you break through.
     </p>
     <button class="btn" id="introOk" style="width:100%;margin-top:12px">Begin the defense ⚔️</button>`);
   el('introOk').onclick = () => { S.seenIntro = true; save(); closeModal(); };
@@ -2210,6 +2258,7 @@ function boot(){
   updateHud();
   refreshAutoBtn();
   refreshBuyModeBtn();
+  refreshFeatureLocks();               // hide systems not yet unlocked by best stage
   document.querySelector('[data-spd="1"]').classList.add('sel');
   window.addEventListener('beforeunload', save);
   setInterval(save, 15000);
