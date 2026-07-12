@@ -1018,6 +1018,9 @@ function checkUnlocks(w){
 const canvas = document.getElementById('stage');
 const ctx = canvas.getContext('2d');
 let dpr = 1;
+// While an HD sheet is still decoding, skip its low-res canvas fallback so the
+// crystal/heroes/enemies don't flash in at low resolution on first load.
+const sheetPending = id => !!(window.Sheets && Sheets.pending && Sheets.pending(id));
 
 function resize(){
   const wrap = canvas.parentElement;
@@ -1277,13 +1280,13 @@ function draw(now){
   const hp = S.crystalHp;
   const towerFrame = hp >= 0.70 ? 0 : hp >= 0.30 ? 1 : hp >= 0.10 ? 2 : 3;
   const drewTower = window.Sheets && Sheets.draw(ctx, 'tower', view.crystalX, view.ground, towerH, 'idle', towerFrame * 1000);
-  if (!drewTower){
+  if (drewTower){
+    // animate the burning tower's fire (more intense as HP drops)
+    drawTowerFire(view.crystalX, view.ground - towerH, towerH, towerFrame, now);
+  } else if (!sheetPending('tower')){        // skip low-res fallback while the HD sheet is still loading
     const pulse = 0.5 + 0.5*Math.sin(now/500);
     if (Spr().drawCrystal) Spr().drawCrystal(ctx, view.crystalX, view.ground - size*10, size*3, pulse, S.crystalHp);
     else { ctx.fillStyle = `rgba(123,211,255,${0.5+0.4*pulse})`; ctx.fillRect(view.crystalX-14, view.ground-70, 28, 44); }
-  } else {
-    // animate the burning tower's fire (more intense as HP drops)
-    drawTowerFire(view.crystalX, view.ground - towerH, towerH, towerFrame, now);
   }
 
   // enemies
@@ -1348,7 +1351,7 @@ function draw(now){
         ctx.restore();
       }
     }
-    if (!drew){
+    if (!drew && !sheetPending(sid)){        // skip low-res fallback while the HD sheet is still loading
       const floatOff = t.float ? (10 + Math.sin(now/300)*4) : 0;
       by = e.y - floatOff;
       if (e.boss){ if (Spr().drawBoss) Spr().drawBoss(ctx, e.x, by, es, e.frame); else drawFallbackChar(e.x, by, es, '#b3407a'); }
@@ -1394,7 +1397,7 @@ function draw(now){
     const st = heroAnim[slot.def.id];
     const animName = (st && st.t > 0) ? st.name : 'idle';
     const drewSheet = window.Sheets && Sheets.draw(ctx, slot.def.id, slot.x, slot.y, size*20, animName, now);
-    if (!drewSheet){
+    if (!drewSheet && !sheetPending(slot.def.id)){    // skip low-res fallback while the HD sheet is still loading
       const frame = (heroFlash[slot.def.id] > 0) ? 1 : (Math.floor(now/350)%2);
       const fn = Spr()[slot.def.draw];
       if (fn){

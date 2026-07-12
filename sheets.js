@@ -85,6 +85,14 @@ window.Sheets = (function () {
   }
 
   function ready(id){ return !!(imgs[id] && imgs[id].ok); }
+  // true while a configured sheet is still loading (not yet ok, not failed) —
+  // callers use this to skip the low-res canvas fallback and avoid a first-frame
+  // flash before the HD art is decoded.
+  function pending(id){
+    if (!enabled || !SHEET_CONFIG[id]) return false;
+    const rec = imgs[id];
+    return !rec || (!rec.ok && !rec.failed);
+  }
 
   // Draw one animation frame centered at x, feet at baseY, scaled to targetH px.
   // Returns true if it drew (caller then skips the canvas fallback), else false.
@@ -120,5 +128,5 @@ window.Sheets = (function () {
 
   function preload(){ if (enabled) Object.keys(SHEET_CONFIG).forEach(load); }
 
-  return { draw, load, ready, has, preload, isEnabled, setEnabled, CONFIG: SHEET_CONFIG };
+  return { draw, load, ready, pending, has, preload, isEnabled, setEnabled, CONFIG: SHEET_CONFIG };
 })();
