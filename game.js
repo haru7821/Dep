@@ -928,8 +928,14 @@ function simulate(dt){
       S.goldHistory.push({ w: S.wave, r: Math.round(rate) });   // for the Stats chart
       if (S.goldHistory.length > 60) S.goldHistory.shift();
     }
+    const clearedWave = S.wave;
     S.crystalHp = Math.min(1, S.crystalHp + 0.05);
     S.wave++;
+    // clearing the last wave of a stage fully restores the Crystal
+    if (clearedWave % STAGE_WAVES === 0){
+      S.crystalHp = 1;
+      toast(`🛡️ Stage ${dispStage(clearedWave)} cleared — Crystal fully restored!`);
+    }
     reachWave(S.wave);
     checkUnlocks(S.wave);
     checkAchievements();
