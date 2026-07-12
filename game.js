@@ -186,6 +186,10 @@ const ENEMY_SPRITE = { normal:'slime', fast:'zombie', runner:'zombie', tank:'ske
 const SLOW_FACTOR = 0.42;              // movement multiplier while frozen
 const BURN_DUR = 1.6;                  // seconds an enemy shows the burning FX
 const PARTY_BUFF_MUL = 1.30;           // Aunel's Dawn Blessing damage buff
+// Cap on crystal damage-reduction (wardMul × towerHpMul). Without this, stacking
+// Ward/Fortify pushes the heal break-even past the 24-enemy wave cap and the
+// Crystal becomes unbreakable. At 3.3 a full wave can always threaten it.
+const DMG_MITIGATION_CAP = 3.3;
 
 // Permanent shard-shop upgrades (persist through prestige)
 const SHARD_UPGRADES = [
@@ -863,7 +867,8 @@ function simulate(dt){
       if (e.atkTimer >= 1){
         e.atkTimer -= 1;
         const ksTake = ksIs('cannon') ? 1.6 : ksIs('fortress') ? 0.4 : 1;
-        const dmgFrac = (e.boss ? 0.20 : 0.05) * ksTake / (wardMul() * towerHpMul());
+        const mitig = Math.min(DMG_MITIGATION_CAP, wardMul() * towerHpMul());
+        const dmgFrac = (e.boss ? 0.20 : 0.05) * ksTake / mitig;
         S.crystalHp = Math.max(0, S.crystalHp - dmgFrac);
         if (e.boss) shake(6);
         addFloater(view.crystalX, view.ground - 60*px, '-' + Math.round(dmgFrac*100) + '%', '#ff6b6b');
