@@ -1402,6 +1402,12 @@ function updateHud(){
     ob.classList.toggle('ready', !odActive() && odCharge >= 1);
     ob.classList.toggle('active', odActive());
   }
+  const kb = el('btnKeystone');
+  if (kb){
+    const unlocked = keystonesUnlocked();
+    kb.classList.toggle('locked', !unlocked);
+    kb.textContent = unlocked ? '⭐ Keystone' : '🔒 Keystone';
+  }
   el('s-wave').textContent = dispStage(S.wave) + '-' + waveInStage(S.wave);
   el('s-gold').textContent = fmt(S.gold);
   el('s-shard').textContent = fmt(S.shards);
@@ -1841,12 +1847,29 @@ function openTalents(){
 }
 if (el('btnTalents')) el('btnTalents').onclick = openTalents;
 
-// Keystone panel — pick ONE build-defining perk (mutually exclusive)
+// Keystone panel — pick ONE build-defining perk (mutually exclusive).
+// Locked until the player reaches Stage 10 (lifetime best).
+const KEYSTONE_STAGE = 10;
+const keystonesUnlocked = () => dispStage(S.bestWave) >= KEYSTONE_STAGE;
 function pickKeystone(id){
+  if (!keystonesUnlocked()) return;
   S.keystone = (S.keystone === id) ? null : id;   // tap active one to clear
   GA('upgrade'); save(); openKeystones(); updateHud();
 }
 function openKeystones(){
+  if (!keystonesUnlocked()){
+    openModal(`
+      <h2>⭐ Keystone</h2>
+      <div class="ks-lock">
+        <div class="ks-lock-ic">🔒</div>
+        <div class="ks-lock-msg">Keystones unlock at <b>Stage ${KEYSTONE_STAGE}</b>.</div>
+        <div class="ks-lock-sub">Reach Stage ${dispStage(S.bestWave)} → keep climbing.
+          Best so far: <b>Stage ${dispStage(S.bestWave)} · Wave ${waveInStage(S.bestWave)}/${STAGE_WAVES}</b></div>
+      </div>
+      <button class="btn" id="closeKs" style="width:100%;margin-top:12px">Close</button>`);
+    el('closeKs').onclick = closeModal;
+    return;
+  }
   const rows = Object.entries(KEYSTONES).map(([id, k]) => {
     const on = S.keystone === id;
     return `<div class="ks ${on?'on':''}" style="--kc:${k.color}" data-ks="${id}">
