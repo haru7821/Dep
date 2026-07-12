@@ -9,7 +9,14 @@
 const SAVE_KEY = 'aether_crystal_save_v1';
 const OFFLINE_CAP_S = 8 * 3600;        // offline earnings capped at 8h
 const SPAWN_INTERVAL = 0.8;            // seconds between enemy spawns
-const BOSS_EVERY = 5;                  // boss on every 5th wave
+const BOSS_EVERY = 5;                  // boss on every 5th wave (mini-boss w5, stage boss w10)
+// Progression: 10 waves per stage, up to stage 99. `wave` stays a global 1.. counter
+// (drives all scaling); stage/wave-in-stage are derived for display and unlocks.
+const STAGE_WAVES = 10;
+const STAGE_MAX = 99;
+const stageOf     = w => Math.floor((w - 1) / STAGE_WAVES) + 1;
+const waveInStage = w => ((w - 1) % STAGE_WAVES) + 1;
+const dispStage   = w => Math.min(STAGE_MAX, stageOf(w));
 
 // Hero definitions (bases per Agent B's spec). Each hero has ONE auto-cast AoE
 // skill with its own cooldown, damage multiplier and a distinct visible effect.
@@ -39,12 +46,19 @@ const HERO_DEFS = [
 // Enemy archetypes: hp/speed/render-size multipliers, gold bonus, slow immunity,
 // element (drives weakness/resist) and armor (flat damage reduction).
 const ENEMY_TYPES = {
-  normal: { hp:1.0, spd:26, size:1.0,  gold:1, element:'earth'  },
-  fast:   { hp:0.6, spd:46, size:0.9,  gold:1, element:'poison' },
-  runner: { hp:0.4, spd:62, size:0.85, gold:1, element:'poison' },
-  tank:   { hp:2.2, spd:18, size:1.5,  gold:2, element:'dark',  armor:0.25 },
-  golem:  { hp:4.5, spd:13, size:2.0,  gold:4, element:'earth', armor:0.40 },
-  wraith: { hp:1.3, spd:34, size:1.1,  gold:2, element:'dark', slowImmune:true, float:true },
+  normal:  { hp:1.0, spd:26, size:1.0,  gold:1, element:'earth'  },
+  fast:    { hp:0.6, spd:46, size:0.9,  gold:1, element:'poison' },
+  runner:  { hp:0.4, spd:62, size:0.85, gold:1, element:'poison' },
+  tank:    { hp:2.2, spd:18, size:1.5,  gold:2, element:'dark',  armor:0.25 },
+  golem:   { hp:4.5, spd:13, size:2.0,  gold:4, element:'earth', armor:0.40 },
+  wraith:  { hp:1.3, spd:34, size:1.1,  gold:2, element:'dark', slowImmune:true, float:true },
+  // ---- later-stage variants (reuse sprites, distinct element/behaviour) ----
+  imp:     { hp:0.7, spd:44, size:0.85, gold:1, element:'fire',   sprite:'slime'    },
+  frostkin:{ hp:1.3, spd:24, size:1.0,  gold:2, element:'frost',  sprite:'specter'  },
+  venom:   { hp:1.5, spd:30, size:1.1,  gold:2, element:'poison', sprite:'zombie'   },
+  shade:   { hp:0.9, spd:54, size:0.95, gold:2, element:'void',   sprite:'specter', slowImmune:true, float:true },
+  brute:   { hp:3.2, spd:17, size:1.6,  gold:3, element:'physical', armor:0.20, sprite:'skeleton' },
+  revenant:{ hp:2.6, spd:21, size:1.4,  gold:3, element:'lightning', sprite:'skeleton' },
 };
 // Element matchups: attacking an enemy with its `weak` element deals +60%,
 // with its `resist` element deals -50%. Bosses: dragon=fire, elderghost=void.
@@ -54,8 +68,12 @@ const ELEM_MATCH = {
   dark:     { weak:'holy',      resist:'dark'      },
   fire:     { weak:'frost',     resist:'fire'      },
   void:     { weak:'holy',      resist:'dark'      },
+  frost:    { weak:'fire',      resist:'frost'     },
+  lightning:{ weak:'earth',     resist:'lightning' },
+  physical: { weak:'lightning', resist:'physical'  },
 };
 const ELEM_ICON = { physical:'⚔️', fire:'🔥', frost:'❄️', lightning:'⚡', holy:'✨', earth:'🪨', dark:'🌑', poison:'☠️', void:'🌀' };
+const ELEM_COLOR = { physical:'#cdd6f4', fire:'#ff7a3c', frost:'#7bd3ff', lightning:'#ffe066', holy:'#fff0b0', earth:'#8fd07a', dark:'#b07bff', poison:'#9be36a', void:'#c58bff' };
 // hero attack elements (one per hero, used for basic + skill)
 const HERO_ELEM = { garran:'physical', mira:'frost', faye:'fire', rai:'lightning', aunel:'holy' };
 function bossElement(kind){ return kind === 'dragon' ? 'fire' : 'void'; }
@@ -80,7 +98,8 @@ function elemVs(enemyEl, atkEl){
   return { mult:1, kind:null };
 }
 // which bestiary monster each enemy type uses (falls back to canvas art)
-const ENEMY_SPRITE = { normal:'slime', fast:'zombie', runner:'zombie', tank:'skeleton', golem:'skeleton', wraith:'specter' };
+const ENEMY_SPRITE = { normal:'slime', fast:'zombie', runner:'zombie', tank:'skeleton', golem:'skeleton', wraith:'specter',
+  imp:'slime', frostkin:'specter', venom:'zombie', shade:'specter', brute:'skeleton', revenant:'skeleton' };
 const SLOW_FACTOR = 0.42;              // movement multiplier while frozen
 const BURN_DUR = 1.6;                  // seconds an enemy shows the burning FX
 const PARTY_BUFF_MUL = 1.30;           // Aunel's Dawn Blessing damage buff
@@ -216,7 +235,7 @@ function checkAchievements(){
 }
 
 // --- Endless milestones: every 25 waves of a NEW best pays shards (+TP each 100)
-const MILESTONE_STEP = 25;
+const MILESTONE_STEP = 10;    // reward on each stage clear (10 waves)
 const nextMilestone = () => Math.floor(S.bestWave / MILESTONE_STEP) * MILESTONE_STEP + MILESTONE_STEP;
 function awardMilestones(from, to){
   let sh = 0, tp = 0, n = 0, top = 0;
@@ -225,7 +244,7 @@ function awardMilestones(from, to){
   }
   if (!n) return;
   S.shards += sh; S.talentPoints += tp;
-  toast(`🏅 Wave ${top} milestone${n>1?` (×${n})`:''}! +${sh}💠${tp?` +${tp}🌳`:''}`);
+  toast(`🏅 Stage ${dispStage(top)} cleared${n>1?` (×${n})`:''}! +${sh}💠${tp?` +${tp}🌳`:''}`);
   GA('prestige');
 }
 // advance the lifetime best wave, paying any milestones crossed
@@ -407,12 +426,19 @@ function heroSlots(){
   }));
 }
 
+// Monster roster grows with the stage: each tier introduces new archetypes.
 function pickType(w){
+  const st = stageOf(w);
   const pool = ['normal', 'normal', 'fast'];
-  if (w >= 5)  pool.push('runner');
-  if (w >= 6)  pool.push('tank');
-  if (w >= 8)  pool.push('wraith');
-  if (w >= 12) pool.push('golem');
+  if (st >= 2)  pool.push('runner');
+  if (st >= 3)  pool.push('tank');
+  if (st >= 4)  pool.push('wraith');
+  if (st >= 5)  pool.push('golem', 'imp');
+  if (st >= 7)  pool.push('frostkin');
+  if (st >= 9)  pool.push('venom');
+  if (st >= 11) pool.push('shade');
+  if (st >= 14) pool.push('brute');
+  if (st >= 18) pool.push('revenant');
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -864,7 +890,7 @@ function checkUnlocks(w){
       buildHeroPanel();
     }
   }
-  if (w === 500) toast('🏆 Wave 500! The Crystal is fully resealed. Endless mode continues!');
+  if (w === STAGE_MAX * STAGE_WAVES) toast('🏆 Stage 99 cleared! The Crystal is fully resealed. Endless mode continues!');
 }
 
 // ------------------------------------------------------------------ rendering
@@ -1145,6 +1171,17 @@ function draw(now){
     const es = size * (e.boss ? 3 : t.size) * (e.mini ? 0.58 : 1);
     const sid = e.boss ? (e.bossKind || 'dragon') : ENEMY_SPRITE[e.type];
     const th = es * (e.boss ? (e.bossKind === 'elderghost' ? 15 : 24) : 14);   // dragon 2x, elder ghost a bit smaller
+    // element aura (ground glow) distinguishes archetypes that share a sprite
+    if (!e.boss && S.settings.fx && e.element){
+      const col = ELEM_COLOR[e.element] || '#8fd07a';
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const gy = e.y - th*0.14, gr = th*0.5;
+      const gg = ctx.createRadialGradient(e.x, gy, 0, e.x, gy, gr);
+      gg.addColorStop(0, col); gg.addColorStop(1, 'transparent');
+      ctx.globalAlpha = 0.22 + 0.06*Math.sin(now/260 + e.x);
+      ctx.fillStyle = gg; ctx.beginPath(); ctx.ellipse(e.x, gy, gr, gr*0.5, 0, 0, PI2); ctx.fill();
+      ctx.restore();
+    }
     const atCrystal = e.x <= view.crystalX + 42 * px;
     const anim = atCrystal ? 'attack' : 'idle';       // play the attack animation at the crystal
     let drew = false, by = e.y;
@@ -1333,7 +1370,7 @@ function updateHud(){
     ob.classList.toggle('ready', !odActive() && odCharge >= 1);
     ob.classList.toggle('active', odActive());
   }
-  el('s-wave').textContent = S.wave;
+  el('s-wave').textContent = dispStage(S.wave) + '-' + waveInStage(S.wave);
   el('s-gold').textContent = fmt(S.gold);
   el('s-shard').textContent = fmt(S.shards);
   if (el('s-tp')) el('s-tp').textContent = fmt(S.talentPoints);
@@ -1371,7 +1408,7 @@ function buildHeroPanel(){
     const card = document.createElement('div');
     card.className = 'hero-card' + (unlocked ? '' : ' locked');
     if (!unlocked){
-      card.innerHTML = `<div class="lock-tag">🔒 ${def.name}<br>Unlocks at Wave ${def.unlockWave}</div>`;
+      card.innerHTML = `<div class="lock-tag">🔒 ${def.name}<br>Unlocks at Stage ${dispStage(def.unlockWave)}</div>`;
       panel.appendChild(card);
       continue;
     }
@@ -1432,7 +1469,8 @@ function toast(msg){
 let bannerTimer;
 function showWaveBanner(w){
   const b = el('wavebanner');
-  b.textContent = isBossWave(w) ? `⚔️ BOSS — Wave ${w}` : `Wave ${w}`;
+  const label = `Stage ${dispStage(w)} · Wave ${waveInStage(w)}/${STAGE_WAVES}`;
+  b.textContent = isBossWave(w) ? `⚔️ BOSS — ${label}` : label;
   b.style.opacity = '1';
   clearTimeout(bannerTimer); bannerTimer = setTimeout(()=>b.style.opacity='0.35', 1400);
 }
@@ -1670,9 +1708,9 @@ function openStats(){
   openModal(`
     <h2>📊 Guardian's Record</h2>
     <div class="shard-shop">
-      <div class="shard-item"><div class="info"><b>Current Wave</b><div class="lv">${S.wave}</div></div></div>
-      <div class="shard-item"><div class="info"><b>Best Wave</b><div class="lv">${S.bestWave}</div></div></div>
-      <div class="shard-item"><div class="info"><b>Next Milestone</b><div class="lv">🏅 Wave ${nextMilestone()} — reward 💠${1 + Math.floor(nextMilestone()/100)}${nextMilestone()%100===0?' + 🌳1':''}</div></div></div>
+      <div class="shard-item"><div class="info"><b>Current Stage</b><div class="lv">Stage ${dispStage(S.wave)} · Wave ${waveInStage(S.wave)}/${STAGE_WAVES}</div></div></div>
+      <div class="shard-item"><div class="info"><b>Best Stage</b><div class="lv">Stage ${dispStage(S.bestWave)} · Wave ${waveInStage(S.bestWave)}/${STAGE_WAVES}</div></div></div>
+      <div class="shard-item"><div class="info"><b>Next Milestone</b><div class="lv">🏅 Clear Stage ${dispStage(nextMilestone())} — reward 💠${1 + Math.floor(nextMilestone()/100)}${nextMilestone()%100===0?' + 🌳1':''}</div></div></div>
       <div class="shard-item"><div class="info"><b>Enemies Defeated</b><div class="lv">${fmt(S.totalKills)}</div></div></div>
       <div class="shard-item"><div class="info"><b>Lifetime Gold</b><div class="lv">🪙 ${fmt(S.totalGoldEarned)}</div></div></div>
       <div class="shard-item"><div class="info"><b>Shards Earned</b><div class="lv">💠 ${S.shardsEarned}</div></div></div>
