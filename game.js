@@ -295,6 +295,7 @@ function freshState(){
     seenIntro: false,       // shown the first-run tutorial yet?
     keystone: null,         // chosen build-defining keystone id (or null)
     settings: { dmgNums:true, fx:true, shake:true },   // display/perf toggles
+    buyMode: 1,             // hero bulk-buy amount: 1, 10, or 'max'
   };
 }
 
@@ -1311,7 +1312,12 @@ function updateHud(){
     const btn = el('buy-'+def.id);
     if (btn){
       const lvl = S.heroLevels[def.id];
-      btn.disabled = S.gold < heroCost(def, lvl);
+      const aff = bulkBuyPlan(def);
+      const showN = aff.count > 0 ? aff.count : 1;
+      const showCost = aff.count > 0 ? aff.cost : heroCost(def, lvl);
+      const verb = lvl === 0 ? 'Recruit' : (S.buyMode === 1 ? 'Upgrade' : `Upgrade ×${showN}`);
+      btn.innerHTML = `${verb} <small>🪙 ${fmt(showCost)}</small>`;
+      btn.disabled = aff.count <= 0;
       const lvEl = el('lv-'+def.id);
       if (lvEl) lvEl.textContent = lvl;
     }
@@ -1338,9 +1344,12 @@ function buildHeroPanel(){
       panel.appendChild(card);
       continue;
     }
-    const cost = heroCost(def, lvl);
     const dmgTxt = def.target==='support' ? `+${(3*lvl).toFixed(0)}% aura / heal`
                  : `${fmt(heroDmg(def,lvl)*globalDmgMul())} dmg`;
+    const aff = bulkBuyPlan(def);                       // levels affordable right now
+    const showN = aff.count > 0 ? aff.count : 1;
+    const showCost = aff.count > 0 ? aff.cost : heroCost(def, lvl);
+    const verb = lvl === 0 ? 'Recruit' : (S.buyMode === 1 ? 'Upgrade' : `Upgrade ×${showN}`);
     card.innerHTML = `
       <h3><span style="color:${def.color}">◆</span> ${def.name}</h3>
       <div class="role">${def.role}</div>
@@ -1348,32 +1357,38 @@ function buildHeroPanel(){
       <div class="stat-row"><span>${def.target==='support'?'Support':'Power'}</span><b id="dmg-${def.id}">${dmgTxt}</b></div>
       <div class="skill-row" title="Auto-cast area skill">${def.skill.icon} ${def.skill.name}</div>
       <div class="cd-bar"><div class="cd-fill" id="cd-${def.id}" style="background:${def.color}"></div></div>
-      <button class="buy" id="buy-${def.id}">
-        ${lvl===0 ? 'Recruit' : 'Upgrade'} <small>🪙 ${fmt(cost)}</small>
+      <button class="buy" id="buy-${def.id}" ${aff.count>0?'':'disabled'}>
+        ${verb} <small>🪙 ${fmt(showCost)}</small>
       </button>`;
     panel.appendChild(card);
     card.querySelector('.buy').addEventListener('click', () => buyHero(def));
   }
 }
 
+// How many levels the current buy-mode can afford for a hero, and their cost.
+function bulkBuyPlan(def, mode = S.buyMode){
+  const start = S.heroLevels[def.id];
+  if (start === 0 && S.wave < def.unlockWave) return { count:0, cost:0 };
+  const cap = mode === 'max' ? Infinity : mode;
+  let lvl = start, cost = 0, count = 0;
+  while (count < cap){
+    const c = heroCost(def, lvl);
+    if (cost + c > S.gold) break;
+    cost += c; lvl++; count++;
+    if (count > 100000) break;   // safety
+  }
+  return { count, cost };
+}
 function buyHero(def){
   const lvl = S.heroLevels[def.id];
   if (lvl === 0 && S.wave < def.unlockWave){ buildHeroPanel(); return; }
-  const cost = heroCost(def, lvl);
-  if (S.gold < cost) return;
-  S.gold -= cost;
-  S.heroLevels[def.id]++;
+  const plan = bulkBuyPlan(def);
+  if (plan.count <= 0) return;
+  S.gold -= plan.cost;
+  S.heroLevels[def.id] += plan.count;
   GA('upgrade');
-  const dmgEl = el('dmg-'+def.id);
-  if (dmgEl){
-    dmgEl.textContent = def.target==='support'
-      ? `+${(3*S.heroLevels[def.id]).toFixed(0)}% aura / heal`
-      : `${fmt(heroDmg(def,S.heroLevels[def.id])*globalDmgMul())} dmg`;
-  }
-  const btn = el('buy-'+def.id);
-  if (btn) btn.innerHTML = `Upgrade <small>🪙 ${fmt(heroCost(def, S.heroLevels[def.id]))}</small>`;
-  else buildHeroPanel();   // card not rendered yet (e.g. just wave-unlocked) — rebuild
   checkAchievements();
+  buildHeroPanel();            // refresh labels/costs (levels may jump by many)
   updateHud();
 }
 
@@ -1723,6 +1738,18 @@ function openSettings(){
 }
 if (el('btnSettings')) el('btnSettings').onclick = openSettings;
 
+// Hero bulk-buy mode: cycle ×1 → ×10 → Max
+const BUY_CYCLE = [1, 10, 'max'];
+function refreshBuyModeBtn(){
+  const b = el('btnBuyMode'); if (!b) return;
+  b.textContent = '🛒 Buy ' + (S.buyMode === 'max' ? 'Max' : '×' + S.buyMode);
+}
+if (el('btnBuyMode')) el('btnBuyMode').onclick = () => {
+  const i = BUY_CYCLE.indexOf(S.buyMode);
+  S.buyMode = BUY_CYCLE[(i + 1) % BUY_CYCLE.length];
+  refreshBuyModeBtn(); buildHeroPanel(); save();
+};
+
 // achievements panel
 function openAchievements(){
   const done = ACHIEVEMENTS.filter(a => S.achievements[a.id]).length;
@@ -1980,6 +2007,7 @@ function boot(){
   showWaveBanner(S.wave);
   updateHud();
   refreshAutoBtn();
+  refreshBuyModeBtn();
   document.querySelector('[data-spd="1"]').classList.add('sel');
   window.addEventListener('beforeunload', save);
   setInterval(save, 15000);
