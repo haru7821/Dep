@@ -461,7 +461,7 @@ function spawnEnemy(w){
     const bossKind = (Math.floor(w / BOSS_EVERY) % 2 === 0) ? 'elderghost' : 'dragon';
     enemies.push({ x: view.laneRight, y: view.ground, hp, maxHp: hp,
       type:'boss', speed:18, frame:0, boss:true, bossKind, element: bossElement(bossKind),
-      slow:0, goldMul:10, atkTimer:0 });
+      slow:0, goldMul:10, atkTimer:0, age:0 });
     return;
   }
   const ev = curEvent;
@@ -478,7 +478,7 @@ function spawnEnemy(w){
     x: view.laneRight + Math.random()*40, y: view.ground,
     hp, maxHp: hp, type, speed: t.spd * (ev ? ev.spd : 1), frame:0, boss:false,
     element: t.element, armor: t.armor || 0, split, shield, maxShield: shield,
-    slow:0, goldMul, golden, atkTimer:0,
+    slow:0, goldMul, golden, atkTimer:0, age:0,
   });
 }
 
@@ -589,7 +589,7 @@ function spawnChildren(e){
       x: e.x + (k ? 20 : -20) * (view.w/900), y: view.ground,
       hp: chp, maxHp: chp, type: e.type, speed: t.spd * 1.3, frame: 0, boss: false,
       element: e.element, armor: 0, mini: true, split: false,
-      slow: 0, goldMul: Math.max(1, Math.round(e.goldMul * 0.4)), atkTimer: 0,
+      slow: 0, goldMul: Math.max(1, Math.round(e.goldMul * 0.4)), atkTimer: 0, age: 0,
     });
   }
   spawnParticles(e.x, e.y - 14, 'earth', 0.8);
@@ -646,10 +646,10 @@ function damageEnemy(e, dmg, crit, element){
   return false;
 }
 
-// Engagement line: heroes hold fire until enemies march past this point
-// (so freshly-spawned enemies on the far right aren't hit instantly).
-function engageLine(){ return view.crystalX + (view.laneRight - view.crystalX) * 0.66; }
-function engaged(e){ return e.x <= engageLine(); }
+// Engagement delay: heroes hold fire on an enemy until it has been on the map
+// for a moment (so freshly-spawned enemies aren't hit the instant they appear).
+const ENGAGE_DELAY = 1;   // seconds after spawn before an enemy can be targeted
+function engaged(e){ return (e.age || 0) >= ENGAGE_DELAY; }
 function nearestEnemy(){
   let target = null, best = Infinity;
   for (const e of enemies){ if (engaged(e) && e.x < best){ best = e.x; target = e; } }
@@ -750,6 +750,7 @@ function simulate(dt){
   for (let i = enemies.length - 1; i >= 0; i--){
     const e = enemies[i];
     e.frame = (Math.floor(waveTime*4) % 2);
+    e.age = (e.age || 0) + dt;                       // time alive (drives engage delay)
     if (e.slow > 0) e.slow -= dt;
     if (e.burn > 0) e.burn -= dt;
     if (e.lunge > 0) e.lunge -= dt * 4;              // dragon attack-lunge decay
@@ -1173,16 +1174,6 @@ function draw(now){
     drawTowerFire(view.crystalX, view.ground - towerH, towerH, towerFrame, now);
   }
 
-  // engagement line — heroes open fire once enemies march past this point
-  {
-    const ex = engageLine();
-    ctx.save();
-    ctx.strokeStyle = '#7bd3ff'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 9]);
-    ctx.globalAlpha = 0.16 + 0.05*Math.sin(now/500);
-    ctx.beginPath(); ctx.moveTo(ex, view.ground - size*20); ctx.lineTo(ex, view.ground + 3*px); ctx.stroke();
-    ctx.setLineDash([]); ctx.restore();
-  }
-
   // enemies
   for (const e of enemies){
     const t = ENEMY_TYPES[e.type] || ENEMY_TYPES.normal;
@@ -1203,6 +1194,9 @@ function draw(now){
     const atCrystal = e.x <= view.crystalX + 42 * px;
     const anim = atCrystal ? 'attack' : 'idle';       // play the attack animation at the crystal
     let drew = false, by = e.y;
+    // fade in over the first second so it reads as "arriving" (not yet targetable)
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, 0.3 + 0.7 * ((e.age || 0) / ENGAGE_DELAY));
     if (window.Sheets && sid){
       let ax = e.x, aby = e.y, ath = th;
       if (e.boss && e.bossKind === 'dragon'){
@@ -1249,6 +1243,7 @@ function draw(now){
       else if (Spr().drawEnemy) Spr().drawEnemy(ctx, e.x, by, es, e.type, e.frame, e.hp/e.maxHp);
       else drawFallbackChar(e.x, by, es, '#b3407a');
     }
+    ctx.restore();     // end spawn fade-in
     const spH = drew ? th : es*15;                    // overlays/hp-bar sized to the sprite
     const ow = spH * 0.62;
     if (e.slow > 0) drawIceBlock(e.x, by - spH, ow, spH, now);
