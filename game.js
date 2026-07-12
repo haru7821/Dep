@@ -1942,6 +1942,19 @@ const BESTIARY = [
     lore:'Boss. Wreathed in flame; appears on the fifth-wave assaults.' },
   { sprite:'elderghost', name:'Elder Ghost',      lv:10, hp:300, mp:60, el:'VOID',   fc:'#a05ad0', boss:true,
     lore:'Boss. An ancient void-spirit that commands the darker waves.' },
+  // later-stage variants — share a sprite but tinted by their element in the codex
+  { sprite:'slime',    variant:true, tint:'#ff7a3c', name:'Ember Imp',   lv:6,  hp:8,  mp:3,  el:'FIRE',      fc:'#e0632a',
+    ability:'Fast fiery slime — appears from Stage 5' },
+  { sprite:'specter',  variant:true, tint:'#7bd3ff', name:'Frostkin',    lv:7,  hp:14, mp:8,  el:'FROST',     fc:'#5bc8ff',
+    ability:'A chilling shade — appears from Stage 7' },
+  { sprite:'zombie',   variant:true, tint:'#9be36a', name:'Venomspawn',  lv:9,  hp:16, mp:6,  el:'POISON',    fc:'#6cbf3a',
+    ability:'A toxic brawler — appears from Stage 9' },
+  { sprite:'specter',  variant:true, tint:'#c58bff', name:'Void Shade',  lv:11, hp:12, mp:14, el:'VOID',      fc:'#a05ad0',
+    ability:'Very fast, immune to freeze — from Stage 11' },
+  { sprite:'skeleton', variant:true, tint:'#cdd6f4', name:'Bone Brute',  lv:14, hp:60, mp:8,  el:'PHYSICAL',  fc:'#aab4d8',
+    ability:'Armoured heavy — appears from Stage 14' },
+  { sprite:'skeleton', variant:true, tint:'#ffe066', name:'Revenant',    lv:18, hp:52, mp:16, el:'LIGHTNING', fc:'#ffd75e',
+    ability:'A charged skeleton — appears from Stage 18' },
 ];
 
 // draw the monster's real sprite (sheet frame 0) into a codex portrait canvas.
@@ -1977,6 +1990,11 @@ function drawMonThumb(cv, entry, discovered){
     const dw = cw * scale, dh = ch * scale;
     ctx2.imageSmoothingEnabled = false;
     ctx2.drawImage(img, 0, 0, cw, ch, (W-dw)/2, (H-dh)/2, dw, dh);
+    if (entry.tint && discovered){            // element tint so variants look distinct
+      ctx2.save(); ctx2.globalCompositeOperation = 'source-atop';
+      ctx2.globalAlpha = 0.45; ctx2.fillStyle = entry.tint;
+      ctx2.fillRect(0, 0, W, H); ctx2.restore();
+    }
     if (!discovered) silhouette();
   };
   img.onerror = fallback;
@@ -2000,7 +2018,7 @@ function openBestiary(){
     <div class="mon-card${disc ? '' : ' locked'}" style="--fc:${m.fc}">
       <div class="mon-frame" style="--fc:${m.fc}">
         <canvas class="mon-portrait" width="220" height="130" data-i="${i}"></canvas>
-        ${disc ? `<span class="mon-kills">☠ ${fmt(n)}</span>` : ''}
+        ${disc && !m.variant ? `<span class="mon-kills">☠ ${fmt(n)}</span>` : ''}
       </div>
       <div class="mon-plaque">
         <div class="nm">LV ${disc ? m.lv : '?'}&nbsp; ${nm}</div>
