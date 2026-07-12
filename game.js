@@ -1527,13 +1527,18 @@ function draw(now){
     const ow = spH * 0.62;
     if (e.slow > 0) drawIceBlock(e.x, by - spH, ow, spH, now);
     if (e.burn > 0) drawBurnFire(e.x, by, spH, now, e.x);
-    if (e.golden){
+    if (e.golden && Number.isFinite(e.x)){
       ctx.save();
-      ctx.globalAlpha = 0.28 + 0.12*Math.sin(now/120 + e.x);
-      ctx.fillStyle = '#ffe14d'; ctx.fillRect(e.x - ow/2, by - spH, ow, spH);
-      ctx.globalAlpha = 0.9; ctx.fillStyle = '#fff6c0';
-      for (let k = 0; k < 3; k++){ const a = now/200 + k*2.1;
-        ctx.fillRect(e.x + Math.cos(a)*ow*0.5 - 1, by - spH*0.5 + Math.sin(a)*spH*0.4 - 1, 3, 3); }
+      ctx.globalCompositeOperation = 'lighter';
+      const gy = by - spH*0.5, gr = spH*0.72, a = 0.22 + 0.10*Math.sin(now/120 + e.x);
+      const gg = ctx.createRadialGradient(e.x, gy, 0, e.x, gy, gr);   // soft round glow (no square edges)
+      gg.addColorStop(0, `rgba(255,225,77,${a})`);
+      gg.addColorStop(0.6, `rgba(255,215,94,${a*0.5})`);
+      gg.addColorStop(1, 'rgba(255,215,94,0)');
+      ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(e.x, gy, gr, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#fff6c0'; ctx.globalAlpha = 0.9;               // orbiting sparkles
+      for (let k = 0; k < 3; k++){ const aa = now/200 + k*2.1;
+        ctx.fillRect(e.x + Math.cos(aa)*ow*0.5 - 1, by - spH*0.5 + Math.sin(aa)*spH*0.4 - 1, 3, 3); }
       ctx.restore();
     }
     const bw = 22*px * (e.boss ? 2.2 : t.size) * (e.mini ? 0.6 : 1);
