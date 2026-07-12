@@ -477,6 +477,7 @@ let partyBuffT = 0;          // remaining seconds of Aunel's damage buff
 let shakeT = 0, shakeAmt = 0;   // screen-shake timer + magnitude
 function shake(amt){ if (S && S.settings && S.settings.shake){ shakeAmt = Math.max(shakeAmt, amt); shakeT = 0.22; } }
 // boss entrance cinematic: full-screen flash + name banner + brief slow-mo
+let sweepT = 0; const SWEEP_DUR = 0.55;   // wave-clear light-sweep flourish
 let bossIntroT = 0, bossIntroName = '', bossIntroRGB = '';
 const BOSS_INTRO_DUR = 1.7;
 const BOSS_INFO = { dragon:{ name:'INFERNAL DRAGON', rgb:'255,122,60' }, elderghost:{ name:'ELDER GHOST', rgb:'197,139,255' } };
@@ -956,6 +957,7 @@ function simulate(dt){
     const clearedWave = S.wave;
     S.crystalHp = Math.min(1, S.crystalHp + 0.05);
     S.wave++;
+    sweepT = SWEEP_DUR;                        // light sweep flourish on every wave clear
     // clearing the last wave of a stage fully restores the Crystal
     if (clearedWave % STAGE_WAVES === 0){
       S.crystalHp = 1;
@@ -972,6 +974,7 @@ function simulate(dt){
   // kill-streak combo decay
   if (comboT > 0){ comboT -= dt; if (comboT <= 0){ combo = 0; comboT = 0; } }
   if (odT > 0) odT = Math.max(0, odT - dt);
+  if (sweepT > 0) sweepT = Math.max(0, sweepT - dt);
   if (shakeT > 0){ shakeT -= dt; if (shakeT <= 0){ shakeT = 0; shakeAmt = 0; } }
   if (wallHintT > 0) wallHintT -= dt;
   // auto-upgrade: buy one cheapest affordable upgrade a few times per second,
@@ -1366,6 +1369,19 @@ function drawCrystalShield(cx, groundY, towerH, now){
   ctx.restore();
 }
 
+// Wave-clear flourish: a soft diagonal band of light sweeps across the screen.
+function drawSweep(){
+  if (sweepT <= 0) return;
+  const p = 1 - sweepT / SWEEP_DUR;              // 0 → 1 sweep progress
+  const cx = -0.3*view.w + p*1.6*view.w, bw = view.w*0.28;
+  const g = ctx.createLinearGradient(cx - bw, 0, cx + bw, 0);
+  const a = Math.sin(Math.min(1,p)*Math.PI) * 0.22;   // fade in/out
+  g.addColorStop(0, 'rgba(255,255,255,0)');
+  g.addColorStop(0.5, `rgba(210,240,255,${a})`);
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = g; ctx.fillRect(0, 0, view.w, view.h); ctx.restore();
+}
 function drawBossIntro(now){
   if (bossIntroT <= 0) return;
   const t = bossIntroT / BOSS_INTRO_DUR, s = view.h / 460, rgb = bossIntroRGB;
@@ -1618,6 +1634,7 @@ function draw(now){
     ctx.restore();
   }
 
+  drawSweep();                 // wave-clear light sweep
   drawBossIntro(now);          // boss entrance flash + name banner (on top)
   if (_shk) ctx.restore();     // end screen-shake transform
 }
