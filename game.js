@@ -1513,7 +1513,20 @@ function updateHud(){
   el('s-gold').textContent = fmt(S.gold);
   el('s-shard').textContent = fmt(S.shards);
   if (el('s-tp')) el('s-tp').textContent = fmt(S.talentPoints);
-  el('s-crystal').textContent = Math.round(S.crystalHp*100) + '%';
+  // Crystal HP — bar (graph) + numbers
+  const hpFrac = Math.max(0, Math.min(1, S.crystalHp));
+  const hpMax = Math.round(crystalMaxHp());
+  const hpCur = Math.max(0, Math.ceil(hpFrac * hpMax));
+  el('s-crystal').textContent = Math.round(hpFrac*100) + '%';
+  const fill = el('s-crystal-fill');
+  if (fill){
+    fill.style.width = (hpFrac*100) + '%';
+    const col = hpFrac > 0.5 ? 'linear-gradient(90deg,#3fbf6f,#57e18a)'
+              : hpFrac > 0.25 ? 'linear-gradient(90deg,#e0a72e,#ffd75e)'
+              : 'linear-gradient(90deg,#c0392b,#ff6b6b)';
+    fill.style.background = col;
+  }
+  if (el('s-crystal-num')) el('s-crystal-num').textContent = hpCur + '/' + hpMax;
   el('btnPrestige').disabled = prestigeShards(S.totalGoldEarned) <= S.shardsEarned;
   for (const def of HERO_DEFS){
     const btn = el('buy-'+def.id);
