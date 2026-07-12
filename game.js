@@ -2532,6 +2532,41 @@ function destroyRelic(id){
   toast(`🗑️ Destroyed ${RELIC_TYPES[rel.type].name} — salvaged ${salv}💠`);
   GA('upgrade'); save(); openRelics(); updateHud();
 }
+// ---- Relic fusion (gacha): combine 3 of one rarity for a chance at the next.
+// Higher rarities are riskier; on failure you keep just one of the same rarity.
+const FUSE_COUNT = 3;
+const FUSE_CHANCE = { common:0.80, rare:0.60, epic:0.40, legendary:0.20 };
+const relicsOfRarity = rar => S.relics.filter(r => r.rarity === rar);
+const nextRarity = rar => RELIC_RARITY[RELIC_RARITY.findIndex(r => r.id === rar) + 1];
+function makeRelic(rarId){
+  const types = Object.keys(RELIC_TYPES);
+  if (rarId === 'mythic'){
+    const a = (Math.random()*types.length)|0, b = (a + 1 + ((Math.random()*(types.length-1))|0)) % types.length;
+    return { id: ++S.relicSeq, type: types[a], type2: types[b], rarity:'mythic' };
+  }
+  return { id: ++S.relicSeq, type: types[(Math.random()*types.length)|0], rarity: rarId };
+}
+function fuseRelics(rar){
+  const next = nextRarity(rar);
+  const pool = relicsOfRarity(rar);
+  if (!next || pool.length < FUSE_COUNT) return;
+  // consume 3, spending unequipped relics before equipped ones
+  const order = pool.slice().sort((a,b) => (S.equipped.includes(a.id)?1:0) - (S.equipped.includes(b.id)?1:0));
+  const consume = order.slice(0, FUSE_COUNT).map(r => r.id);
+  S.relics = S.relics.filter(r => !consume.includes(r.id));
+  consume.forEach(id => { const ei = S.equipped.indexOf(id); if (ei >= 0) S.equipped.splice(ei, 1); });
+  const success = Math.random() < (FUSE_CHANCE[rar] || 0.5);
+  const rel = makeRelic(success ? next.id : rar);
+  S.relics.push(rel);
+  if (S.equipped.length < RELIC_SLOTS) S.equipped.push(rel.id);
+  if (success){
+    toast(`✨ Fusion SUCCESS! ${RELIC_TYPES[rel.type].icon} ${relicRarityName(rel)} ${RELIC_TYPES[rel.type].name}`);
+    GA('prestige'); spawnParticles(view.w/2, view.h*0.4, 'holy', 2.2);
+  } else {
+    toast(`💢 Fusion failed — kept one ${relicRarityName(rel)}`); GA('hit');
+  }
+  save(); openRelics(); updateHud();
+}
 function openRelics(){
   // the relic list is its own scroll container — preserve its position across re-renders
   const prevScroll = el('modalBox').querySelector('.relic-list')?.scrollTop || 0;
@@ -2559,17 +2594,31 @@ function openRelics(){
       <button class="relic-del" data-del="${rel.id}" title="Destroy (salvage ${relicSalvage(rel)}💠)">🗑️</button>
     </div>`;
   }).join('') : `<p style="grid-column:1/-1;color:var(--muted)">No relics yet. Defeat bosses (every ${BOSS_EVERY} waves) to find them.</p>`;
+  // fusion rows: any rarity (below Mythic) you own 3+ of can be fused up
+  const fusable = RELIC_RARITY.filter(r => r.id !== 'mythic' && relicsOfRarity(r.id).length >= FUSE_COUNT);
+  const fuseRows = fusable.map(r => {
+    const next = nextRarity(r.id), pct = Math.round((FUSE_CHANCE[r.id] || 0.5) * 100);
+    return `<div class="shard-item">
+      <div class="info">3× <b style="color:${r.color}">${r.name}</b> → <b style="color:${next.color}">${next.name}</b>
+        <div class="lv">${pct}% success · on fail you keep one ${r.name} (${relicsOfRarity(r.id).length} owned)</div></div>
+      <button class="btn" data-fuse="${r.id}" style="min-width:92px">🧪 ${pct}%</button>
+    </div>`;
+  }).join('');
+  const fuseSection = `<div class="branch-title">🧪 Fusion — gamble 3 relics for the next tier</div>` +
+    (fuseRows || `<p style="color:var(--muted);font-size:12px;margin:4px 2px">Collect <b>${FUSE_COUNT}</b> relics of the same rarity to fuse them upward.</p>`);
   openModal(`
     <h2>🗡️ Relics</h2>
     <p>Bosses drop relics that grant permanent global bonuses. Equip up to
        <b>${RELIC_SLOTS}</b>. Tap a relic to equip / unequip.</p>
     <div class="relic-slots">${slots}</div>
     <div class="relic-list">${list}</div>
+    ${fuseSection}
     <button class="btn" id="closeRelic" style="width:100%;margin-top:12px">Close</button>`);
   el('closeRelic').onclick = closeModal;
   el('modalBox').querySelectorAll('[data-rel]').forEach(n => n.onclick = () => toggleEquip(+n.dataset.rel));
   el('modalBox').querySelectorAll('[data-eq]').forEach(n => n.onclick = () => toggleEquip(+n.dataset.eq));
   el('modalBox').querySelectorAll('[data-del]').forEach(n => n.onclick = e => { e.stopPropagation(); destroyRelic(+n.dataset.del); });
+  el('modalBox').querySelectorAll('[data-fuse]').forEach(n => n.onclick = () => fuseRelics(n.dataset.fuse));
   const newList = el('modalBox').querySelector('.relic-list');
   if (newList) newList.scrollTop = prevScroll;
 }
