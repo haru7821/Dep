@@ -1298,6 +1298,29 @@ function drawAtmosphere(now){
   ctx.save(); ctx.fillStyle = vg; ctx.fillRect(0, 0, view.w, view.h); ctx.restore();
 }
 
+// Translucent energy dome over the Crystal — colour + flicker track its HP
+// (green → amber → red), and a low shield stutters like it's failing.
+function drawCrystalShield(cx, groundY, towerH, now){
+  const hp = Math.max(0, Math.min(1, S.crystalHp));
+  const rx = towerH * 0.64, ry = towerH * 0.92, cy = groundY - towerH * 0.30;
+  const rgb = hp > 0.5 ? '91,225,138' : hp > 0.25 ? '255,215,94' : '255,107,107';
+  const pulse = 0.5 + 0.5 * Math.sin(now / 420);
+  const glow = 0.08 + 0.08 * pulse + (1 - hp) * 0.05;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, view.w, groundY); ctx.clip();      // dome sits on the ground
+  ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createRadialGradient(cx, cy, ry * 0.35, cx, cy, ry);
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(0.8, `rgba(${rgb},${glow * 0.5})`);
+  g.addColorStop(1, `rgba(${rgb},${glow * 1.6})`);
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+  let a = 0.30 + 0.25 * pulse;
+  if (hp < 0.5 && Math.sin(now / 80) < -(1 - 2 * hp)) a *= 0.2;       // failing-shield stutter
+  ctx.strokeStyle = `rgba(${rgb},${a})`; ctx.lineWidth = Math.max(1.5, towerH * 0.010);
+  ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+}
+
 function draw(now){
   const px = view.w / 900;
   const size = Math.max(2, Math.round(3 * (view.h/460)));
@@ -1328,6 +1351,7 @@ function draw(now){
     if (Spr().drawCrystal) Spr().drawCrystal(ctx, view.crystalX, view.ground - size*10, size*3, pulse, S.crystalHp);
     else { ctx.fillStyle = `rgba(123,211,255,${0.5+0.4*pulse})`; ctx.fillRect(view.crystalX-14, view.ground-70, 28, 44); }
   }
+  drawCrystalShield(view.crystalX, view.ground, towerH, now);
 
   // enemies
   for (const e of enemies){
