@@ -117,15 +117,27 @@ function featureOpen(flag){                    // gate for non-DOM systems (e.g.
   const f = FEATURE_UNLOCKS.find(u => u.flag === flag);
   return !f || featureIsOpen(f);
 }
-// Hide every not-yet-unlocked control. `announce` shows a popup for anything
-// newly opened; on the seeding call (boot) we pass false so we don't re-announce
-// systems the player already earned.
+// Grey out (not hide) every not-yet-unlocked control, so players can see what's
+// coming. `announce` shows a popup for anything newly opened; on the seeding
+// call (boot) we pass false so we don't re-announce systems already earned.
 const announcedFeatures = new Set();
 function refreshFeatureLocks(announce){
   const justOpened = [];
   for (const u of FEATURE_UNLOCKS){
     const open = featureIsOpen(u);
-    document.querySelectorAll(u.sel).forEach(nEl => { nEl.style.display = open ? '' : 'none'; });
+    document.querySelectorAll(u.sel).forEach(nEl => {
+      nEl.style.display = '';                                   // always visible
+      nEl.classList.toggle('feat-locked', !open);
+      if (!open){
+        nEl.dataset.unlockStage = u.stage;
+        if (!nEl.dataset.origTitle && nEl.title) nEl.dataset.origTitle = nEl.title;
+        nEl.title = `🔒 Unlocks at Stage ${u.stage}`;
+      } else {
+        delete nEl.dataset.unlockStage;
+        if (nEl.dataset.origTitle){ nEl.title = nEl.dataset.origTitle; delete nEl.dataset.origTitle; }
+        else if ((nEl.title||'').startsWith('🔒')) nEl.removeAttribute('title');
+      }
+    });
     if (open && !announcedFeatures.has(u.sel)){
       announcedFeatures.add(u.sel);
       justOpened.push(u);
@@ -133,6 +145,16 @@ function refreshFeatureLocks(announce){
   }
   if (announce && justOpened.length) showUnlockPopup(justOpened);
 }
+// A tap on a locked control explains itself instead of doing nothing. Capture
+// phase so it runs before the control's own click handler and can cancel it.
+document.addEventListener('click', e => {
+  const locked = e.target.closest && e.target.closest('.feat-locked');
+  if (locked){
+    e.preventDefault(); e.stopImmediatePropagation();
+    toast(`🔒 Unlocks at Stage ${locked.dataset.unlockStage}`);
+    GA('hit');
+  }
+}, true);
 // Popup announcing newly-unlocked systems. Queued so it waits its turn behind
 // any modal already on screen (e.g. the offline "welcome back" panel).
 let unlockQueue = [];
