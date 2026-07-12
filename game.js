@@ -476,6 +476,11 @@ let spawnTimer = 0, spawnedThisWave = 0, waveKills = 0, waveGoldAccum = 0, waveT
 let partyBuffT = 0;          // remaining seconds of Aunel's damage buff
 let shakeT = 0, shakeAmt = 0;   // screen-shake timer + magnitude
 function shake(amt){ if (S && S.settings && S.settings.shake){ shakeAmt = Math.max(shakeAmt, amt); shakeT = 0.22; } }
+// boss entrance cinematic: full-screen flash + name banner + brief slow-mo
+let bossIntroT = 0, bossIntroName = '', bossIntroRGB = '';
+const BOSS_INTRO_DUR = 1.7;
+const BOSS_INFO = { dragon:{ name:'INFERNAL DRAGON', rgb:'255,122,60' }, elderghost:{ name:'ELDER GHOST', rgb:'197,139,255' } };
+function startBossIntro(kind){ const b = BOSS_INFO[kind] || BOSS_INFO.dragon; bossIntroT = BOSS_INTRO_DUR; bossIntroName = b.name; bossIntroRGB = b.rgb; GA('boss'); shake(7); }
 // kill-streak combo: rapid consecutive kills build a gold bonus
 let combo = 0, comboT = 0;   // current streak + seconds left before it resets
 const COMBO_WINDOW = 2.6;    // seconds to land the next kill and keep the streak
@@ -562,6 +567,7 @@ function spawnEnemy(w){
     enemies.push({ x: view.laneRight, y: view.ground, hp, maxHp: hp,
       type:'boss', speed:18, frame:0, boss:true, bossKind, element: bossElement(bossKind),
       slow:0, goldMul:10, atkTimer:0, age:0 });
+    startBossIntro(bossKind);
     return;
   }
   const ev = curEvent;
@@ -1321,6 +1327,26 @@ function drawCrystalShield(cx, groundY, towerH, now){
   ctx.restore();
 }
 
+function drawBossIntro(now){
+  if (bossIntroT <= 0) return;
+  const t = bossIntroT / BOSS_INTRO_DUR, s = view.h / 460, rgb = bossIntroRGB;
+  const fl = Math.max(0, (t - 0.7) / 0.3);                 // opening colour flash
+  if (fl > 0){ ctx.save(); ctx.globalAlpha = 0.5 * fl; ctx.fillStyle = `rgb(${rgb})`; ctx.fillRect(0, 0, view.w, view.h); ctx.restore(); }
+  const alpha = Math.min(Math.min(1, (1 - t) * 4), Math.min(1, t * 4));   // fade in then out
+  const bh = 46 * s, y = view.h / 2 - bh / 2;
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.55; ctx.fillStyle = '#05060f'; ctx.fillRect(0, y, view.w, bh);
+  ctx.globalAlpha = alpha; ctx.fillStyle = `rgb(${rgb})`;
+  ctx.fillRect(0, y, view.w, 2); ctx.fillRect(0, y + bh - 2, view.w, 2);
+  ctx.textAlign = 'center';
+  ctx.font = `bold ${Math.round(11 * s)}px system-ui`;
+  ctx.fillText('⚔  BOSS APPROACHING  ⚔', view.w / 2, y + 14 * s);
+  ctx.font = `900 ${Math.round(26 * s)}px system-ui`;
+  ctx.shadowColor = `rgb(${rgb})`; ctx.shadowBlur = 18; ctx.fillStyle = '#fff';
+  ctx.fillText(bossIntroName, view.w / 2, y + 38 * s);
+  ctx.restore();
+}
+
 function draw(now){
   const px = view.w / 900;
   const size = Math.max(2, Math.round(3 * (view.h/460)));
@@ -1552,6 +1578,7 @@ function draw(now){
     ctx.restore();
   }
 
+  drawBossIntro(now);          // boss entrance flash + name banner (on top)
   if (_shk) ctx.restore();     // end screen-shake transform
 }
 
@@ -1562,7 +1589,9 @@ function frame(now){
   let dt = (now - lastT) / 1000;
   lastT = now;
   if (dt > 0.25) dt = 0.25;
-  simulate(dt * gameSpeed());
+  if (bossIntroT > 0) bossIntroT = Math.max(0, bossIntroT - dt);   // real-time countdown
+  const slowmo = bossIntroT > 0 ? 0.35 : 1;                         // dramatic slow entry
+  simulate(dt * gameSpeed() * slowmo);
   draw(now);
   acc += dt;
   if (acc > 5){ acc = 0; save(); }
