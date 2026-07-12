@@ -2024,11 +2024,16 @@ function openTalents(){
 if (el('btnTalents')) el('btnTalents').onclick = openTalents;
 
 // Keystone panel — pick ONE build-defining perk (mutually exclusive).
-// Locked until the player reaches Stage 10 (lifetime best).
+// From Stage 10 the keystones unlock one at a time, one per stage
+// (Stage 10 → 1st, Stage 11 → 2nd, … Stage 14 → 5th), so the choice pool
+// grows as you climb. You still keep only one active at a time.
 const KEYSTONE_STAGE = 10;
-const keystonesUnlocked = () => dispStage(S.bestWave) >= KEYSTONE_STAGE;
+const KEYSTONE_IDS = Object.keys(KEYSTONES);
+const keystoneStage = id => KEYSTONE_STAGE + KEYSTONE_IDS.indexOf(id);      // stage this keystone unlocks at
+const keystoneAvail = id => dispStage(S.bestWave) >= keystoneStage(id);     // is it selectable yet?
+const keystonesUnlocked = () => dispStage(S.bestWave) >= KEYSTONE_STAGE;    // at least the first is available
 function pickKeystone(id){
-  if (!keystonesUnlocked()) return;
+  if (!keystoneAvail(id)) return;
   S.keystone = (S.keystone === id) ? null : id;   // tap active one to clear
   GA('upgrade'); save(); openKeystones(); updateHud();
 }
@@ -2046,7 +2051,15 @@ function openKeystones(){
     el('closeKs').onclick = closeModal;
     return;
   }
+  const availN = KEYSTONE_IDS.filter(keystoneAvail).length;
   const rows = Object.entries(KEYSTONES).map(([id, k]) => {
+    if (!keystoneAvail(id)){                        // still locked — greyed, not clickable
+      return `<div class="ks ks-locked" style="--kc:${k.color}">
+        <span class="ks-ic">🔒</span>
+        <div class="ks-info"><div class="ks-nm">${k.name}</div>
+          <div class="ks-desc">Unlocks at <b>Stage ${keystoneStage(id)}</b></div></div>
+      </div>`;
+    }
     const on = S.keystone === id;
     return `<div class="ks ${on?'on':''}" style="--kc:${k.color}" data-ks="${id}">
       <span class="ks-ic">${k.icon}</span>
@@ -2056,8 +2069,9 @@ function openKeystones(){
   }).join('');
   openModal(`
     <h2>⭐ Keystone</h2>
-    <p>Choose <b>one</b> build-defining keystone. Only one can be active — switch
-       any time (tap the active one to clear it). They persist through Reseal.</p>
+    <p>Choose <b>one</b> build-defining keystone (only one active — tap it again to
+       clear). A new keystone unlocks every stage from ${KEYSTONE_STAGE};
+       <b>${availN}/${KEYSTONE_IDS.length}</b> available so far. They persist through Reseal.</p>
     <div class="ks-list">${rows}</div>
     <button class="btn" id="closeKs" style="width:100%;margin-top:12px">Close</button>`);
   el('closeKs').onclick = closeModal;
