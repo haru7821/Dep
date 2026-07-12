@@ -619,6 +619,19 @@ const PARTICLE_PRESETS = {
   holy:   { n:18, colors:['#fff6c0','#ffe9a0','#ffd75e'],           shape:'star',   spMin:20,  spMax:130, sizeMin:2, sizeMax:5, life:[0.6,1.2], grav:-48, drag:0.9,  rise:20, glow:true },
   earth:  { n:18, colors:['#e0b877','#a06a34','#ffcc66'],           shape:'shard',  spMin:40,  spMax:180, sizeMin:2, sizeMax:5, life:[0.35,0.8],grav:150, drag:0.9,  rise:0,  glow:false },
 };
+// Death shatter: enemy bursts into element-coloured pixel shards that arc + fade.
+function spawnShatter(e){
+  if (S && S.settings && !S.settings.fx) return;
+  const col = ELEM_COLOR[e.element] || '#cdd6f4', sc = view.h/460;
+  const n = e.boss ? 22 : 10, cy = e.y - 16*sc;
+  for (let i = 0; i < n; i++){
+    if (particles.length >= MAX_PARTICLES) particles.shift();
+    const ang = Math.random()*Math.PI*2, sp = (40 + Math.random()*130) * sc, life = 0.35 + Math.random()*0.4;
+    particles.push({ x: e.x + (Math.random()-0.5)*12*sc, y: cy + (Math.random()-0.5)*16*sc,
+      vx: Math.cos(ang)*sp, vy: Math.sin(ang)*sp - 40*sc, life, max: life,
+      size: (1.4 + Math.random()*2.2) * sc, color: col, shape:'shard', grav: 120*sc, drag: 0.9, glow: true });
+  }
+}
 function spawnParticles(x, y, name, scale = 1){
   if (S && S.settings && !S.settings.fx) return;      // "reduced effects" perf toggle
   const p = PARTICLE_PRESETS[name]; if (!p) return;
@@ -747,6 +760,7 @@ function damageEnemy(e, dmg, crit, element){
     if (e.boss){ spawnParticles(e.x, e.y - 24, 'fire', 2.2); spawnParticles(e.x, e.y - 24, 'earth', 1.4); GA('explosion'); shake(9);
       grantRelic(S.wave); spawnParticles(e.x, e.y - 24, 'holy', 1.6); }
     else if (e.type === 'wraith') spawnParticles(e.x, e.y - 16, 'poison', 1.3);   // 독 cloud
+    spawnShatter(e);                          // pixel-shatter dissolve in the enemy's element colour
     return true;
   }
   return false;
