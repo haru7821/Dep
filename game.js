@@ -278,6 +278,7 @@ function freshState(){
     speed: 1,
     lastSeen: Date.now(),
     recentGoldRate: [],     // gold/sec samples of recent waves (for offline calc)
+    goldHistory: [],        // {w,r} gold/sec per cleared wave (Stats chart, last 60)
     bestWave: 1,            // lifetime best wave reached
     totalKills: 0,          // lifetime enemies defeated
     goldenKills: 0,         // golden enemies slain (lifetime)
@@ -767,8 +768,11 @@ function simulate(dt){
   // wave clear
   if (spawnedThisWave >= totalToSpawn && enemies.length === 0){
     if (waveTime > 0){
-      S.recentGoldRate.push(waveGoldAccum / waveTime);
+      const rate = waveGoldAccum / waveTime;
+      S.recentGoldRate.push(rate);
       if (S.recentGoldRate.length > 10) S.recentGoldRate.shift();
+      S.goldHistory.push({ w: S.wave, r: Math.round(rate) });   // for the Stats chart
+      if (S.goldHistory.length > 60) S.goldHistory.shift();
     }
     S.crystalHp = Math.min(1, S.crystalHp + 0.05);
     S.wave++;
@@ -1648,8 +1652,53 @@ function openStats(){
       <div class="shard-item"><div class="info"><b>Critical Chance</b><div class="lv">${Math.round(critChance()*100)}%</div></div></div>
       <div class="shard-item"><div class="info"><b>Best Combo</b><div class="lv">🔥 ${S.bestCombo}× streak</div></div></div>
     </div>
-    <button class="btn" id="closeStats" style="width:100%">Close</button>`);
+    <div class="branch-title">Gold income per wave</div>
+    <canvas id="statChart" width="800" height="220"
+      style="width:100%;height:110px;background:#0d1128;border:1px solid var(--line);border-radius:8px"></canvas>
+    <button class="btn" id="closeStats" style="width:100%;margin-top:12px">Close</button>`);
   el('closeStats').onclick = closeModal;
+  drawGoldChart(el('statChart'));
+}
+// simple gold/sec line chart (last cleared waves) in the game's palette
+function drawGoldChart(cv){
+  if (!cv) return;
+  const g = cv.getContext('2d'); const W = cv.width, H = cv.height;
+  g.clearRect(0, 0, W, H);
+  const data = S.goldHistory || [];
+  if (data.length < 2){
+    g.fillStyle = '#8b93c4'; g.font = '20px system-ui'; g.textAlign = 'center';
+    g.fillText('Clear a few waves to chart your gold income…', W/2, H/2);
+    return;
+  }
+  const pad = { l: 64, r: 12, t: 14, b: 26 };
+  const max = Math.max(...data.map(d => d.r), 1), min = 0;
+  const x = i => pad.l + (W - pad.l - pad.r) * (i / (data.length - 1));
+  const y = v => pad.t + (H - pad.t - pad.b) * (1 - (v - min) / (max - min || 1));
+  // gridlines + y labels
+  g.strokeStyle = 'rgba(255,255,255,.08)'; g.fillStyle = '#8b93c4';
+  g.font = '13px system-ui'; g.textAlign = 'right'; g.lineWidth = 1;
+  for (let k = 0; k <= 3; k++){
+    const v = max * k/3, yy = y(v);
+    g.beginPath(); g.moveTo(pad.l, yy); g.lineTo(W - pad.r, yy); g.stroke();
+    g.fillText(fmt(v) + '/s', pad.l - 6, yy + 4);
+  }
+  // x labels (first / last wave)
+  g.textAlign = 'center';
+  g.fillText('W' + data[0].w, x(0), H - 8);
+  g.fillText('W' + data[data.length-1].w, x(data.length-1), H - 8);
+  // area fill + line
+  g.beginPath(); g.moveTo(x(0), y(data[0].r));
+  data.forEach((d, i) => g.lineTo(x(i), y(d.r)));
+  g.lineTo(x(data.length-1), y(0)); g.lineTo(x(0), y(0)); g.closePath();
+  const grad = g.createLinearGradient(0, pad.t, 0, H - pad.b);
+  grad.addColorStop(0, 'rgba(255,215,94,.35)'); grad.addColorStop(1, 'rgba(255,215,94,0)');
+  g.fillStyle = grad; g.fill();
+  g.beginPath(); g.moveTo(x(0), y(data[0].r));
+  data.forEach((d, i) => g.lineTo(x(i), y(d.r)));
+  g.strokeStyle = '#ffd75e'; g.lineWidth = 2.5; g.stroke();
+  // last point dot
+  const li = data.length - 1;
+  g.fillStyle = '#ffe9a0'; g.beginPath(); g.arc(x(li), y(data[li].r), 4, 0, Math.PI*2); g.fill();
 }
 if (el('btnStats')) el('btnStats').onclick = openStats;
 
