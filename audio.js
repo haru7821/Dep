@@ -7,6 +7,7 @@
 window.GameAudio = (function () {
   let ctx = null, master, sfxGain, musicGain, noiseBuf = null;
   let muted = false, musicOn = true, seqTimer = null, step = 0, unlocked = false;
+  let musicEl = null, usingFile = false;   // real music track (assets/music.*) if present
 
   function makeNoise() {
     const len = ctx.sampleRate * 0.5;
@@ -25,6 +26,32 @@ window.GameAudio = (function () {
     musicGain = ctx.createGain(); musicGain.gain.value = 0.0; musicGain.connect(master);
     makeNoise();
     if (musicOn) startMusic();
+    loadMusicFile();
+  }
+
+  // If a real track exists at assets/music.(mp3|ogg|m4a|wav), loop it instead of
+  // the synth. Falls back to the synth automatically when no file is found.
+  function applyMusicState() {
+    if (!musicEl) return;
+    musicEl.muted = muted;
+    if (usingFile && musicOn && !muted && unlocked) musicEl.play().catch(() => {});
+    else musicEl.pause();
+  }
+  function loadMusicFile() {
+    if (musicEl) return;
+    const cands = ['assets/music.mp3', 'assets/music.ogg'];
+    let i = 0;
+    const el = new Audio();
+    el.loop = true; el.preload = 'auto'; el.volume = 0.55;
+    const tryNext = () => { if (i < cands.length) { el.src = cands[i++]; el.load(); } };
+    el.addEventListener('canplaythrough', () => {
+      if (usingFile) return;
+      usingFile = true; musicEl = el;
+      if (ctx) rampMusic(0.0);              // silence the synth fallback
+      applyMusicState();
+    });
+    el.addEventListener('error', tryNext);
+    tryNext();
   }
 
   // unlock on first gesture
@@ -34,7 +61,8 @@ window.GameAudio = (function () {
     if (!ctx) return;
     if (ctx.state === 'suspended') ctx.resume();
     unlocked = true;
-    if (musicOn) rampMusic(0.20);
+    if (musicOn && !usingFile) rampMusic(0.30);
+    applyMusicState();
   }
 
   function tone(freq, dur, type, vol, slideTo) {
@@ -110,17 +138,22 @@ window.GameAudio = (function () {
 
   function rampMusic(to) {
     if (!ctx) return;
-    musicGain.gain.linearRampToValueAtTime(to, ctx.currentTime + 0.8);
+    const t = ctx.currentTime;
+    musicGain.gain.cancelScheduledValues(t);
+    musicGain.gain.setValueAtTime(musicGain.gain.value, t);   // anchor start so the ramp actually moves
+    musicGain.gain.linearRampToValueAtTime(to, t + 0.8);
   }
 
   function toggleMute() {
     muted = !muted;
     if (ctx) master.gain.value = muted ? 0 : 0.85;
+    applyMusicState();
     return muted;
   }
   function toggleMusic() {
     musicOn = !musicOn;
-    if (ctx) rampMusic(musicOn ? 0.20 : 0.0);
+    if (usingFile) applyMusicState();
+    else if (ctx) rampMusic(musicOn ? 0.30 : 0.0);
     return musicOn;
   }
 
