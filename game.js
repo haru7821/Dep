@@ -2048,6 +2048,8 @@ function destroyRelic(id){
   GA('upgrade'); save(); openRelics(); updateHud();
 }
 function openRelics(){
+  // the relic list is its own scroll container — preserve its position across re-renders
+  const prevScroll = el('modalBox').querySelector('.relic-list')?.scrollTop || 0;
   const slots = Array.from({length:RELIC_SLOTS}, (_,i) => {
     const id = S.equipped[i]; const rel = id && S.relics.find(r=>r.id===id);
     if (!rel) return `<div class="relic-slot">＋</div>`;
@@ -2083,6 +2085,8 @@ function openRelics(){
   el('modalBox').querySelectorAll('[data-rel]').forEach(n => n.onclick = () => toggleEquip(+n.dataset.rel));
   el('modalBox').querySelectorAll('[data-eq]').forEach(n => n.onclick = () => toggleEquip(+n.dataset.eq));
   el('modalBox').querySelectorAll('[data-del]').forEach(n => n.onclick = e => { e.stopPropagation(); destroyRelic(+n.dataset.del); });
+  const newList = el('modalBox').querySelector('.relic-list');
+  if (newList) newList.scrollTop = prevScroll;
 }
 if (el('btnRelics')) el('btnRelics').onclick = openRelics;
 
