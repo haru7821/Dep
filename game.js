@@ -943,8 +943,12 @@ function simulate(dt){
   if (odT > 0) odT = Math.max(0, odT - dt);
   if (shakeT > 0){ shakeT -= dt; if (shakeT <= 0){ shakeT = 0; shakeAmt = 0; } }
   if (wallHintT > 0) wallHintT -= dt;
-  // auto-upgrade: buy one cheapest affordable upgrade a few times per second
-  if (S.autoUp){ autoUpT -= dt; if (autoUpT <= 0){ autoUpT = 0.3; autoUpgradeStep(); } }
+  // auto-upgrade: buy one cheapest affordable upgrade a few times per second,
+  // and auto-trigger Overdrive whenever it's charged and there are foes to hit
+  if (S.autoUp){
+    autoUpT -= dt; if (autoUpT <= 0){ autoUpT = 0.3; autoUpgradeStep(); }
+    if (odCharge >= 1 && !odActive() && enemies.length > 0) tryOverdrive();
+  }
 
   // fx + particles + floaters
   updateParticles(dt);
@@ -2386,8 +2390,8 @@ function refreshAutoBtn(){
 }
 if (el('btnAuto')) el('btnAuto').onclick = () => {
   S.autoUp = !S.autoUp; refreshAutoBtn();
-  toast(S.autoUp ? '🅰️ Auto-upgrade ON — spending gold on the cheapest upgrade'
-                 : '🅰️ Auto-upgrade OFF');
+  toast(S.autoUp ? '🅰️ Auto ON — buys cheapest upgrades + auto-fires Overdrive'
+                 : '🅰️ Auto OFF');
   save();
 };
 
