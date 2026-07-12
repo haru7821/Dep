@@ -215,6 +215,22 @@ function checkAchievements(){
   }
 }
 
+// --- Endless milestones: every 25 waves of a NEW best pays shards (+TP each 100)
+const MILESTONE_STEP = 25;
+const nextMilestone = () => Math.floor(S.bestWave / MILESTONE_STEP) * MILESTONE_STEP + MILESTONE_STEP;
+function awardMilestones(from, to){
+  let sh = 0, tp = 0, n = 0, top = 0;
+  for (let m = Math.floor(from/MILESTONE_STEP)*MILESTONE_STEP + MILESTONE_STEP; m <= to; m += MILESTONE_STEP){
+    sh += 1 + Math.floor(m/100); if (m % 100 === 0) tp += 1; n++; top = m;
+  }
+  if (!n) return;
+  S.shards += sh; S.talentPoints += tp;
+  toast(`🏅 Wave ${top} milestone${n>1?` (×${n})`:''}! +${sh}💠${tp?` +${tp}🌳`:''}`);
+  GA('prestige');
+}
+// advance the lifetime best wave, paying any milestones crossed
+function reachWave(w){ if (w > S.bestWave){ awardMilestones(S.bestWave, w); S.bestWave = w; } }
+
 // ------------------------------------------------------------------ formulas
 const enemyHP    = w => 10 * Math.pow(1.12, w - 1);
 const enemyCount = w => Math.min(5 + Math.floor(w / 3), 20);
@@ -749,7 +765,7 @@ function simulate(dt){
     }
     S.crystalHp = Math.min(1, S.crystalHp + 0.05);
     S.wave++;
-    if (S.wave > S.bestWave) S.bestWave = S.wave;
+    reachWave(S.wave);
     checkUnlocks(S.wave);
     checkAchievements();
     startWave(S.wave);
@@ -1471,8 +1487,8 @@ function runOfflineSim(seconds){
       budget -= total;
       gold += owGold(w); kills += isBossWave(w) ? 1 : enemyCount(w);
       S.wave++; waves++;
-      if (S.wave > S.bestWave) S.bestWave = S.wave;
     }
+    reachWave(S.wave);                                 // award all crossed milestones at once
   }
   gold = Math.floor(gold);
   if (gold > 0){ S.gold += gold; S.totalGoldEarned += gold; }
@@ -1593,6 +1609,7 @@ function openStats(){
     <div class="shard-shop">
       <div class="shard-item"><div class="info"><b>Current Wave</b><div class="lv">${S.wave}</div></div></div>
       <div class="shard-item"><div class="info"><b>Best Wave</b><div class="lv">${S.bestWave}</div></div></div>
+      <div class="shard-item"><div class="info"><b>Next Milestone</b><div class="lv">🏅 Wave ${nextMilestone()} — reward 💠${1 + Math.floor(nextMilestone()/100)}${nextMilestone()%100===0?' + 🌳1':''}</div></div></div>
       <div class="shard-item"><div class="info"><b>Enemies Defeated</b><div class="lv">${fmt(S.totalKills)}</div></div></div>
       <div class="shard-item"><div class="info"><b>Lifetime Gold</b><div class="lv">🪙 ${fmt(S.totalGoldEarned)}</div></div></div>
       <div class="shard-item"><div class="info"><b>Shards Earned</b><div class="lv">💠 ${S.shardsEarned}</div></div></div>
