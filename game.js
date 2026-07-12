@@ -60,11 +60,23 @@ const ELEM_ICON = { physical:'⚔️', fire:'🔥', frost:'❄️', lightning:'�
 const HERO_ELEM = { garran:'physical', mira:'frost', faye:'fire', rai:'lightning', aunel:'holy' };
 function bossElement(kind){ return kind === 'dragon' ? 'fire' : 'void'; }
 // returns {mult, kind} for an attack element vs an enemy's element
+// Keystones: pick ONE build-defining perk (mutually exclusive, free to switch).
+const KEYSTONES = {
+  cannon:     { name:'Glass Cannon', icon:'💥', color:'#ff6b6b', desc:'+100% damage dealt, but the Crystal takes +60% damage.' },
+  fortress:   { name:'Fortress',     icon:'🛡️', color:'#5bc8ff', desc:'Crystal takes −60% damage, but you deal −30% damage.' },
+  momentum:   { name:'Momentum',     icon:'🔥', color:'#ffb93c', desc:'Your kill-streak also boosts damage (up to +100%) and doubles the combo gold bonus.' },
+  avarice:    { name:'Avarice',      icon:'🪙', color:'#ffd75e', desc:'+150% gold from kills, but every enemy has +35% HP.' },
+  attunement: { name:'Attunement',   icon:'🌈', color:'#c58bff', desc:'Elemental weakness hits deal ×2.2 (up from ×1.6) and you ignore enemy resistances.' },
+};
+function ksIs(id){ return S && S.keystone === id; }
+function enemyHpMul(){ return ksIs('avarice') ? 1.35 : 1; }     // Avarice: tougher enemies
+
 function elemVs(enemyEl, atkEl){
   const m = ELEM_MATCH[enemyEl];
   if (!m || !atkEl) return { mult:1, kind:null };
-  if (m.weak === atkEl)   return { mult:1.6, kind:'weak' };
-  if (m.resist === atkEl) return { mult:0.5, kind:'resist' };
+  const att = ksIs('attunement');
+  if (m.weak === atkEl)   return { mult: att ? 2.2 : 1.6, kind:'weak' };
+  if (m.resist === atkEl) return { mult: att ? 1 : 0.5, kind: att ? null : 'resist' };
   return { mult:1, kind:null };
 }
 // which bestiary monster each enemy type uses (falls back to canvas art)
@@ -113,7 +125,7 @@ const talent = id => (S.talents[id] || 0);
 function effInterval(def){ return Math.max(0.05, def.atkInterval * (1 - 0.05 * talent('haste')) / (odActive() ? OD_RATE : 1)); }
 function effSkillCd(def){ return def.skill.cd * (1 - 0.04 * talent('focus')); }
 function wardMul(){ return shardMul('ward') * (1 + 0.10 * talent('bulwark')); }
-function goldMulAll(){ return shardMul('gold') * (1 + 0.08 * talent('greed')) * (1 + relicBonus('gold')); }
+function goldMulAll(){ return shardMul('gold') * (1 + 0.08 * talent('greed')) * (1 + relicBonus('gold')) * (ksIs('avarice') ? 2.5 : 1); }
 function goldenChance(){ return 0.03 + 0.01 * talent('fortune'); }
 
 // --- Relics: boss drops that grant a global bonus. Rarity scales the roll.
@@ -265,6 +277,7 @@ function freshState(){
     towerLv: 0,             // gold-bought Fortify Tower level (resets on reseal)
     autoUp: false,          // auto-buy the cheapest affordable hero upgrade
     seenIntro: false,       // shown the first-run tutorial yet?
+    keystone: null,         // chosen build-defining keystone id (or null)
   };
 }
 
@@ -301,7 +314,12 @@ function globalDmgMul(){
   m *= 1 + relicBonus('dmg');                         // equipped relics
   return m;
 }
-function combatMul(){ return globalDmgMul() * (partyBuffT > 0 ? PARTY_BUFF_MUL : 1) * (1 + 0.05 * talent('might')) * (odActive() ? OD_DMG : 1); }
+function ksDmgMul(){
+  let m = ksIs('cannon') ? 2 : ksIs('fortress') ? 0.7 : 1;
+  if (ksIs('momentum')) m *= 1 + Math.min(combo, COMBO_MAX) / COMBO_MAX;   // damage scales with streak
+  return m;
+}
+function combatMul(){ return globalDmgMul() * (partyBuffT > 0 ? PARTY_BUFF_MUL : 1) * (1 + 0.05 * talent('might')) * (odActive() ? OD_DMG : 1) * ksDmgMul(); }
 function towerHpMul(){ return 1 + 0.15 * S.towerLv; }          // Fortify Tower (gold)
 function towerCost(){ return Math.ceil(60 * Math.pow(1.55, S.towerLv)); }
 function crystalMaxHp(){ return 100 * wardMul() * (1 + relicBonus('ward')) * towerHpMul(); }
@@ -322,7 +340,7 @@ let combo = 0, comboT = 0;   // current streak + seconds left before it resets
 const COMBO_WINDOW = 2.6;    // seconds to land the next kill and keep the streak
 const COMBO_MAX = 60;        // combo count where the gold bonus caps
 // gold bonus from the current streak: up to +150% at COMBO_MAX
-function comboMul(){ return 1 + Math.min(combo, COMBO_MAX) / COMBO_MAX * 1.5; }
+function comboMul(){ return 1 + Math.min(combo, COMBO_MAX) / COMBO_MAX * 1.5 * (ksIs('momentum') ? 2 : 1); }
 function comboTier(){ return combo>=50?4 : combo>=30?3 : combo>=15?2 : combo>=5?1 : 0; }
 // Overdrive: kills charge a gauge; when full, activate for a burst of power
 let odCharge = 0, odT = 0;         // gauge 0..1, active seconds remaining
@@ -391,7 +409,7 @@ function waveSpawnCount(w){
 
 function spawnEnemy(w){
   if (isBossWave(w)){
-    const hp = enemyHP(w) * 8;
+    const hp = enemyHP(w) * 8 * enemyHpMul();
     const bossKind = (Math.floor(w / BOSS_EVERY) % 2 === 0) ? 'elderghost' : 'dragon';
     enemies.push({ x: view.laneRight, y: view.ground, hp, maxHp: hp,
       type:'boss', speed:18, frame:0, boss:true, bossKind, element: bossElement(bossKind),
@@ -401,7 +419,7 @@ function spawnEnemy(w){
   const ev = curEvent;
   const type = pickType(w);
   const t = ENEMY_TYPES[type];
-  const hp = enemyHP(w) * t.hp * (ev ? ev.hp : 1);
+  const hp = enemyHP(w) * t.hp * (ev ? ev.hp : 1) * enemyHpMul();
   const golden = (ev && ev.golden) || (w >= 8 && Math.random() < goldenChance());
   let goldMul = t.gold * (ev ? ev.gold : 1);
   if (golden) goldMul *= 30;
@@ -667,7 +685,8 @@ function simulate(dt){
       e.atkTimer += dt;
       if (e.atkTimer >= 1){
         e.atkTimer -= 1;
-        const dmgFrac = (e.boss ? 0.20 : 0.05) / (wardMul() * towerHpMul());
+        const ksTake = ksIs('cannon') ? 1.6 : ksIs('fortress') ? 0.4 : 1;
+        const dmgFrac = (e.boss ? 0.20 : 0.05) * ksTake / (wardMul() * towerHpMul());
         S.crystalHp = Math.max(0, S.crystalHp - dmgFrac);
         addFloater(view.crystalX, view.ground - 60*px, '-' + Math.round(dmgFrac*100) + '%', '#ff6b6b');
         if (e.boss && e.bossKind === 'dragon'){       // lunge + fire breath toward the crystal
@@ -1367,6 +1386,7 @@ function doPrestige(){
       relics: S.relics, equipped: S.equipped, relicSeq: S.relicSeq,
       kills: S.kills, bestCombo: S.bestCombo,                 // lifetime records
       autoUp: S.autoUp, seenIntro: S.seenIntro,               // keep QoL/tutorial flags
+      keystone: S.keystone,                                   // keep the build choice
     };
     S = freshState();
     Object.assign(S, keep);
@@ -1428,7 +1448,7 @@ function heroDPS(){
   }
   return d * 1.3;
 }
-const owHP   = w => isBossWave(w) ? enemyHP(w) * 8 : enemyCount(w) * enemyHP(w) * 1.3;
+const owHP   = w => (isBossWave(w) ? enemyHP(w) * 8 : enemyCount(w) * enemyHP(w) * 1.3) * enemyHpMul();
 const owGold = w => Math.ceil((isBossWave(w) ? goldPerKill(w) * 10 : enemyCount(w) * goldPerKill(w)) * goldMulAll());
 
 // Advance waves for `seconds` of absence, stopping at the DPS sustain wall.
@@ -1618,6 +1638,31 @@ function openTalents(){
   });
 }
 if (el('btnTalents')) el('btnTalents').onclick = openTalents;
+
+// Keystone panel — pick ONE build-defining perk (mutually exclusive)
+function pickKeystone(id){
+  S.keystone = (S.keystone === id) ? null : id;   // tap active one to clear
+  GA('upgrade'); save(); openKeystones(); updateHud();
+}
+function openKeystones(){
+  const rows = Object.entries(KEYSTONES).map(([id, k]) => {
+    const on = S.keystone === id;
+    return `<div class="ks ${on?'on':''}" style="--kc:${k.color}" data-ks="${id}">
+      <span class="ks-ic">${k.icon}</span>
+      <div class="ks-info"><div class="ks-nm">${k.name}${on?' · ACTIVE':''}</div>
+        <div class="ks-desc">${k.desc}</div></div>
+    </div>`;
+  }).join('');
+  openModal(`
+    <h2>⭐ Keystone</h2>
+    <p>Choose <b>one</b> build-defining keystone. Only one can be active — switch
+       any time (tap the active one to clear it). They persist through Reseal.</p>
+    <div class="ks-list">${rows}</div>
+    <button class="btn" id="closeKs" style="width:100%;margin-top:12px">Close</button>`);
+  el('closeKs').onclick = closeModal;
+  el('modalBox').querySelectorAll('[data-ks]').forEach(n => n.onclick = () => pickKeystone(n.dataset.ks));
+}
+if (el('btnKeystone')) el('btnKeystone').onclick = openKeystones;
 
 // achievements panel
 function openAchievements(){

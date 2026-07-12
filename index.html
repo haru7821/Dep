@@ -82,6 +82,17 @@
   .shard-item .info b{color:var(--shard)}
   .shard-item .lv{font-size:11px;color:var(--muted)}
   .branch-title{font-size:12px;font-weight:700;color:var(--accent);margin:10px 2px 2px}
+  /* Keystone picker */
+  .ks-list{display:grid;gap:8px;margin:12px 0}
+  .ks{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);
+    border:1px solid var(--line);border-left:4px solid var(--kc,#888);border-radius:10px;
+    padding:10px;cursor:pointer;transition:transform .08s}
+  .ks:active{transform:scale(.99)}
+  .ks.on{outline:2px solid var(--kc,#888);outline-offset:-1px;
+    box-shadow:0 0 14px color-mix(in srgb, var(--kc) 55%, transparent)}
+  .ks-ic{font-size:22px;line-height:1}
+  .ks-nm{font-size:13px;font-weight:800;color:var(--kc,#e8ecff)}
+  .ks-desc{font-size:11px;color:var(--muted);line-height:1.45;margin-top:2px}
   /* Overdrive gauge button (bottom-left of the battlefield) */
   #odBtn{position:absolute;left:12px;bottom:12px;z-index:15;width:74px;height:40px;
     border:2px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--text);
@@ -192,6 +203,7 @@
     <button class="btn prestige" id="btnPrestige">💠 Reseal Crystal (Prestige)</button>
     <button class="btn" id="btnShop">💠 Shard Shop</button>
     <button class="btn" id="btnTalents">🌳 Talents</button>
+    <button class="btn" id="btnKeystone">⭐ Keystone</button>
     <button class="btn" id="btnAch">🏆 Achievements</button>
     <button class="btn" id="btnBestiary">📖 Bestiary</button>
     <button class="btn" id="btnRelics">🗡️ Relics</button>
@@ -216,8 +228,8 @@
   <div class="box" id="modalBox"></div>
 </div>
 
-<script src="sprites.js?v=28"></script>
-<script src="dungeon.js?v=28"></script>
-<script src="sheets.js?v=28"></script>
-<script src="audio.js?v=28"></script>
-<script src="game.js?v=28"></script>
+<script src="sprites.js?v=29"></script>
+<script src="dungeon.js?v=29"></script>
+<script src="sheets.js?v=29"></script>
+<script src="audio.js?v=29"></script>
+<script src="game.js?v=29"></script>
