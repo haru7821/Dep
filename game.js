@@ -1476,7 +1476,14 @@ function showWaveBanner(w){
 }
 
 // ------------------------------------------------------------------ modals
-function openModal(html){ el('modalBox').innerHTML = html; el('modal').classList.add('show'); }
+function openModal(html){
+  const box = el('modalBox');
+  // preserve scroll when re-rendering an already-open modal (e.g. destroying a relic)
+  const keep = el('modal').classList.contains('show') ? box.scrollTop : 0;
+  box.innerHTML = html;
+  el('modal').classList.add('show');
+  box.scrollTop = keep;
+}
 function closeModal(){ el('modal').classList.remove('show'); el('modalBox').classList.remove('wide'); }
 el('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
 
