@@ -646,9 +646,13 @@ function damageEnemy(e, dmg, crit, element){
   return false;
 }
 
+// Engagement line: heroes hold fire until enemies march past this point
+// (so freshly-spawned enemies on the far right aren't hit instantly).
+function engageLine(){ return view.crystalX + (view.laneRight - view.crystalX) * 0.66; }
+function engaged(e){ return e.x <= engageLine(); }
 function nearestEnemy(){
   let target = null, best = Infinity;
-  for (const e of enemies){ if (e.x < best){ best = e.x; target = e; } }
+  for (const e of enemies){ if (engaged(e) && e.x < best){ best = e.x; target = e; } }
   return target;
 }
 function removeEnemy(e){ const i = enemies.indexOf(e); if (i >= 0) enemies.splice(i, 1); }
@@ -666,7 +670,7 @@ function castSkill(def, slot, lvl){
     addFx({ kind:'nova', x: hx + 34, y: slot.y - 12, r0:8, r:150, dur:0.5, color:s.fx });
     spawnParticles(hx + 34, slot.y - 8, 'earth', 1.3);
     spawnParticles(hx + 34, slot.y - 8, 'fire', 0.5);
-    for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], dmg, roll.crit, HERO_ELEM[def.id])) enemies.splice(i, 1);
+    for (let i = enemies.length - 1; i >= 0; i--) if (engaged(enemies[i]) && damageEnemy(enemies[i], dmg, roll.crit, HERO_ELEM[def.id])) enemies.splice(i, 1);
     GA('explosion');
   }
   else if (s.kind === 'frost'){
@@ -677,6 +681,7 @@ function castSkill(def, slot, lvl){
     spawnParticles(cx, cy, 'frost', 1.3);
     for (let i = enemies.length - 1; i >= 0; i--){
       const e = enemies[i];
+      if (!engaged(e)) continue;
       if (!ENEMY_TYPES[e.type] || !ENEMY_TYPES[e.type].slowImmune){ e.slow = 3; spawnParticles(e.x, e.y-14, 'frost', 0.4); }  // freeze
       if (damageEnemy(e, dmg, roll.crit, HERO_ELEM[def.id])) enemies.splice(i, 1);
     }
@@ -691,13 +696,13 @@ function castSkill(def, slot, lvl){
     spawnParticles(t.x, t.y - 14, 'fire', 1.6);
     spawnParticles(t.x, t.y - 14, 'smoke', 1.0);
     for (let i = enemies.length - 1; i >= 0; i--){
-      if (Math.abs(enemies[i].x - t.x) <= R){ enemies[i].burn = BURN_DUR; if (damageEnemy(enemies[i], dmg, roll.crit, HERO_ELEM[def.id])) enemies.splice(i, 1); }
+      if (engaged(enemies[i]) && Math.abs(enemies[i].x - t.x) <= R){ enemies[i].burn = BURN_DUR; if (damageEnemy(enemies[i], dmg, roll.crit, HERO_ELEM[def.id])) enemies.splice(i, 1); }
     }
     GA('explosion'); shake(5);
   }
   else if (s.kind === 'chain'){
     // LIGHTNING: arcs + electric sparks at each struck enemy
-    const targets = [...enemies].sort((a,b) => a.x - b.x).slice(0, 5);
+    const targets = enemies.filter(engaged).sort((a,b) => a.x - b.x).slice(0, 5);
     if (!targets.length) return;
     const segs = []; let px = hx, py = hy;
     for (const e of targets){ segs.push([px, py, e.x, e.y - 14]); px = e.x; py = e.y - 14; spawnParticles(e.x, e.y-14, 'spark', 0.7); }
@@ -713,7 +718,7 @@ function castSkill(def, slot, lvl){
     addFx({ kind:'nova', x: view.crystalX, y: slot.y - 18, r0:8, r:220, dur:0.7, color:s.fx });
     addFx({ kind:'heal', x: view.crystalX, y: view.ground - 40, dur:0.9, color:s.fx });
     spawnParticles(view.crystalX, slot.y - 18, 'holy', 1.6);
-    for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], holy, HERO_ELEM[def.id])) enemies.splice(i, 1);
+    for (let i = enemies.length - 1; i >= 0; i--) if (engaged(enemies[i]) && damageEnemy(enemies[i], holy, HERO_ELEM[def.id])) enemies.splice(i, 1);
     GA('heal');
   }
   heroFlash[def.id] = 0.22;
@@ -795,7 +800,7 @@ function simulate(dt){
     skillTimers[def.id] = (skillTimers[def.id] || 0) + dt;
     if (skillTimers[def.id] >= cd){
       const wantsHeal = def.skill.kind === 'blessing' && S.crystalHp < 0.98;
-      if (enemies.length > 0 || wantsHeal){
+      if (enemies.some(engaged) || wantsHeal){
         skillTimers[def.id] = 0;
         castSkill(def, slot, lvl);
       } else {
@@ -870,7 +875,7 @@ function basicAttack(def, slot, lvl){
     // Mira splash: hit every enemy + purple pulse (one crit roll for the volley)
     const r = critRoll(dmg);
     addFx({ kind:'nova', x: hx, y: hy, r0:4, r:60, dur:0.3, color:def.color });
-    for (let i = enemies.length - 1; i >= 0; i--) if (damageEnemy(enemies[i], r.dmg, r.crit, HERO_ELEM[def.id])) enemies.splice(i, 1);
+    for (let i = enemies.length - 1; i >= 0; i--) if (engaged(enemies[i]) && damageEnemy(enemies[i], r.dmg, r.crit, HERO_ELEM[def.id])) enemies.splice(i, 1);
     basicSfx('shoot');
     heroFlash[def.id] = 0.15;
   } else {
@@ -1168,6 +1173,16 @@ function draw(now){
     drawTowerFire(view.crystalX, view.ground - towerH, towerH, towerFrame, now);
   }
 
+  // engagement line — heroes open fire once enemies march past this point
+  {
+    const ex = engageLine();
+    ctx.save();
+    ctx.strokeStyle = '#7bd3ff'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 9]);
+    ctx.globalAlpha = 0.16 + 0.05*Math.sin(now/500);
+    ctx.beginPath(); ctx.moveTo(ex, view.ground - size*20); ctx.lineTo(ex, view.ground + 3*px); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+  }
+
   // enemies
   for (const e of enemies){
     const t = ENEMY_TYPES[e.type] || ENEMY_TYPES.normal;
@@ -1175,7 +1190,7 @@ function draw(now){
     const sid = e.boss ? (e.bossKind || 'dragon') : ENEMY_SPRITE[e.type];
     const th = es * (e.boss ? (e.bossKind === 'elderghost' ? 15 : 24) : 14);   // dragon 2x, elder ghost a bit smaller
     // element aura (ground glow) distinguishes archetypes that share a sprite
-    if (!e.boss && S.settings.fx && e.element){
+    if (!e.boss && S.settings.fx && e.element && Number.isFinite(e.x)){
       const col = ELEM_COLOR[e.element] || '#8fd07a';
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
       const gy = e.y - th*0.14, gr = th*0.5;
@@ -1725,7 +1740,7 @@ canvas.addEventListener('pointerdown', e => {
   if (best && bd < 48){
     const def = best.def;
     const ready = (skillTimers[def.id] || 0) >= effSkillCd(def);
-    if (ready && (enemies.length > 0 || def.skill.kind === 'blessing')){
+    if (ready && (enemies.some(engaged) || def.skill.kind === 'blessing')){
       skillTimers[def.id] = 0;
       castSkill(def, best, S.heroLevels[def.id]);
     }
