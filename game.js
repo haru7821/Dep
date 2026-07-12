@@ -1269,15 +1269,40 @@ const Spr = () => (window.Sprites || {});
 // Each 10-stage band gets its own colour grade + ambient particle colour, so
 // climbing the stages reads visually as moving through new biomes.
 const BIOMES = [
-  { name:'Verdant Halls', tint:null,      mote:'#9be36a' },  // Stage 1–10
-  { name:'Frostspire',    tint:'#3a6bd0', mote:'#cbeaff' },  // 11–20
-  { name:'Emberdepths',   tint:'#c0392b', mote:'#ff9d3c' },  // 21–30
-  { name:'Blightmarsh',   tint:'#2f9e5a', mote:'#b6ff8a' },  // 31–40
-  { name:'Voidreach',     tint:'#7a3cc0', mote:'#d9a6ff' },  // 41–50
-  { name:'Sunscorch',     tint:'#c58b2e', mote:'#ffd98a' },  // 51–60
-  { name:'Abyssal Tide',  tint:'#2b8fb0', mote:'#bff0ff' },  // 61–70
-  { name:'Duskvault',     tint:'#b0347a', mote:'#ffb3e6' },  // 71–80
+  { name:'Verdant Halls', tint:null,      mote:'#9be36a', wx:null    },  // Stage 1–10
+  { name:'Frostspire',    tint:'#3a6bd0', mote:'#cbeaff', wx:'snow'  },  // 11–20
+  { name:'Emberdepths',   tint:'#c0392b', mote:'#ff9d3c', wx:'ash'   },  // 21–30
+  { name:'Blightmarsh',   tint:'#2f9e5a', mote:'#b6ff8a', wx:'spore' },  // 31–40
+  { name:'Voidreach',     tint:'#7a3cc0', mote:'#d9a6ff', wx:'void'  },  // 41–50
+  { name:'Sunscorch',     tint:'#c58b2e', mote:'#ffd98a', wx:'sand'  },  // 51–60
+  { name:'Abyssal Tide',  tint:'#2b8fb0', mote:'#bff0ff', wx:'rain'  },  // 61–70
+  { name:'Duskvault',     tint:'#b0347a', mote:'#ffb3e6', wx:'petal' },  // 71–80
 ];
+const WEATHER = {
+  snow:  { color:'#dff0ff', speed:0.10, sway:1.2, amp:16, size:1.6, alpha:0.7 },
+  ash:   { color:'#ff9d3c', speed:0.08, sway:1.6, amp:20, size:1.4, alpha:0.55, add:true },
+  spore: { color:'#b6ff8a', speed:0.05, sway:1.8, amp:22, size:1.3, alpha:0.5,  add:true },
+  void:  { color:'#d9a6ff', speed:0.07, sway:1.0, amp:14, size:1.5, alpha:0.55, add:true },
+  sand:  { color:'#ffd98a', speed:0.22, sway:0.8, amp:10, size:1.0, alpha:0.4 },
+  rain:  { color:'#9fd0ff', speed:0.55, sway:0.3, amp:5,  size:2.2, alpha:0.5, line:true },
+  petal: { color:'#ffb3e6', speed:0.09, sway:2.0, amp:24, size:1.8, alpha:0.6 },
+};
+const WDROPS = Array.from({ length: 70 }, () => ({ x: Math.random(), y: Math.random(), ph: Math.random()*Math.PI*2, z: Math.random() }));
+function drawWeather(now){
+  if (!S.settings.fx) return;
+  const wx = biomeOf(S.wave).wx; if (!wx) return;
+  const w = WEATHER[wx], sc = view.h/460, t = now/1000;
+  ctx.save(); if (w.add) ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = w.color;
+  for (const d of WDROPS){
+    const y = ((((d.y + t*w.speed) % 1) + 1) % 1) * (view.h + 40) - 20;
+    const x = d.x*view.w + Math.sin(t*w.sway + d.ph) * w.amp * sc;
+    ctx.globalAlpha = w.alpha * (0.55 + 0.45*d.z);
+    const s = w.size * sc * (0.6 + d.z);
+    if (w.line){ ctx.fillRect(x, y, Math.max(1, s*0.35), s*3.2); }
+    else { ctx.beginPath(); ctx.arc(x, y, s, 0, Math.PI*2); ctx.fill(); }
+  }
+  ctx.restore();
+}
 const biomeOf = w => BIOMES[Math.floor((dispStage(w) - 1) / 10) % BIOMES.length];
 const MOTES = Array.from({ length: 30 }, () => ({
   x: Math.random(), y: Math.random(), r: 0.6 + Math.random() * 1.8,
@@ -1517,6 +1542,7 @@ function draw(now){
   for (const o of fx) drawFx(o, now);
   drawParticles();
   drawAtmosphere(now);                               // biome colour grade + vignette (under HUD/floaters)
+  drawWeather(now);                                  // biome weather: snow / ash / rain / …
 
   // floaters
   for (const f of floaters){
