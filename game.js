@@ -92,40 +92,62 @@ function enemyHpMul(){ return ksIs('avarice') ? 1.35 : 1; }     // Avarice: toug
 // Progressive feature reveal — systems stay hidden until you clear the stage
 // that unlocks them, so a fresh run starts simple (just recruit + fight) and
 // opens up as you climb. Gate is on lifetime best stage (dispStage(S.bestWave)).
+// A run stays lean early — only recruit + fight — and reveals systems deeper in.
+// `also` is a soft-lock safety: it opens the meta layer the moment a Reseal is
+// possible even if the stage gate hasn't been met, so a player can never wall
+// out with no way forward.
 const FEATURE_UNLOCKS = [
-  { sel:'#btnTower',      stage:2,  name:'🏰 Fortify' },
-  { sel:'#btnBestiary',   stage:2,  name:'📖 Bestiary' },
-  { sel:'[data-spd="2"]', stage:2,  name:'2× Speed' },
-  { sel:'#odBtn',         stage:3,  name:'⚡ Overdrive' },
-  { sel:'#btnBuyMode',    stage:3,  name:'🛒 Bulk Buy' },
-  { sel:'#btnRelics',     stage:3,  name:'🗡️ Relics', flag:'relics' },
-  { sel:'#btnAuto',       stage:4,  name:'🅰️ Auto-Upgrade' },
-  { sel:'[data-spd="3"]', stage:4,  name:'3× Speed' },
-  { sel:'#btnAch',        stage:4,  name:'🏆 Achievements' },
-  { sel:'#btnPrestige',   stage:5,  name:'💠 Reseal (Prestige)' },
-  { sel:'#btnShop',       stage:5,  name:'💠 Shard Shop' },
-  { sel:'#btnTalents',    stage:5,  name:'🌳 Talents' },
+  { sel:'#btnTower',      stage:3,  name:'🏰 Fortify' },
+  { sel:'#btnBestiary',   stage:3,  name:'📖 Bestiary' },
+  { sel:'[data-spd="2"]', stage:3,  name:'2× Speed' },
+  { sel:'#odBtn',         stage:5,  name:'⚡ Overdrive' },
+  { sel:'#btnBuyMode',    stage:5,  name:'🛒 Bulk Buy' },
+  { sel:'#btnRelics',     stage:5,  name:'🗡️ Relics', flag:'relics' },
+  { sel:'#btnAuto',       stage:6,  name:'🅰️ Auto-Upgrade' },
+  { sel:'[data-spd="3"]', stage:6,  name:'3× Speed' },
+  { sel:'#btnAch',        stage:6,  name:'🏆 Achievements' },
+  { sel:'#btnPrestige',   stage:8,  name:'💠 Reseal (Prestige)', also:()=>prestigeShards(S.totalGoldEarned) >= 1 },
+  { sel:'#btnShop',       stage:8,  name:'💠 Shard Shop',        also:()=>prestigeShards(S.totalGoldEarned) >= 1 },
+  { sel:'#btnTalents',    stage:8,  name:'🌳 Talents' },
   { sel:'#btnKeystone',   stage:10, name:'⭐ Keystone' },
 ];
 const bestStage = () => dispStage(S ? S.bestWave : 1);
+const featureIsOpen = u => bestStage() >= u.stage || (u.also && u.also());
 function featureOpen(flag){                    // gate for non-DOM systems (e.g. relic drops)
   const f = FEATURE_UNLOCKS.find(u => u.flag === flag);
-  return !f || bestStage() >= f.stage;
+  return !f || featureIsOpen(f);
 }
-// hide every not-yet-unlocked control; called on load + whenever best stage grows
-function refreshFeatureLocks(){
-  const st = bestStage();
+// Hide every not-yet-unlocked control. `announce` shows a popup for anything
+// newly opened; on the seeding call (boot) we pass false so we don't re-announce
+// systems the player already earned.
+const announcedFeatures = new Set();
+function refreshFeatureLocks(announce){
+  const justOpened = [];
   for (const u of FEATURE_UNLOCKS){
-    document.querySelectorAll(u.sel).forEach(nEl => { nEl.style.display = st >= u.stage ? '' : 'none'; });
+    const open = featureIsOpen(u);
+    document.querySelectorAll(u.sel).forEach(nEl => { nEl.style.display = open ? '' : 'none'; });
+    if (open && !announcedFeatures.has(u.sel)){
+      announcedFeatures.add(u.sel);
+      justOpened.push(u);
+    }
   }
+  if (announce && justOpened.length) showUnlockPopup(justOpened);
 }
-// announce features crossed when the best stage advances from `from`→`to`
-function announceFeatureUnlocks(from, to){
-  const a = dispStage(from), b = dispStage(to);
-  if (b <= a) return;
-  for (const u of FEATURE_UNLOCKS){
-    if (u.stage > a && u.stage <= b) toast('🔓 Unlocked: ' + u.name);
-  }
+// Popup announcing newly-unlocked systems. Queued so it waits its turn behind
+// any modal already on screen (e.g. the offline "welcome back" panel).
+let unlockQueue = [];
+function showUnlockPopup(list){ unlockQueue.push(...list); flushUnlockPopup(); }
+function flushUnlockPopup(){
+  if (!unlockQueue.length || el('modal').classList.contains('show')) return;
+  const list = unlockQueue; unlockQueue = [];
+  const rows = list.map(u => `<div class="shard-item"><div class="info"><b>${u.name}</b></div>
+    <div class="lv">Stage ${u.stage}</div></div>`).join('');
+  openModal(`<h2>🔓 New Systems Unlocked!</h2>
+    <p>Your climb opened ${list.length>1?'these new systems':'a new system'} — find ${list.length>1?'them':'it'} in the controls bar:</p>
+    <div class="shard-shop">${rows}</div>
+    <button class="btn" id="unlockOk" style="width:100%;margin-top:6px">Continue ⚔️</button>`);
+  GA('prestige');
+  el('unlockOk').onclick = closeModal;
 }
 
 function elemVs(enemyEl, atkEl){
@@ -290,11 +312,8 @@ function awardMilestones(from, to){
 // advance the lifetime best wave, paying any milestones crossed
 function reachWave(w){
   if (w > S.bestWave){
-    const prev = S.bestWave;
-    awardMilestones(prev, w);
-    S.bestWave = w;
-    announceFeatureUnlocks(prev, w);   // toast any newly-opened systems
-    refreshFeatureLocks();             // reveal their buttons
+    awardMilestones(S.bestWave, w);
+    S.bestWave = w;                    // feature reveal happens in checkUnlocks
   }
 }
 
@@ -950,6 +969,7 @@ function checkUnlocks(w){
     }
   }
   if (w === STAGE_MAX * STAGE_WAVES) toast('🏆 Stage 99 cleared! The Crystal is fully resealed. Endless mode continues!');
+  refreshFeatureLocks(true);   // reveal + popup-announce any systems the new best stage unlocked
 }
 
 // ------------------------------------------------------------------ rendering
@@ -1576,7 +1596,10 @@ function openModal(html){
   el('modal').classList.add('show');
   box.scrollTop = keep;
 }
-function closeModal(){ el('modal').classList.remove('show'); el('modalBox').classList.remove('wide'); }
+function closeModal(){
+  el('modal').classList.remove('show'); el('modalBox').classList.remove('wide');
+  if (unlockQueue.length) setTimeout(flushUnlockPopup, 80);   // show any queued unlock popup next
+}
 el('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
 
 function doPrestige(){
@@ -1739,7 +1762,7 @@ function showIntro(){
     <p style="margin-top:10px">
       • <b>Buy &amp; upgrade heroes</b> with 🪙 gold (cards below). More heroes unlock as you reach new waves.<br>
       • Each hero has an <b>auto-casting skill</b> — <b>tap a hero</b> to fire it early.<br>
-      • <b>New systems unlock as you clear stages</b> — Fortify &amp; Bestiary at Stage 2, Overdrive &amp; Relics at Stage 3, Auto at Stage 4, Reseal &amp; Talents at Stage 5, and more beyond.<br>
+      • <b>New systems unlock as you clear stages</b> — Fortify &amp; Bestiary at Stage 3, Overdrive &amp; Relics at Stage 5, Auto at Stage 6, Reseal &amp; Talents at Stage 8, and more beyond.<br>
       • Hit a wall? Once <b>💠 Reseal (Prestige)</b> opens, it trades your run for permanent power — that's how you break through.
     </p>
     <button class="btn" id="introOk" style="width:100%;margin-top:12px">Begin the defense ⚔️</button>`);
@@ -2270,8 +2293,9 @@ function boot(){
   S = load() || freshState();
   if (window.Sheets && Sheets.preload) Sheets.preload();   // avoid canvas→sheet size pop
   resize();
+  refreshFeatureLocks(false);         // seed: hide locked systems, mark earned ones as already-known
   if (!S.seenIntro) showIntro();      // first-run tutorial (before any offline popup)
-  else applyOffline();
+  else applyOffline();                // offline gains may cross a stage → queues an unlock popup
   checkAchievements();
   startWave(S.wave);
   buildHeroPanel();
@@ -2279,7 +2303,6 @@ function boot(){
   updateHud();
   refreshAutoBtn();
   refreshBuyModeBtn();
-  refreshFeatureLocks();               // hide systems not yet unlocked by best stage
   document.querySelector('[data-spd="1"]').classList.add('sel');
   window.addEventListener('beforeunload', save);
   setInterval(save, 15000);
