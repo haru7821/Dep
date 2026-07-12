@@ -218,7 +218,7 @@ const TALENTS = [
   { id:'precision', branch:'⚔️ Offense', name:'Precision',    desc:'+0.1× critical damage',   max:5,  cost:2, fmt:l=>`×${(CRIT_MULT+0.1*l).toFixed(1)} crit` },
   { id:'haste',     branch:'⚔️ Offense', name:'Haste',        desc:'+5% attack speed',        max:8,  cost:2, fmt:l=>`+${5*l}% spd` },
   { id:'bulwark',   branch:'🛡️ Defense', name:'Bulwark',      desc:'+10% crystal defense',    max:8,  cost:1, fmt:l=>`+${10*l}% def` },
-  { id:'regen',     branch:'🛡️ Defense', name:'Regeneration', desc:'+0.5%/s crystal regen',   max:6,  cost:1, fmt:l=>`+${(0.5*l).toFixed(1)}%/s` },
+  { id:'regen',     branch:'🛡️ Defense', name:'Regeneration', desc:'+0.1%/s crystal regen',   max:6,  cost:1, fmt:l=>`+${(0.1*l).toFixed(1)}%/s` },
   { id:'greed',     branch:'💰 Economy', name:'Greed',        desc:'+8% gold from kills',     max:8,  cost:1, fmt:l=>`+${8*l}% gold` },
   { id:'fortune',   branch:'💰 Economy', name:'Fortune',      desc:'+1% golden enemy chance', max:5,  cost:2, fmt:l=>`+${l}% golden` },
   { id:'focus',     branch:'✨ Skills',  name:'Focus',        desc:'-4% skill cooldown',      max:8,  cost:2, fmt:l=>`-${4*l}% CD` },
@@ -833,7 +833,7 @@ function simulate(dt){
   sfxGap -= dt;
   if (partyBuffT > 0) partyBuffT -= dt;
   if (talent('regen') > 0 && S.crystalHp > 0)
-    S.crystalHp = Math.min(1, S.crystalHp + 0.005 * talent('regen') * dt);
+    S.crystalHp = Math.min(1, S.crystalHp + 0.001 * talent('regen') * dt);
 
   // spawn
   if (spawnedThisWave < totalToSpawn){
