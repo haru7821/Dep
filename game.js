@@ -383,9 +383,11 @@ function load(){
     });
   }catch(e){ return null; }
 }
+let skipSave = false;   // set before a New Start so the unload handler can't re-write the save
 function save(){
+  if (skipSave) return;
   S.lastSeen = Date.now();
-  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){}
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); return true; }catch(e){ return false; }
 }
 
 // ------------------------------------------------------------ derived getters
@@ -1758,13 +1760,28 @@ document.addEventListener('visibilitychange', () => {
 // ------------------------------------------------------------------ wiring
 el('btnPrestige').onclick = doPrestige;
 el('btnShop').onclick = openShardShop;
-el('btnReset').onclick = () => {
-  openModal(`<h2>Reset Save?</h2><p>This permanently deletes all progress, shards, and upgrades.</p>
+// Manual save — write immediately and confirm.
+if (el('btnSave')) el('btnSave').onclick = () => {
+  const ok = save();
+  toast(ok ? '💾 Progress saved' : '⚠️ Save failed (storage blocked)');
+  GA(ok ? 'upgrade' : 'hit');
+};
+// New Start — wipe the save and reload into a fresh game. skipSave stops the
+// beforeunload handler from writing the current state back on the way out.
+if (el('btnNewStart')) el('btnNewStart').onclick = () => {
+  openModal(`<h2>🆕 New Start?</h2>
+    <p>This permanently deletes <b>all</b> progress — waves, gold, shards, heroes,
+       talents, relics and upgrades — and begins a brand-new game from Wave 1.
+       This cannot be undone.</p>
     <div style="display:flex;gap:8px;margin-top:14px">
-      <button class="btn" id="doReset" style="flex:1;background:var(--danger);border-color:var(--danger)">Delete Everything</button>
-      <button class="btn" id="noReset" style="flex:1">Cancel</button></div>`);
-  el('doReset').onclick = () => { localStorage.removeItem(SAVE_KEY); location.reload(); };
-  el('noReset').onclick = closeModal;
+      <button class="btn" id="doNewStart" style="flex:1;background:var(--danger);border-color:var(--danger)">Delete &amp; Start Over</button>
+      <button class="btn" id="noNewStart" style="flex:1">Cancel</button></div>`);
+  el('doNewStart').onclick = () => {
+    skipSave = true;                       // block any further writes (incl. beforeunload)
+    try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+    location.reload();
+  };
+  el('noNewStart').onclick = closeModal;
 };
 document.querySelectorAll('[data-spd]').forEach(b => {
   b.onclick = () => {
