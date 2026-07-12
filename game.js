@@ -129,23 +129,42 @@ const RELIC_RARITY = [
   { id:'rare',      name:'Rare',      color:'#5bc8ff', mul:2 },
   { id:'epic',      name:'Epic',      color:'#c58bff', mul:3.2 },
   { id:'legendary', name:'Legendary', color:'#ffb93c', mul:5 },
+  // Mythic: ultra-rare (0.1%) golden relic that carries TWO stats at once.
+  { id:'mythic',    name:'Mythic',    color:'#ffd75e', mul:6, dual:true },
 ];
+const MYTHIC_CHANCE = 0.001;   // 0.1% chance for a dual-stat golden relic
 function rollRarity(wave){
   const r = Math.random() + Math.min(0.25, wave/800);   // deeper waves skew higher
   return r>1.15 ? RELIC_RARITY[3] : r>0.9 ? RELIC_RARITY[2] : r>0.55 ? RELIC_RARITY[1] : RELIC_RARITY[0];
 }
-function relicValue(rel){ return RELIC_TYPES[rel.type].per * (RELIC_RARITY.find(r=>r.id===rel.rarity)?.mul || 1); }
-// summed bonus of equipped relics for a given stat
+function rarityMul(id){ return RELIC_RARITY.find(r=>r.id===id)?.mul || 1; }
+function relicValue(rel){ return RELIC_TYPES[rel.type].per * rarityMul(rel.rarity); }        // primary stat
+function relicValue2(rel){ return rel.type2 ? RELIC_TYPES[rel.type2].per * rarityMul(rel.rarity) : 0; }  // 2nd stat
+// summed bonus of equipped relics for a given stat (counts both stats of a Mythic)
 function relicBonus(stat){
   let v = 0;
   for (const id of (S.equipped||[])){
     const rel = (S.relics||[]).find(r=>r.id===id);
-    if (rel && RELIC_TYPES[rel.type].stat === stat) v += relicValue(rel);
+    if (!rel) continue;
+    if (RELIC_TYPES[rel.type].stat === stat) v += relicValue(rel);
+    if (rel.type2 && RELIC_TYPES[rel.type2].stat === stat) v += relicValue2(rel);
   }
   return v;
 }
 function grantRelic(wave){
   const types = Object.keys(RELIC_TYPES);
+  if (Math.random() < MYTHIC_CHANCE){           // 0.1% golden dual-stat Mythic
+    const a = (Math.random()*types.length)|0;
+    const b = (a + 1 + ((Math.random()*(types.length-1))|0)) % types.length;   // distinct, no loop
+    const rel = { id: ++S.relicSeq, type: types[a], type2: types[b], rarity:'mythic' };
+    S.relics.push(rel);
+    if (S.equipped.length < RELIC_SLOTS) S.equipped.push(rel.id);
+    const ta = RELIC_TYPES[types[a]], tb = RELIC_TYPES[types[b]];
+    toast(`🌟 MYTHIC RELIC! ${ta.icon}${tb.icon} ${ta.fmt(relicValue(rel))} & ${tb.fmt(relicValue2(rel))}`);
+    spawnParticles(view.w/2, view.h*0.4, 'holy', 2.4);
+    GA('prestige');
+    return;
+  }
   const type = types[(Math.random()*types.length)|0];
   const rar = rollRarity(wave);
   const rel = { id: ++S.relicSeq, type, rarity: rar.id };
@@ -1752,9 +1771,15 @@ function openRelics(){
   });
   const list = owned.length ? owned.map(rel => {
     const t = RELIC_TYPES[rel.type], eq = S.equipped.includes(rel.id);
-    return `<div class="relic ${eq?'eq':''}" style="--rc:${relicColor(rel)}">
-      <span class="ic" data-rel="${rel.id}">${t.icon}</span>
-      <div style="flex:1" data-rel="${rel.id}"><div class="rn">${t.name}</div><div class="rd">${t.fmt(relicValue(rel))}</div>
+    const t2 = rel.type2 ? RELIC_TYPES[rel.type2] : null;
+    const myth = rel.rarity === 'mythic';
+    const name = t2 ? `${t.name} + ${t2.name}` : t.name;
+    const stats = t2
+      ? `${t.fmt(relicValue(rel))} · ${t2.fmt(relicValue2(rel))}`
+      : t.fmt(relicValue(rel));
+    return `<div class="relic ${eq?'eq':''} ${myth?'mythic':''}" style="--rc:${relicColor(rel)}">
+      <span class="ic" data-rel="${rel.id}">${t.icon}${t2?t2.icon:''}</span>
+      <div style="flex:1" data-rel="${rel.id}"><div class="rn">${name}</div><div class="rd">${stats}</div>
         <div class="rr">${relicRarityName(rel)}${eq?' · EQUIPPED':''}</div></div>
       <button class="relic-del" data-del="${rel.id}" title="Destroy (salvage ${relicSalvage(rel)}💠)">🗑️</button>
     </div>`;

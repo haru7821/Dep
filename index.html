@@ -156,6 +156,11 @@
   .relic .rn{font-size:12px;font-weight:700}
   .relic .rd{font-size:10px;color:var(--muted)}
   .relic .rr{font-size:10px;font-weight:700;color:var(--rc,#9fb0d8)}
+  .relic.mythic{border-color:#ffd75e;background:linear-gradient(120deg,#3a2f12,#26200e);
+    box-shadow:0 0 10px rgba(255,215,94,.5);animation:mythShine 1.6s ease-in-out infinite}
+  .relic.mythic .rn{color:#ffe9a0}
+  .relic.mythic .ic{filter:drop-shadow(0 0 4px rgba(255,215,94,.9))}
+  @keyframes mythShine{0%,100%{box-shadow:0 0 8px rgba(255,215,94,.4)}50%{box-shadow:0 0 20px rgba(255,215,94,.95)}}
   .relic-del{flex:0 0 auto;border:1px solid var(--line);background:#2a1420;color:#ff8a8a;
     border-radius:7px;padding:5px 7px;font-size:13px;cursor:pointer;line-height:1}
   .relic-del:active{transform:scale(.94)} .relic-del:hover{background:#3a1a26;border-color:var(--danger)}
@@ -211,8 +216,8 @@
   <div class="box" id="modalBox"></div>
 </div>
 
-<script src="sprites.js?v=27"></script>
-<script src="dungeon.js?v=27"></script>
-<script src="sheets.js?v=27"></script>
-<script src="audio.js?v=27"></script>
-<script src="game.js?v=27"></script>
+<script src="sprites.js?v=28"></script>
+<script src="dungeon.js?v=28"></script>
+<script src="sheets.js?v=28"></script>
+<script src="audio.js?v=28"></script>
+<script src="game.js?v=28"></script>
