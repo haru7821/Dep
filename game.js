@@ -340,7 +340,11 @@ function reachWave(w){
 }
 
 // ------------------------------------------------------------------ formulas
-const enemyHP    = w => 12 * Math.pow(1.12, w - 1);
+// Early monsters hit +50% HP, tapering linearly back to normal by wave 40
+// (end of Stage 4), so the opening is tougher without touching late scaling.
+const EARLY_HP_WAVES = 40;
+const earlyHpMul = w => 1 + 0.5 * Math.max(0, (EARLY_HP_WAVES - (w - 1)) / EARLY_HP_WAVES);
+const enemyHP    = w => 12 * Math.pow(1.12, w - 1) * earlyHpMul(w);
 const enemyCount = w => Math.min(6 + Math.floor(w / 2.7), 24);
 // gold now grows with the HP wall (was 1.10 — income fell behind every wave)
 const goldPerKill= w => Math.ceil(2 * Math.pow(1.12, w - 1));
