@@ -80,6 +80,7 @@ const LANG = {
     'pr.d1':'Reset your waves, gold, and hero levels to permanently reinforce the seal.',
     'pr.d2':'You will gain <b style="color:var(--shard)">+{g} Aether Shards</b> (you\'d hold {h}). Every shard earned grants <b>+2% permanent global damage</b> and can be spent in the Shard Shop.',
     'pr.go':'Reseal Now', 'pr.notyet':'Not enough progress to gain shards yet.',
+    'shard.cap':'💠 Shard storage is full (max {m}) — spend some in the Shard Shop!',
     'ad.dev.title':'Test ad — real ads appear on the game portal',
     'ad.fail':'📺 Ad not available right now',
     'ad.off2':'📺 Watch an ad — collect ×2',
@@ -165,6 +166,7 @@ const LANG = {
     'pr.d1':'웨이브·골드·영웅 레벨을 초기화하고 봉인을 영구히 강화합니다.',
     'pr.d2':'<b style="color:var(--shard)">+{g} 에테르 샤드</b>를 얻습니다(총 {h}개). 샤드 1개당 <b>영구 전역 피해 +2%</b>, 샤드 상점에서 사용할 수 있습니다.',
     'pr.go':'지금 재봉인', 'pr.notyet':'아직 샤드를 얻을 만큼 진행하지 못했습니다.',
+    'shard.cap':'💠 샤드 보유량이 가득 찼습니다 (최대 {m}) — 샤드 상점에서 사용하세요!',
     'ad.dev.title':'테스트 광고 — 실제 광고는 게임 포털에서 나옵니다',
     'ad.fail':'📺 지금은 광고를 불러올 수 없습니다',
     'ad.off2':'📺 광고 보고 2배 받기',
@@ -250,6 +252,7 @@ const LANG = {
     'pr.d1':'ウェーブ・ゴールド・ヒーローレベルをリセットし、封印を永続強化します。',
     'pr.d2':'<b style="color:var(--shard)">+{g} エーテルシャード</b>獲得(合計{h})。シャード1つにつき<b>永続全体ダメージ+2%</b>、シャードショップで使用可。',
     'pr.go':'今すぐ再封印', 'pr.notyet':'まだシャードを得るほど進行していません。',
+    'shard.cap':'💠 シャード所持数が上限です (最大{m}) — シャードショップで使いましょう!',
     'ad.dev.title':'テスト広告 — 実際の広告はゲームポータルで表示されます',
     'ad.fail':'📺 現在広告を読み込めません',
     'ad.off2':'📺 広告を見て2倍受け取る',
@@ -366,6 +369,14 @@ const SAVE_KEY = 'aether_crystal_save_v1';
 const OFFLINE_CAP_S = 8 * 3600;        // offline earnings capped at 8h
 const SPAWN_INTERVAL = 0.8;            // seconds between enemy spawns
 const BOSS_EVERY = 5;                  // boss on every 5th wave (mini-boss w5, stage boss w10)
+const SHARD_MAX = 1000;                // shard wallet cap — gains above this are lost
+// all shard income flows through here so the cap holds everywhere
+function addShards(n){
+  const before = S.shards;
+  S.shards = Math.min(SHARD_MAX, S.shards + n);
+  if (S.shards - before < n) toast(tf('shard.cap', { m: SHARD_MAX }));
+  return S.shards - before;
+}
 // Progression: 10 waves per stage, up to stage 99. `wave` stays a global 1.. counter
 // (drives all scaling); stage/wave-in-stage are derived for display and unlocks.
 const STAGE_WAVES = 10;
@@ -765,7 +776,7 @@ function checkAchievements(){
     if (!S.achievements[a.id] && a.check()){
       S.achievements[a.id] = true;
       S.talentPoints += a.tp;
-      S.shards += a.shards;
+      addShards(a.shards);
       const reward = [a.tp?`+${a.tp} TP`:'', a.shards?`+${a.shards}💠`:''].filter(Boolean).join(', ');
       toast('🏆 ' + a.name + (reward ? ' — ' + reward : ''));
       GA('prestige');
@@ -782,7 +793,7 @@ function awardMilestones(from, to){
     sh += 1 + Math.floor(m/100); if (m % 100 === 0) tp += 1; n++; top = m;
   }
   if (!n) return;
-  S.shards += sh; S.talentPoints += tp;
+  addShards(sh); S.talentPoints += tp;
   toast(`🏅 Stage ${dispStage(top)} cleared${n>1?` (×${n})`:''}! +${sh}💠${tp?` +${tp}🌳`:''}`);
   GA('prestige');
 }
@@ -2416,7 +2427,8 @@ function doPrestige(){
   openModal(`
     <h2>${t('pr.title')}</h2>
     <p>${t('pr.d1')}</p>
-    <p>${tf('pr.d2',{g:gain, h:S.shards + gain})}</p>
+    <p>${tf('pr.d2',{g:gain, h:Math.min(SHARD_MAX, S.shards + gain)})}</p>
+    ${S.shards + gain > SHARD_MAX ? `<p style="color:var(--muted);font-size:12px">${tf('shard.cap',{m:SHARD_MAX})}</p>` : ''}
     <div style="display:flex;gap:8px;margin-top:14px">
       <button class="btn prestige" id="confPrestige" style="flex:1">${t('pr.go')}</button>
       <button class="btn" id="cancPrestige" style="flex:1">${t('cancel')}</button>
@@ -2425,7 +2437,7 @@ function doPrestige(){
     const shardBonus = Math.floor(gain * raceBonus('shardGain'));   // race shard bonus (Celestial Ascension)
     if (shardBonus > 0) toast(`💠 Race bonus: +${shardBonus} shards`);
     const keep = {
-      shards: S.shards + gain + shardBonus, shardsEarned: S.shardsEarned + gain,
+      shards: Math.min(SHARD_MAX, S.shards + gain + shardBonus), shardsEarned: S.shardsEarned + gain,
       shardUpg: S.shardUpg, totalGoldEarned: S.totalGoldEarned,
       bestWave: S.bestWave, totalKills: S.totalKills, goldenKills: S.goldenKills,
       prestiges: S.prestiges + 1, achievements: S.achievements,
@@ -3266,7 +3278,7 @@ function destroyRelic(id){
   const salv = relicSalvage(rel);
   S.relics = S.relics.filter(r => r.id !== id);
   const ei = S.equipped.indexOf(id); if (ei >= 0) S.equipped.splice(ei, 1);
-  S.shards += salv;
+  addShards(salv);
   toast(`🗑️ Destroyed ${RELIC_TYPES[rel.type].name} — salvaged ${salv}💠`);
   GA('upgrade'); save(); openRelics(); updateHud();
 }
@@ -3473,6 +3485,7 @@ window.addEventListener('keydown', audioUnlock);
 // ------------------------------------------------------------------ boot
 function boot(){
   S = load() || freshState();
+  if (S.shards > SHARD_MAX) S.shards = SHARD_MAX;   // enforce the cap on old saves
   if (window.Ads) Ads.init();
   autoFuse();                             // migrate old saves: collapse piled Common/Rare relics
   if (window.Sheets && Sheets.preload) Sheets.preload();   // avoid canvas→sheet size pop
