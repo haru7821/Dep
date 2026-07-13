@@ -1000,7 +1000,13 @@ function basicAttack(def, slot, lvl){
   const hx = slot.x, hy = slot.y - 22;
   if (!(heroAnim[def.id] && heroAnim[def.id].name === 'cast')) heroAnim[def.id] = { name:'attack', t:0.35 };
   if (def.target === 'support'){
-    S.crystalHp = Math.min(1, S.crystalHp + Math.min(0.08, 0.004 * lvl));   // passive heal ≤8%/tick
+    // heal is a per-SECOND rate (× tick interval) so Haste/Overdrive can't inflate
+    // its effective HPS; capped at 5%/s, and cut to 25% while a boss is on the
+    // field so bosses always out-damage the healer.
+    const rate = Math.min(0.05, 0.0025 * lvl);
+    let heal = rate * effInterval(def);
+    if (enemies.some(e => e.boss)) heal *= 0.25;
+    S.crystalHp = Math.min(1, S.crystalHp + heal);
     return;
   }
   const dmg = heroDmg(def, lvl) * combatMul();
