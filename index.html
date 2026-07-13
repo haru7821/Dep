@@ -125,9 +125,22 @@
     display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--rc);font-weight:800}
   .rt-node{position:absolute;width:13%;aspect-ratio:1;transform:translate(-50%,-50%);z-index:2;
     display:flex;align-items:center;justify-content:center;cursor:pointer}
-  .rt-node.rt-cap{width:16%;z-index:3}
-  .rt-node.rt-cap .rt-hex{filter:drop-shadow(0 0 7px var(--rc))}
-  .rt-node.rt-cap .rt-ic{font-size:18px}
+  .rt-node.rt-cap{width:17%;z-index:4}
+  .rt-node.rt-cap .rt-ic{font-size:18px;z-index:2}
+  .rt-node.rt-cap .rt-hex{z-index:1}
+  .rt-node.rt-cap .rt-badge{z-index:3}
+  /* rotating halo behind the capstone */
+  .rt-node.rt-cap::before{content:'';position:absolute;inset:-8px;border-radius:50%;z-index:0;
+    background:conic-gradient(from 0deg, transparent 0 62%, var(--rc) 82%, transparent);
+    animation:capRing 3.2s linear infinite;opacity:.6;filter:blur(1px)}
+  @keyframes capRing{to{transform:rotate(360deg)}}
+  /* unlocked capstone: float + pulsing glow */
+  .rt-node.rt-cap.has{animation:capFloat 2.4s ease-in-out infinite}
+  @keyframes capFloat{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.09)}}
+  .rt-node.rt-cap.has .rt-hex{animation:capGlow 1.5s ease-in-out infinite}
+  @keyframes capGlow{0%,100%{filter:drop-shadow(0 0 5px var(--rc))}50%{filter:drop-shadow(0 0 16px var(--rc)) brightness(1.25)}}
+  .rt-node.rt-cap.max::before{opacity:.9;animation-duration:2s}
+  .rt-node.rt-cap.locked::before{opacity:.2}
   .rt-hex{position:absolute;inset:0;background:var(--rc);
     clip-path:polygon(25% 5%,75% 5%,98% 50%,75% 95%,25% 95%,2% 50%)}
   .rt-hex::after{content:'';position:absolute;inset:2px;background:var(--panel2);
@@ -288,8 +301,8 @@
   <div class="box" id="modalBox"></div>
 </div>
 
-<script src="sprites.js?v=89"></script>
-<script src="dungeon.js?v=89"></script>
-<script src="sheets.js?v=89"></script>
-<script src="audio.js?v=89"></script>
-<script src="game.js?v=89"></script>
+<script src="sprites.js?v=90"></script>
+<script src="dungeon.js?v=90"></script>
+<script src="sheets.js?v=90"></script>
+<script src="audio.js?v=90"></script>
+<script src="game.js?v=90"></script>
