@@ -3028,8 +3028,10 @@ function openRelics(){
       <span class="ic" data-rel="${rel.id}">${t.icon}${t2?t2.icon:''}</span>
       <div style="flex:1" data-rel="${rel.id}"><div class="rn">${name}</div><div class="rd">${stats}</div>
         <div class="rr">${relicRarityName(rel)}${eq?' · EQUIPPED':''}${sel?' · PICKED':''}</div></div>
-      ${myth?'':`<button class="relic-del" data-pick="${rel.id}" title="Select for fusion" style="color:${sel?'#7bffb0':'#8fd0ff'}">🧪</button>`}
-      <button class="relic-del" data-del="${rel.id}" title="Destroy (salvage ${relicSalvage(rel)}💠)">🗑️</button>
+      <div class="relic-acts">
+        ${myth?'':`<button class="relic-del" data-pick="${rel.id}" title="Select for fusion" style="color:${sel?'#7bffb0':'#8fd0ff'}">🧪</button>`}
+        <button class="relic-del" data-del="${rel.id}" title="Destroy (salvage ${relicSalvage(rel)}💠)">🗑️</button>
+      </div>
     </div>`;
   }).join('') : `<p style="grid-column:1/-1;color:var(--muted)">No relics yet. Defeat bosses (every ${BOSS_EVERY} waves) to find them.</p>`;
   // fusion: pick relics with the 🧪 button, then fuse the chosen set
