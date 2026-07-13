@@ -86,7 +86,7 @@ const KEYSTONES = {
   avarice:    { name:'Avarice',      icon:'🪙', color:'#ffd75e', desc:'+150% gold from kills, but every enemy has +35% HP.' },
   attunement: { name:'Attunement',   icon:'🌈', color:'#c58bff', desc:'Elemental weakness hits deal ×2.2 (up from ×1.6) and you ignore enemy resistances.' },
 };
-function ksIs(id){ return S && S.keystone === id; }
+function ksIs(id){ return !!(S && S.keystones && S.keystones.includes(id)); }
 function enemyHpMul(){ return ksIs('avarice') ? 1.35 : 1; }     // Avarice: tougher enemies
 
 // Progressive feature reveal — systems stay hidden until you clear the stage
@@ -410,7 +410,7 @@ function freshState(){
     towerLv: 0,             // gold-bought Fortify Tower level (resets on reseal)
     autoUp: false,          // auto-buy the cheapest affordable hero upgrade
     seenIntro: false,       // shown the first-run tutorial yet?
-    keystone: null,         // chosen build-defining keystone id (or null)
+    keystones: [],          // active keystone ids (1 until all unlocked, then multi)
     settings: { dmgNums:true, fx:true, shake:true },   // display/perf toggles
     buyMode: 1,             // hero bulk-buy amount: 1, 10, or 'max'
   };
@@ -429,6 +429,7 @@ function load(){
       settings:   Object.assign(base.settings,   d.settings   || {}),
       relics:   Array.isArray(d.relics)   ? d.relics   : [],
       equipped: Array.isArray(d.equipped) ? d.equipped : [],
+      keystones: Array.isArray(d.keystones) ? d.keystones : (d.keystone ? [d.keystone] : []),  // migrate single→multi
     });
   }catch(e){ return null; }
 }
@@ -1892,7 +1893,7 @@ function doPrestige(){
       relics: S.relics, equipped: S.equipped, relicSeq: S.relicSeq,
       kills: S.kills, bestCombo: S.bestCombo,                 // lifetime records
       autoUp: S.autoUp, seenIntro: S.seenIntro,               // keep QoL/tutorial flags
-      keystone: S.keystone,                                   // keep the build choice
+      keystones: S.keystones,                                 // keep the build choice(s)
     };
     S = freshState();
     Object.assign(S, keep);
@@ -2292,9 +2293,14 @@ const KEYSTONE_IDS = Object.keys(KEYSTONES);
 const keystoneStage = id => KEYSTONE_STAGE + KEYSTONE_IDS.indexOf(id);      // stage this keystone unlocks at
 const keystoneAvail = id => dispStage(S.bestWave) >= keystoneStage(id);     // is it selectable yet?
 const keystonesUnlocked = () => dispStage(S.bestWave) >= KEYSTONE_STAGE;    // at least the first is available
+const allKeystonesOpen = () => KEYSTONE_IDS.every(keystoneAvail);           // every keystone unlocked?
+const keystoneCap = () => allKeystonesOpen() ? KEYSTONE_IDS.length : 1;     // multi-select once all are open
 function pickKeystone(id){
   if (!keystoneAvail(id)) return;
-  S.keystone = (S.keystone === id) ? null : id;   // tap active one to clear
+  const arr = S.keystones, i = arr.indexOf(id);
+  if (i >= 0){ arr.splice(i, 1); }                 // tap active one to clear
+  else if (keystoneCap() === 1){ S.keystones = [id]; }   // single-select: replace
+  else arr.push(id);                               // multi-select: add another
   GA('upgrade'); save(); openKeystones(); updateHud();
 }
 function openKeystones(){
@@ -2320,18 +2326,20 @@ function openKeystones(){
           <div class="ks-desc">Unlocks at <b>Stage ${keystoneStage(id)}</b></div></div>
       </div>`;
     }
-    const on = S.keystone === id;
+    const on = S.keystones.includes(id);
     return `<div class="ks ${on?'on':''}" style="--kc:${k.color}" data-ks="${id}">
       <span class="ks-ic">${k.icon}</span>
       <div class="ks-info"><div class="ks-nm">${k.name}${on?' · ACTIVE':''}</div>
         <div class="ks-desc">${k.desc}</div></div>
     </div>`;
   }).join('');
+  const multi = allKeystonesOpen();
+  const intro = multi
+    ? `All keystones unlocked — <b>activate as many as you like</b> at once (tap to toggle). Currently <b>${S.keystones.length}</b> active.`
+    : `Choose <b>one</b> build-defining keystone (only one active — tap it again to clear). A new keystone unlocks every stage from ${KEYSTONE_STAGE}; <b>${availN}/${KEYSTONE_IDS.length}</b> available so far — unlock them all to stack multiple.`;
   openModal(`
     <h2>⭐ Keystone</h2>
-    <p>Choose <b>one</b> build-defining keystone (only one active — tap it again to
-       clear). A new keystone unlocks every stage from ${KEYSTONE_STAGE};
-       <b>${availN}/${KEYSTONE_IDS.length}</b> available so far. They persist through Reseal.</p>
+    <p>${intro} They persist through Reseal.</p>
     <div class="ks-list">${rows}</div>
     <button class="btn" id="closeKs" style="width:100%;margin-top:12px">Close</button>`);
   el('closeKs').onclick = closeModal;
