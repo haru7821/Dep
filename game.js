@@ -24,6 +24,62 @@ const LANG = {
     'relic.fuse.title':'🧪 Fusion — pick 3 Epic+ relics to gamble upward',
     'relic.fuse.hint':'Common & Rare auto-fuse. Tap 🧪 on <b>3</b> Epic (or Legendary) relics of the same rarity to gamble them upward.',
     'relic.fuse.success':'success (fail keeps one)', 'relic.fuse.picked':'Picked',
+    'confirm':'Confirm', 'cancel':'Cancel', 'back':'Back',
+    'lbl.stage':'Stage', 'lbl.wave':'Wave', 'lbl.now':'now', 'lbl.level':'Level', 'lbl.power':'Power', 'lbl.support':'Support',
+    'hero.unlock':'Unlocks at Stage {n}',
+    'shop.desc':'Permanent upgrades bought with Aether Shards. These persist through every reseal. You have <b style="color:var(--shard)">{n}</b>💠.',
+    'off.title':'🌙 Welcome back, guardian',
+    'off.desc':'Your heroes held the line for <b>{t}</b> while you were away (progress is capped at 8h and stops where your damage can no longer keep up).',
+    'off.waves':'waves cleared', 'off.gold':'gold earned', 'off.collect':'Collect',
+    'intro.title':'⟡ Defend the Aether Crystal',
+    'intro.p1':'Endless waves of monsters march from the right toward your Crystal on the left. Your heroes attack on their own — you grow the defense.',
+    'intro.p2':'• <b>Buy &amp; upgrade heroes</b> with 🪙 gold (cards below). More heroes unlock as you reach new waves.<br>• Each hero has an <b>auto-casting skill</b> — <b>tap a hero</b> to fire it early.<br>• <b>New systems unlock as you clear stages</b> — Fortify &amp; Bestiary at Stage 3, Overdrive &amp; Relics at Stage 5, Auto at Stage 6, Reseal &amp; Talents at Stage 8, and more beyond.<br>• Hit a wall? Once <b>💠 Reseal (Prestige)</b> opens, it trades your run for permanent power — that\'s how you break through.',
+    'intro.btn':'Begin the defense ⚔️',
+    'sv.title':'💾 Save Slots', 'sv.desc':'Store up to {n} games and load any of them anytime. Your game also autosaves on its own.',
+    'sv.slot':'Slot', 'sv.empty':'— Empty —', 'sv.save':'💾 Save', 'sv.load':'📂 Load',
+    'sv.loadQ':'Load <b>Slot {n}</b>? Your current game will be replaced — save it to a slot first if you want to keep it.',
+    'sv.overQ':'Overwrite <b>Slot {n}</b> with your current game? The old save there is lost.',
+    'sv.delQ':'Delete <b>Slot {n}</b>? This can\'t be undone.',
+    'sv.saved':'💾 Saved to Slot {n}', 'sv.fail':'⚠️ Save failed', 'sv.deleted':'🗑 Slot {n} deleted',
+    'ago.now':'just now', 'ago.m':'{n}m ago', 'ago.h':'{n}h ago', 'ago.d':'{n}d ago',
+    'ns.title':'🆕 New Start?',
+    'ns.desc':'This permanently deletes <b>all</b> progress — waves, gold, shards, heroes, talents, relics and upgrades — and begins a brand-new game from Wave 1. This cannot be undone.',
+    'ns.do':'Delete &amp; Start Over',
+    'st.title':'📊 Guardian\'s Record', 'st.cur':'Current Stage', 'st.best':'Best Stage', 'st.mile':'Next Milestone',
+    'st.mile.d':'🏅 Clear Stage {n} — reward {r}',
+    'st.kills':'Enemies Defeated', 'st.gold':'Lifetime Gold', 'st.shards':'Shards Earned', 'st.crit':'Critical Chance',
+    'st.combo':'Best Combo', 'st.streak':'× streak', 'st.chart':'Gold income per wave',
+    'st.empty':'Clear a few waves to chart your gold income…',
+    'tal.title':'🌳 Talent Tree',
+    'tal.desc':'Spend Talent Points on permanent bonuses. Earn <b>+2 TP</b> per reseal and more from achievements. You have <b style="color:var(--hp)">{n} TP</b>.',
+    'race.asc':'🧬 Ascendancy', 'race.lockmsg':'Choose a Race at <b>Stage {n}</b>.', 'race.locksub':'Best so far: <b>Stage {n}</b> — keep climbing.',
+    'race.choose':'🧬 Choose your Race',
+    'race.choose.d':'A <b>permanent</b> mid-game identity — each race unlocks its own tech tree (spent with 🌳 Talent Points). Choose wisely; it persists through Reseal.',
+    'race.tree':'Tree:', 'race.later':'Decide later', 'race.become':'Become {n}?',
+    'race.spend':'Spend 🌳 on your race tree — you have <b style="color:var(--hp)">{n} TP</b>.',
+    'race.tap':'Tap a node to view & upgrade it.', 'race.lockedbtn':'Locked',
+    'race.change':'🔄 Change Race — {c}💠 (refunds 🌳)', 'race.changeQ':'🔄 Change Race?',
+    'race.change.d':'Costs <b>{c}💠</b> and refunds every 🌳 spent in your race tree, then lets you choose a new race.',
+    'ks.lockmsg':'Keystones unlock at <b>Stage {n}</b>.', 'ks.locksub':'Best so far: <b>Stage {s} · Wave {w}/{z}</b> — keep climbing.',
+    'ks.unlockat':'Unlocks at <b>Stage {n}</b>', 'ks.active':'ACTIVE',
+    'ks.multi':'All keystones unlocked — <b>activate as many as you like</b> at once (tap to toggle). Currently <b>{n}</b> active.',
+    'ks.single':'Choose <b>one</b> build-defining keystone (only one active — tap it again to clear). A new keystone unlocks every stage from {s}; <b>{a}/{t}</b> available so far — unlock them all to stack multiple.',
+    'ks.persist':'They persist through Reseal.',
+    'ach.title':'🏆 Achievements', 'ach.desc':'One-time milestones that reward Talent Points and Aether Shards.',
+    'ach.reward':'Reward:', 'ach.done':'DONE',
+    'bst.title':'⚔ Bestiary: Monster Entries ⚔', 'bst.disc':'Discovered', 'bst.sub':'defeat a monster to unlock its entry',
+    'bst.el':'ELEMENT', 'bst.weak':'WEAK', 'bst.resist':'RESIST',
+    'el.earth':'EARTH', 'el.poison':'POISON', 'el.dark':'DARK', 'el.fire':'FIRE', 'el.void':'VOID', 'el.frost':'FROST', 'el.lightning':'LIGHTNING', 'el.physical':'PHYSICAL', 'el.holy':'HOLY',
+    'rel.desc':'Bosses drop relics that grant permanent global bonuses. Equip up to <b>{n}</b>. Tap a relic to equip / unequip, or 🧪 to pick for fusion.',
+    'rel.none':'No relics yet. Defeat bosses (every {n} waves) to find them.',
+    'rel.eq':'EQUIPPED', 'rel.picked':'PICKED',
+    'tw.title':'🏰 Fortify Tower',
+    'tw.desc':'Reinforce the Crystal Tower to raise its maximum HP — each level adds <b>+15% effective HP</b>, so enemies chip away less with every hit. Fortify levels reset when you reseal the Crystal.',
+    'tw.lv':'Tower Level', 'tw.hp':'Effective Max HP', 'tw.buy':'🏰 Fortify — 🪙 {c}',
+    'pr.title':'💠 Reseal the Crystal',
+    'pr.d1':'Reset your waves, gold, and hero levels to permanently reinforce the seal.',
+    'pr.d2':'You will gain <b style="color:var(--shard)">+{g} Aether Shards</b> (you\'d hold {h}). Every shard earned grants <b>+2% permanent global damage</b> and can be spent in the Shard Shop.',
+    'pr.go':'Reseal Now', 'pr.notyet':'Not enough progress to gain shards yet.',
   },
   ko: {
     'btn.prestige':'💠 크리스탈 재봉인', 'btn.shop':'💠 샤드 상점', 'btn.talents':'🌳 특성',
@@ -41,6 +97,62 @@ const LANG = {
     'relic.fuse.title':'🧪 합성 — 에픽 이상 유물 3개를 골라 상위 도전',
     'relic.fuse.hint':'일반·희귀는 자동 합성됩니다. 같은 등급의 에픽(또는 전설) 유물 <b>3개</b>에 🧪를 눌러 상위 등급에 도전하세요.',
     'relic.fuse.success':'성공 (실패 시 1개 유지)', 'relic.fuse.picked':'선택됨',
+    'confirm':'확인', 'cancel':'취소', 'back':'뒤로',
+    'lbl.stage':'스테이지', 'lbl.wave':'웨이브', 'lbl.now':'현재', 'lbl.level':'레벨', 'lbl.power':'공격력', 'lbl.support':'지원',
+    'hero.unlock':'스테이지 {n} 해금',
+    'shop.desc':'에테르 샤드로 사는 영구 강화 — 재봉인해도 유지됩니다. 보유: <b style="color:var(--shard)">{n}</b>💠',
+    'off.title':'🌙 어서 오세요, 수호자님',
+    'off.desc':'자리를 비운 동안 영웅들이 <b>{t}</b> 동안 전선을 지켰습니다 (진행은 8시간까지, 화력이 못 버티는 지점에서 멈춥니다).',
+    'off.waves':'웨이브 클리어', 'off.gold':'골드 획득', 'off.collect':'수령',
+    'intro.title':'⟡ 에테르 크리스탈을 지켜라',
+    'intro.p1':'끝없는 몬스터 무리가 오른쪽에서 왼쪽 크리스탈로 몰려옵니다. 영웅은 스스로 싸우고 — 당신은 방어를 키웁니다.',
+    'intro.p2':'• 🪙 골드로 <b>영웅 모집·강화</b> (아래 카드). 웨이브를 진행하면 더 많은 영웅이 해금됩니다.<br>• 영웅마다 <b>자동 시전 스킬</b>이 있습니다 — <b>영웅을 탭</b>하면 즉시 발동.<br>• <b>스테이지를 깰수록 새 시스템 해금</b> — 3: 요새화·도감, 5: 오버드라이브·유물, 6: 자동, 8: 재봉인·특성, 그 너머도.<br>• 벽에 막혔다면? <b>💠 재봉인(프레스티지)</b>이 열리면 이번 판을 영구 성장과 맞바꿉니다 — 그것이 돌파구입니다.',
+    'intro.btn':'방어 시작 ⚔️',
+    'sv.title':'💾 저장 슬롯', 'sv.desc':'최대 {n}개의 게임을 저장하고 언제든 불러올 수 있습니다. 게임은 자동 저장도 됩니다.',
+    'sv.slot':'슬롯', 'sv.empty':'— 비어 있음 —', 'sv.save':'💾 저장', 'sv.load':'📂 불러오기',
+    'sv.loadQ':'<b>슬롯 {n}</b>을 불러올까요? 현재 게임은 대체됩니다 — 남기려면 먼저 슬롯에 저장하세요.',
+    'sv.overQ':'<b>슬롯 {n}</b>에 현재 게임을 덮어쓸까요? 기존 저장은 사라집니다.',
+    'sv.delQ':'<b>슬롯 {n}</b>을 삭제할까요? 되돌릴 수 없습니다.',
+    'sv.saved':'💾 슬롯 {n}에 저장됨', 'sv.fail':'⚠️ 저장 실패', 'sv.deleted':'🗑 슬롯 {n} 삭제됨',
+    'ago.now':'방금 전', 'ago.m':'{n}분 전', 'ago.h':'{n}시간 전', 'ago.d':'{n}일 전',
+    'ns.title':'🆕 새 게임?',
+    'ns.desc':'웨이브·골드·샤드·영웅·특성·유물·강화까지 <b>모든</b> 진행이 영구 삭제되고 웨이브 1부터 새로 시작합니다. 되돌릴 수 없습니다.',
+    'ns.do':'삭제하고 새로 시작',
+    'st.title':'📊 수호자의 기록', 'st.cur':'현재 스테이지', 'st.best':'최고 스테이지', 'st.mile':'다음 이정표',
+    'st.mile.d':'🏅 스테이지 {n} 클리어 — 보상 {r}',
+    'st.kills':'처치한 적', 'st.gold':'누적 골드', 'st.shards':'획득 샤드', 'st.crit':'치명타 확률',
+    'st.combo':'최고 콤보', 'st.streak':'× 연속', 'st.chart':'웨이브당 골드 수입',
+    'st.empty':'웨이브를 몇 개 깨면 골드 수입 그래프가 그려집니다…',
+    'tal.title':'🌳 특성 트리',
+    'tal.desc':'특성 포인트로 영구 보너스를 구매하세요. 재봉인마다 <b>+2 TP</b>, 업적으로 추가 획득. 보유: <b style="color:var(--hp)">{n} TP</b>',
+    'race.asc':'🧬 초월', 'race.lockmsg':'<b>스테이지 {n}</b>에서 종족을 선택합니다.', 'race.locksub':'최고 기록: <b>스테이지 {n}</b> — 계속 올라가세요.',
+    'race.choose':'🧬 종족 선택',
+    'race.choose.d':'<b>영구적인</b> 중반 정체성 — 종족마다 고유 기술 트리가 열립니다(🌳 특성 포인트 사용). 신중히 고르세요; 재봉인 후에도 유지됩니다.',
+    'race.tree':'트리:', 'race.later':'나중에 결정', 'race.become':'{n}이(가) 될까요?',
+    'race.spend':'종족 트리에 🌳를 투자하세요 — 보유 <b style="color:var(--hp)">{n} TP</b>',
+    'race.tap':'노드를 탭하면 확인·강화할 수 있습니다.', 'race.lockedbtn':'잠김',
+    'race.change':'🔄 종족 변경 — {c}💠 (🌳 환급)', 'race.changeQ':'🔄 종족을 변경할까요?',
+    'race.change.d':'<b>{c}💠</b>를 소모하고 종족 트리에 쓴 🌳를 전부 환급한 뒤 새 종족을 고릅니다.',
+    'ks.lockmsg':'키스톤은 <b>스테이지 {n}</b>에 해금됩니다.', 'ks.locksub':'최고 기록: <b>스테이지 {s} · 웨이브 {w}/{z}</b> — 계속 올라가세요.',
+    'ks.unlockat':'<b>스테이지 {n}</b> 해금', 'ks.active':'활성',
+    'ks.multi':'모든 키스톤 해금 — <b>원하는 만큼 동시 활성화</b>(탭으로 전환). 현재 <b>{n}</b>개 활성.',
+    'ks.single':'빌드를 결정짓는 키스톤을 <b>하나</b> 선택하세요(하나만 활성 — 다시 탭하면 해제). 스테이지 {s}부터 매 스테이지 하나씩 해금; 현재 <b>{a}/{t}</b> — 전부 해금하면 중첩 가능.',
+    'ks.persist':'재봉인 후에도 유지됩니다.',
+    'ach.title':'🏆 업적', 'ach.desc':'특성 포인트와 에테르 샤드를 주는 일회성 이정표.',
+    'ach.reward':'보상:', 'ach.done':'달성',
+    'bst.title':'⚔ 도감: 몬스터 목록 ⚔', 'bst.disc':'발견', 'bst.sub':'몬스터를 처치하면 항목이 해금됩니다',
+    'bst.el':'속성', 'bst.weak':'약점', 'bst.resist':'저항',
+    'el.earth':'대지', 'el.poison':'독', 'el.dark':'암흑', 'el.fire':'화염', 'el.void':'공허', 'el.frost':'냉기', 'el.lightning':'번개', 'el.physical':'물리', 'el.holy':'신성',
+    'rel.desc':'보스가 영구 전역 보너스를 주는 유물을 떨어뜨립니다. 최대 <b>{n}</b>개 장착. 유물을 탭해 장착/해제, 🧪로 합성 선택.',
+    'rel.none':'아직 유물이 없습니다. 보스({n}웨이브마다)를 처치해 획득하세요.',
+    'rel.eq':'장착중', 'rel.picked':'선택됨',
+    'tw.title':'🏰 타워 요새화',
+    'tw.desc':'크리스탈 타워를 보강해 최대 체력을 올립니다 — 레벨당 <b>유효 체력 +15%</b>. 요새화 레벨은 재봉인 시 초기화됩니다.',
+    'tw.lv':'타워 레벨', 'tw.hp':'유효 최대 체력', 'tw.buy':'🏰 요새화 — 🪙 {c}',
+    'pr.title':'💠 크리스탈 재봉인',
+    'pr.d1':'웨이브·골드·영웅 레벨을 초기화하고 봉인을 영구히 강화합니다.',
+    'pr.d2':'<b style="color:var(--shard)">+{g} 에테르 샤드</b>를 얻습니다(총 {h}개). 샤드 1개당 <b>영구 전역 피해 +2%</b>, 샤드 상점에서 사용할 수 있습니다.',
+    'pr.go':'지금 재봉인', 'pr.notyet':'아직 샤드를 얻을 만큼 진행하지 못했습니다.',
   },
   ja: {
     'btn.prestige':'💠 クリスタル再封印', 'btn.shop':'💠 シャードショップ', 'btn.talents':'🌳 才能',
@@ -58,9 +170,67 @@ const LANG = {
     'relic.fuse.title':'🧪 合成 — エピック以上の遺物を3つ選んで上位に挑戦',
     'relic.fuse.hint':'コモン・レアは自動合成されます。同じレアリティのエピック（または伝説）遺物<b>3つ</b>の🧪を押して上位に挑戦。',
     'relic.fuse.success':'成功（失敗時は1つ保持）', 'relic.fuse.picked':'選択中',
+    'confirm':'確認', 'cancel':'キャンセル', 'back':'戻る',
+    'lbl.stage':'ステージ', 'lbl.wave':'ウェーブ', 'lbl.now':'現在', 'lbl.level':'レベル', 'lbl.power':'攻撃力', 'lbl.support':'支援',
+    'hero.unlock':'ステージ{n}で解禁',
+    'shop.desc':'エーテルシャードで買う永続強化 — 再封印後も維持されます。所持: <b style="color:var(--shard)">{n}</b>💠',
+    'off.title':'🌙 おかえりなさい、守護者様',
+    'off.desc':'離れている間、ヒーローが<b>{t}</b>戦線を守りました（進行は8時間まで、火力が保てない地点で停止）。',
+    'off.waves':'ウェーブクリア', 'off.gold':'ゴールド獲得', 'off.collect':'受け取る',
+    'intro.title':'⟡ エーテルクリスタルを守れ',
+    'intro.p1':'果てなきモンスターの波が右から左のクリスタルへ押し寄せます。ヒーローは自動で戦い — あなたは防衛を育てます。',
+    'intro.p2':'• 🪙ゴールドで<b>ヒーローを雇用・強化</b>（下のカード）。ウェーブを進めると新ヒーロー解禁。<br>• 各ヒーローは<b>自動発動スキル</b>持ち — <b>タップ</b>で即発動。<br>• <b>ステージクリアで新システム解禁</b> — 3: 要塞化・図鑑、5: オーバードライブ・遺物、6: オート、8: 再封印・才能、さらに先も。<br>• 壁に当たったら? <b>💠再封印(プレステージ)</b>が開けば、今回の進行を永続の力に変えられます — それが突破口です。',
+    'intro.btn':'防衛開始 ⚔️',
+    'sv.title':'💾 セーブスロット', 'sv.desc':'最大{n}件保存していつでもロードできます。オートセーブも作動します。',
+    'sv.slot':'スロット', 'sv.empty':'— 空き —', 'sv.save':'💾 保存', 'sv.load':'📂 ロード',
+    'sv.loadQ':'<b>スロット{n}</b>をロードしますか? 現在のゲームは置き換わります — 残すなら先にスロットへ保存を。',
+    'sv.overQ':'<b>スロット{n}</b>に現在のゲームを上書きしますか? 元のセーブは失われます。',
+    'sv.delQ':'<b>スロット{n}</b>を削除しますか? 元に戻せません。',
+    'sv.saved':'💾 スロット{n}に保存', 'sv.fail':'⚠️ 保存失敗', 'sv.deleted':'🗑 スロット{n}削除',
+    'ago.now':'たった今', 'ago.m':'{n}分前', 'ago.h':'{n}時間前', 'ago.d':'{n}日前',
+    'ns.title':'🆕 ニューゲーム?',
+    'ns.desc':'ウェーブ・ゴールド・シャード・ヒーロー・才能・遺物・強化まで<b>すべて</b>の進行が完全に消え、ウェーブ1から新規開始します。元に戻せません。',
+    'ns.do':'削除して最初から',
+    'st.title':'📊 守護者の記録', 'st.cur':'現在ステージ', 'st.best':'最高ステージ', 'st.mile':'次のマイルストーン',
+    'st.mile.d':'🏅 ステージ{n}クリア — 報酬 {r}',
+    'st.kills':'撃破数', 'st.gold':'累計ゴールド', 'st.shards':'獲得シャード', 'st.crit':'クリティカル率',
+    'st.combo':'最高コンボ', 'st.streak':'× 連続', 'st.chart':'ウェーブごとのゴールド収入',
+    'st.empty':'ウェーブをいくつかクリアすると収入グラフが描かれます…',
+    'tal.title':'🌳 才能ツリー',
+    'tal.desc':'才能ポイントで永続ボーナスを購入。再封印ごとに<b>+2 TP</b>、実績でも獲得。所持: <b style="color:var(--hp)">{n} TP</b>',
+    'race.asc':'🧬 超越', 'race.lockmsg':'<b>ステージ{n}</b>で種族を選択します。', 'race.locksub':'最高記録: <b>ステージ{n}</b> — さらに登ろう。',
+    'race.choose':'🧬 種族を選ぶ',
+    'race.choose.d':'<b>永続的な</b>中盤のアイデンティティ — 種族ごとに固有ツリーが解放（🌳才能ポイントを使用）。慎重に; 再封印後も維持。',
+    'race.tree':'ツリー:', 'race.later':'後で決める', 'race.become':'{n}になりますか?',
+    'race.spend':'種族ツリーに🌳を注ぎましょう — 所持 <b style="color:var(--hp)">{n} TP</b>',
+    'race.tap':'ノードをタップで確認・強化。', 'race.lockedbtn':'ロック',
+    'race.change':'🔄 種族変更 — {c}💠 (🌳返還)', 'race.changeQ':'🔄 種族を変更?',
+    'race.change.d':'<b>{c}💠</b>を消費し、種族ツリーの🌳を全額返還して新しい種族を選べます。',
+    'ks.lockmsg':'キーストーンは<b>ステージ{n}</b>で解禁。', 'ks.locksub':'最高記録: <b>ステージ{s}・ウェーブ{w}/{z}</b> — さらに登ろう。',
+    'ks.unlockat':'<b>ステージ{n}</b>で解禁', 'ks.active':'有効',
+    'ks.multi':'全キーストーン解禁 — <b>好きなだけ同時に有効化</b>(タップで切替)。現在<b>{n}</b>個有効。',
+    'ks.single':'ビルドを決めるキーストーンを<b>1つ</b>選択(有効は1つ — 再タップで解除)。ステージ{s}から毎ステージ1つ解禁; 現在<b>{a}/{t}</b> — 全解禁で複数重ねがけ可能。',
+    'ks.persist':'再封印後も維持されます。',
+    'ach.title':'🏆 実績', 'ach.desc':'才能ポイントとシャードがもらえる一回限りの目標。',
+    'ach.reward':'報酬:', 'ach.done':'達成',
+    'bst.title':'⚔ 図鑑: モンスター一覧 ⚔', 'bst.disc':'発見', 'bst.sub':'モンスターを倒すと項目が解放されます',
+    'bst.el':'属性', 'bst.weak':'弱点', 'bst.resist':'耐性',
+    'el.earth':'大地', 'el.poison':'毒', 'el.dark':'闇', 'el.fire':'炎', 'el.void':'虚空', 'el.frost':'氷', 'el.lightning':'雷', 'el.physical':'物理', 'el.holy':'神聖',
+    'rel.desc':'ボスが永続ボーナスを持つ遺物を落とします。最大<b>{n}</b>個装備。タップで装備/解除、🧪で合成選択。',
+    'rel.none':'まだ遺物がありません。ボス({n}ウェーブごと)を倒して入手。',
+    'rel.eq':'装備中', 'rel.picked':'選択中',
+    'tw.title':'🏰 タワー要塞化',
+    'tw.desc':'クリスタルタワーを補強し最大HPを上昇 — 1レベルごとに<b>有効HP+15%</b>。要塞化レベルは再封印でリセット。',
+    'tw.lv':'タワーレベル', 'tw.hp':'有効最大HP', 'tw.buy':'🏰 要塞化 — 🪙 {c}',
+    'pr.title':'💠 クリスタル再封印',
+    'pr.d1':'ウェーブ・ゴールド・ヒーローレベルをリセットし、封印を永続強化します。',
+    'pr.d2':'<b style="color:var(--shard)">+{g} エーテルシャード</b>獲得(合計{h})。シャード1つにつき<b>永続全体ダメージ+2%</b>、シャードショップで使用可。',
+    'pr.go':'今すぐ再封印', 'pr.notyet':'まだシャードを得るほど進行していません。',
   },
 };
 function t(k){ const l = (S && S.lang) || 'ko'; return (LANG[l] && LANG[l][k] != null) ? LANG[l][k] : (LANG.en[k] != null ? LANG.en[k] : k); }
+// t() + {placeholder} interpolation: tf('sv.saved', {n:3})
+function tf(k, vars){ let str = t(k); for (const [kk, v] of Object.entries(vars)) str = str.split('{'+kk+'}').join(v); return str; }
 // localized field on a data object: L(obj,'desc') → obj.descKo / obj.descJa / obj.desc
 function langSuf(){ const l = (S && S.lang) || 'ko'; return l === 'ko' ? 'Ko' : l === 'ja' ? 'Ja' : ''; }
 // Localized data field: proper NAMES stay English; descriptions/roles/tags come
@@ -110,6 +280,13 @@ const I18N = {
     hu_r2d:{desc:'크리스탈 최대 체력 +8%'}, hu_r2e:{desc:'둔화 효과 +12%'}, hu_r2f:{desc:'영웅 피해 +5%'},
     // relic rarities
     common:{name:'일반'}, rare:{name:'희귀'}, epic:{name:'영웅'}, legendary:{name:'전설'}, mythic:{name:'신화'},
+    // bestiary abilities
+    bst_slime:{desc:'파괴 시 미니 슬라임 2기로 분열 (웨이브 15+)'}, bst_skel:{desc:'장갑 보유; 골렘 변종은 방패도 장비'},
+    bst_wraith:{desc:'빙결 면역'}, bst_imp:{desc:'빠른 화염 슬라임 — 스테이지 5부터 등장'},
+    bst_frost:{desc:'냉기의 그림자 — 스테이지 7부터 등장'}, bst_venom:{desc:'맹독 싸움꾼 — 스테이지 9부터 등장'},
+    bst_shade:{desc:'매우 빠름, 빙결 면역 — 스테이지 11부터'}, bst_brute:{desc:'중장갑 헤비 — 스테이지 14부터 등장'},
+    bst_rev:{desc:'전기를 두른 해골 — 스테이지 18부터 등장'}, bst_harpy:{desc:'재빠른 폭풍 비행체 — 스테이지 15부터 등장'},
+    bst_ogre:{desc:'곤봉 휘두르는 거한 — 스테이지 15부터 등장'},
   },
   ja: {
     cannon:{desc:'与ダメージ+100%、ただしクリスタル被ダメ+60%。'}, fortress:{desc:'クリスタル被ダメ−60%、ただし与ダメージ−30%。'},
@@ -138,6 +315,13 @@ const I18N = {
     ce_r2d:{desc:'クリティカル率+4%'}, ce_r2e:{desc:'黄金の敵確率+1%'}, ce_r2f:{desc:'再封印シャード+8%'},
     hu_r2d:{desc:'クリスタル最大HP+8%'}, hu_r2e:{desc:'スロー効果+12%'}, hu_r2f:{desc:'ヒーローダメージ+5%'},
     common:{name:'コモン'}, rare:{name:'レア'}, epic:{name:'エピック'}, legendary:{name:'レジェンダリー'}, mythic:{name:'ミシック'},
+    // bestiary abilities
+    bst_slime:{desc:'破壊時にミニスライム2体に分裂（ウェーブ15+）'}, bst_skel:{desc:'装甲持ち。ゴーレム変種は盾も装備'},
+    bst_wraith:{desc:'凍結無効'}, bst_imp:{desc:'素早い炎スライム — ステージ5から出現'},
+    bst_frost:{desc:'冷気の影 — ステージ7から出現'}, bst_venom:{desc:'猛毒の乱闘者 — ステージ9から出現'},
+    bst_shade:{desc:'非常に速く凍結無効 — ステージ11から'}, bst_brute:{desc:'重装甲ヘビー — ステージ14から出現'},
+    bst_rev:{desc:'帯電した骸骨 — ステージ18から出現'}, bst_harpy:{desc:'素早い嵐の飛行体 — ステージ15から出現'},
+    bst_ogre:{desc:'棍棒を振り回す巨漢 — ステージ15から出現'},
   },
 };
 
@@ -2048,7 +2232,7 @@ function buildHeroPanel(){
     const card = document.createElement('div');
     card.className = 'hero-card' + (unlocked ? '' : ' locked');
     if (!unlocked){
-      card.innerHTML = `<div class="lock-tag">🔒 ${def.name}<br>Unlocks at Stage ${dispStage(def.unlockWave)}</div>`;
+      card.innerHTML = `<div class="lock-tag">🔒 ${def.name}<br>${tf('hero.unlock',{n:dispStage(def.unlockWave)})}</div>`;
       panel.appendChild(card);
       continue;
     }
@@ -2061,8 +2245,8 @@ function buildHeroPanel(){
     card.innerHTML = `
       <h3><span style="color:${def.color}">◆</span> ${def.name}</h3>
       <div class="role">${L(def,'role')}</div>
-      <div class="stat-row"><span>Level</span><b id="lv-${def.id}">${lvl}</b></div>
-      <div class="stat-row"><span>${def.target==='support'?'Support':'Power'}</span><b id="dmg-${def.id}">${dmgTxt}</b></div>
+      <div class="stat-row"><span>${t('lbl.level')}</span><b id="lv-${def.id}">${lvl}</b></div>
+      <div class="stat-row"><span>${def.target==='support'?t('lbl.support'):t('lbl.power')}</span><b id="dmg-${def.id}">${dmgTxt}</b></div>
       <div class="skill-row" title="Auto-cast area skill">${def.skill.icon} ${def.skill.name}</div>
       <div class="cd-bar"><div class="cd-fill" id="cd-${def.id}" style="background:${def.color}"></div></div>
       <button class="buy" id="buy-${def.id}" ${aff.count>0?'':'disabled'}>
@@ -2109,7 +2293,7 @@ function toast(msg){
 let bannerTimer;
 function showWaveBanner(w){
   const b = el('wavebanner');
-  const label = `Stage ${dispStage(w)} · Wave ${waveInStage(w)}/${STAGE_WAVES}`;
+  const label = `${t('lbl.stage')} ${dispStage(w)} · ${t('lbl.wave')} ${waveInStage(w)}/${STAGE_WAVES}`;
   b.textContent = isBossWave(w) ? `⚔️ BOSS — ${label}` : label;
   b.style.opacity = '1';
   clearTimeout(bannerTimer); bannerTimer = setTimeout(()=>b.style.opacity='0.35', 1400);
@@ -2132,16 +2316,14 @@ el('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeM
 
 function doPrestige(){
   const gain = prestigeShards(S.totalGoldEarned) - S.shardsEarned;
-  if (gain <= 0){ toast('Not enough progress to gain shards yet.'); return; }
+  if (gain <= 0){ toast(t('pr.notyet')); return; }
   openModal(`
-    <h2>💠 Reseal the Crystal</h2>
-    <p>Reset your waves, gold, and hero levels to permanently reinforce the seal.</p>
-    <p>You will gain <b style="color:var(--shard)">+${gain} Aether Shards</b>
-       (you'd hold ${S.shards + gain}). Every shard earned grants
-       <b>+2% permanent global damage</b> and can be spent in the Shard Shop.</p>
+    <h2>${t('pr.title')}</h2>
+    <p>${t('pr.d1')}</p>
+    <p>${tf('pr.d2',{g:gain, h:S.shards + gain})}</p>
     <div style="display:flex;gap:8px;margin-top:14px">
-      <button class="btn prestige" id="confPrestige" style="flex:1">Reseal Now</button>
-      <button class="btn" id="cancPrestige" style="flex:1">Cancel</button>
+      <button class="btn prestige" id="confPrestige" style="flex:1">${t('pr.go')}</button>
+      <button class="btn" id="cancPrestige" style="flex:1">${t('cancel')}</button>
     </div>`);
   el('confPrestige').onclick = () => {
     const shardBonus = Math.floor(gain * raceBonus('shardGain'));   // race shard bonus (Celestial Ascension)
@@ -2180,7 +2362,7 @@ function openShardShop(){
     const maxed = lvl >= u.max;
     return `<div class="shard-item">
       <div class="info"><b>${u.name}</b> — ${L(u,'desc')}
-        <div class="lv">Lv ${lvl}/${u.max} · now ${u.fmt(lvl)}</div></div>
+        <div class="lv">Lv ${lvl}/${u.max} · ${t('lbl.now')} ${u.fmt(lvl)}</div></div>
       <button class="btn" data-up="${u.id}" ${maxed||S.shards<cost?'disabled':''}>${maxed?'MAX':'💠 '+cost}</button>
     </div>`;
   }).join('');
@@ -2192,13 +2374,12 @@ function openShardShop(){
       <button class="btn" id="buyTp" ${tpAfford?'':'disabled'}>💠 ${TP_SHARD_COST}</button>
     </div>`;
   openModal(`
-    <h2>💠 Shard Shop</h2>
-    <p>Permanent upgrades bought with Aether Shards. These persist through every reseal.
-       You have <b style="color:var(--shard)">${S.shards}</b> shards.</p>
+    <h2>${t('btn.shop')}</h2>
+    <p>${tf('shop.desc',{n:S.shards})}</p>
     <div class="shard-shop">${rows}</div>
     <div class="branch-title">🌳 ${t('shop.convert')}</div>
     ${tpRow}
-    <button class="btn" id="closeShop" style="width:100%;margin-top:8px">Close</button>`);
+    <button class="btn" id="closeShop" style="width:100%;margin-top:8px">${t('set.close')}</button>`);
   el('closeShop').onclick = closeModal;
   el('modalBox').querySelectorAll('[data-up]').forEach(b => {
     b.onclick = () => {
@@ -2274,14 +2455,13 @@ function applyOffline(){
   const r = runOfflineSim(away);
   if (r.waves <= 0 && r.gold <= 0) return;
   openModal(`
-    <h2>🌙 Welcome back, guardian</h2>
-    <p>Your heroes held the line for <b>${fmtDur(r.seconds)}</b> while you were away
-       (progress is capped at 8h and stops where your damage can no longer keep up).</p>
+    <h2>${t('off.title')}</h2>
+    <p>${tf('off.desc',{t:fmtDur(r.seconds)})}</p>
     <div style="display:flex;gap:10px;justify-content:center;margin:16px 0;text-align:center">
-      <div style="flex:1"><div style="font-size:22px">🌊 <b style="color:var(--accent)">+${r.waves}</b></div><div style="font-size:11px;color:var(--muted)">waves cleared</div></div>
-      <div style="flex:1"><div style="font-size:22px">🪙 <b style="color:var(--gold)">+${fmt(r.gold)}</b></div><div style="font-size:11px;color:var(--muted)">gold earned</div></div>
+      <div style="flex:1"><div style="font-size:22px">🌊 <b style="color:var(--accent)">+${r.waves}</b></div><div style="font-size:11px;color:var(--muted)">${t('off.waves')}</div></div>
+      <div style="flex:1"><div style="font-size:22px">🪙 <b style="color:var(--gold)">+${fmt(r.gold)}</b></div><div style="font-size:11px;color:var(--muted)">${t('off.gold')}</div></div>
     </div>
-    <button class="btn" id="collectOff" style="width:100%">Collect</button>`);
+    <button class="btn" id="collectOff" style="width:100%">${t('off.collect')}</button>`);
   el('collectOff').onclick = closeModal;
 }
 
@@ -2303,16 +2483,10 @@ function maybeWallHint(brokeWave){
 // ---- First-run tutorial ----
 function showIntro(){
   openModal(`
-    <h2>⟡ Defend the Aether Crystal</h2>
-    <p>Endless waves of monsters march from the right toward your Crystal on the left.
-       Your heroes attack on their own — you grow the defense.</p>
-    <p style="margin-top:10px">
-      • <b>Buy &amp; upgrade heroes</b> with 🪙 gold (cards below). More heroes unlock as you reach new waves.<br>
-      • Each hero has an <b>auto-casting skill</b> — <b>tap a hero</b> to fire it early.<br>
-      • <b>New systems unlock as you clear stages</b> — Fortify &amp; Bestiary at Stage 3, Overdrive &amp; Relics at Stage 5, Auto at Stage 6, Reseal &amp; Talents at Stage 8, and more beyond.<br>
-      • Hit a wall? Once <b>💠 Reseal (Prestige)</b> opens, it trades your run for permanent power — that's how you break through.
-    </p>
-    <button class="btn" id="introOk" style="width:100%;margin-top:12px">Begin the defense ⚔️</button>`);
+    <h2>${t('intro.title')}</h2>
+    <p>${t('intro.p1')}</p>
+    <p style="margin-top:10px">${t('intro.p2')}</p>
+    <button class="btn" id="introOk" style="width:100%;margin-top:12px">${t('intro.btn')}</button>`);
   el('introOk').onclick = () => { S.seenIntro = true; save(); closeModal(); };
 }
 
@@ -2354,56 +2528,54 @@ function loadSlot(n){
 function saveAgo(ts){
   if (!ts) return '';
   const s = Math.floor((Date.now() - ts) / 1000);
-  if (s < 60) return 'just now';
-  if (s < 3600) return Math.floor(s/60) + 'm ago';
-  if (s < 86400) return Math.floor(s/3600) + 'h ago';
-  return Math.floor(s/86400) + 'd ago';
+  if (s < 60) return t('ago.now');
+  if (s < 3600) return tf('ago.m',{n:Math.floor(s/60)});
+  if (s < 86400) return tf('ago.h',{n:Math.floor(s/3600)});
+  return tf('ago.d',{n:Math.floor(s/86400)});
 }
 let savePending = null;                    // {act:'load'|'overwrite'|'delete', slot}
 function openSaves(){
   let head = '';
   if (savePending){
     const { act, slot } = savePending;
-    const label = act === 'load'
-        ? `Load <b>Slot ${slot}</b>? Your current game will be replaced — save it to a slot first if you want to keep it.`
-      : act === 'overwrite'
-        ? `Overwrite <b>Slot ${slot}</b> with your current game? The old save there is lost.`
-        : `Delete <b>Slot ${slot}</b>? This can't be undone.`;
+    const label = act === 'load' ? tf('sv.loadQ',{n:slot})
+      : act === 'overwrite' ? tf('sv.overQ',{n:slot})
+      : tf('sv.delQ',{n:slot});
     const danger = act !== 'overwrite';
     head = `<div class="save-confirm"><p style="margin:0 0 8px">${label}</p>
       <div style="display:flex;gap:8px">
-        <button class="btn" id="saveYes" style="flex:1${danger?';background:var(--danger);border-color:var(--danger)':''}">Confirm</button>
-        <button class="btn" id="saveNo" style="flex:1">Cancel</button></div></div>`;
+        <button class="btn" id="saveYes" style="flex:1${danger?';background:var(--danger);border-color:var(--danger)':''}">${t('confirm')}</button>
+        <button class="btn" id="saveNo" style="flex:1">${t('cancel')}</button></div></div>`;
   }
   const rows = [];
   for (let n = 1; n <= SLOT_COUNT; n++){
     const s = slotInfo(n);
     if (!s){
-      rows.push(`<div class="shard-item"><div class="info"><b>Slot ${n}</b>
-        <div class="lv">— Empty —</div></div>
-        <button class="btn slot-save" data-n="${n}">💾 Save</button></div>`);
+      rows.push(`<div class="shard-item"><div class="info"><b>${t('sv.slot')} ${n}</b>
+        <div class="lv">${t('sv.empty')}</div></div>
+        <button class="btn slot-save" data-n="${n}">${t('sv.save')}</button></div>`);
     } else {
-      rows.push(`<div class="shard-item"><div class="info"><b>Slot ${n}</b>
-        <div class="lv">Stage ${dispStage(s.best)} · Wave ${waveInStage(s.wave)}/${STAGE_WAVES} · 💠${s.prestiges} · ${saveAgo(s.savedAt)}</div></div>
+      rows.push(`<div class="shard-item"><div class="info"><b>${t('sv.slot')} ${n}</b>
+        <div class="lv">${t('lbl.stage')} ${dispStage(s.best)} · ${t('lbl.wave')} ${waveInStage(s.wave)}/${STAGE_WAVES} · 💠${s.prestiges} · ${saveAgo(s.savedAt)}</div></div>
         <div style="display:flex;gap:4px">
-          <button class="btn slot-load" data-n="${n}">📂 Load</button>
+          <button class="btn slot-load" data-n="${n}">${t('sv.load')}</button>
           <button class="btn slot-save" data-n="${n}">💾</button>
           <button class="btn slot-del"  data-n="${n}">🗑</button></div></div>`);
     }
   }
-  openModal(`<h2>💾 Save Slots</h2>
-    <p>Store up to ${SLOT_COUNT} games and load any of them anytime. Your game also autosaves on its own.</p>
+  openModal(`<h2>${t('sv.title')}</h2>
+    <p>${tf('sv.desc',{n:SLOT_COUNT})}</p>
     ${head}
     <div class="shard-shop">${rows.join('')}</div>
-    <button class="btn" id="closeSaves" style="width:100%;margin-top:6px">Close</button>`);
+    <button class="btn" id="closeSaves" style="width:100%;margin-top:6px">${t('set.close')}</button>`);
   el('closeSaves').onclick = () => { savePending = null; closeModal(); };
   const box = el('modalBox');
   if (savePending){
     el('saveYes').onclick = () => {
       const { act, slot } = savePending; savePending = null;
       if (act === 'load'){ loadSlot(slot); return; }              // reloads the page
-      if (act === 'overwrite'){ toast(writeSlot(slot) ? '💾 Saved to Slot '+slot : '⚠️ Save failed'); }
-      else { try{ localStorage.removeItem(SLOT_KEY(slot)); }catch(e){} toast('🗑 Slot '+slot+' deleted'); }
+      if (act === 'overwrite'){ toast(writeSlot(slot) ? tf('sv.saved',{n:slot}) : t('sv.fail')); }
+      else { try{ localStorage.removeItem(SLOT_KEY(slot)); }catch(e){} toast(tf('sv.deleted',{n:slot})); }
       openSaves();
     };
     el('saveNo').onclick = () => { savePending = null; openSaves(); };
@@ -2411,7 +2583,7 @@ function openSaves(){
   box.querySelectorAll('.slot-save').forEach(b => b.onclick = () => {
     const n = +b.dataset.n;
     if (slotInfo(n)){ savePending = { act:'overwrite', slot:n }; openSaves(); }   // occupied → confirm
-    else { toast(writeSlot(n) ? '💾 Saved to Slot '+n : '⚠️ Save failed'); openSaves(); }
+    else { toast(writeSlot(n) ? tf('sv.saved',{n}) : t('sv.fail')); openSaves(); }
   });
   box.querySelectorAll('.slot-load').forEach(b => b.onclick = () => { savePending = { act:'load',   slot:+b.dataset.n }; openSaves(); });
   box.querySelectorAll('.slot-del').forEach(b => b.onclick  = () => { savePending = { act:'delete', slot:+b.dataset.n }; openSaves(); });
@@ -2420,13 +2592,11 @@ if (el('btnSave')) el('btnSave').onclick = () => { savePending = null; openSaves
 // New Start — wipe the save and reload into a fresh game. skipSave stops the
 // beforeunload handler from writing the current state back on the way out.
 function confirmNewStart(){
-  openModal(`<h2>🆕 New Start?</h2>
-    <p>This permanently deletes <b>all</b> progress — waves, gold, shards, heroes,
-       talents, relics and upgrades — and begins a brand-new game from Wave 1.
-       This cannot be undone.</p>
+  openModal(`<h2>${t('ns.title')}</h2>
+    <p>${t('ns.desc')}</p>
     <div style="display:flex;gap:8px;margin-top:14px">
-      <button class="btn" id="doNewStart" style="flex:1;background:var(--danger);border-color:var(--danger)">Delete &amp; Start Over</button>
-      <button class="btn" id="noNewStart" style="flex:1">Cancel</button></div>`);
+      <button class="btn" id="doNewStart" style="flex:1;background:var(--danger);border-color:var(--danger)">${t('ns.do')}</button>
+      <button class="btn" id="noNewStart" style="flex:1">${t('cancel')}</button></div>`);
   el('doNewStart').onclick = () => {
     skipSave = true;                       // block any further writes (incl. beforeunload)
     try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
@@ -2495,21 +2665,21 @@ canvas.addEventListener('pointerdown', e => {
 // stats panel
 function openStats(){
   openModal(`
-    <h2>📊 Guardian's Record</h2>
+    <h2>${t('st.title')}</h2>
     <div class="shard-shop">
-      <div class="shard-item"><div class="info"><b>Current Stage</b><div class="lv">Stage ${dispStage(S.wave)} · Wave ${waveInStage(S.wave)}/${STAGE_WAVES}</div></div></div>
-      <div class="shard-item"><div class="info"><b>Best Stage</b><div class="lv">Stage ${dispStage(S.bestWave)} · Wave ${waveInStage(S.bestWave)}/${STAGE_WAVES}</div></div></div>
-      <div class="shard-item"><div class="info"><b>Next Milestone</b><div class="lv">🏅 Clear Stage ${dispStage(nextMilestone())} — reward 💠${1 + Math.floor(nextMilestone()/100)}${nextMilestone()%100===0?' + 🌳1':''}</div></div></div>
-      <div class="shard-item"><div class="info"><b>Enemies Defeated</b><div class="lv">${fmt(S.totalKills)}</div></div></div>
-      <div class="shard-item"><div class="info"><b>Lifetime Gold</b><div class="lv">🪙 ${fmt(S.totalGoldEarned)}</div></div></div>
-      <div class="shard-item"><div class="info"><b>Shards Earned</b><div class="lv">💠 ${S.shardsEarned}</div></div></div>
-      <div class="shard-item"><div class="info"><b>Critical Chance</b><div class="lv">${Math.round(critChance()*100)}%</div></div></div>
-      <div class="shard-item"><div class="info"><b>Best Combo</b><div class="lv">🔥 ${S.bestCombo}× streak</div></div></div>
+      <div class="shard-item"><div class="info"><b>${t('st.cur')}</b><div class="lv">${t('lbl.stage')} ${dispStage(S.wave)} · ${t('lbl.wave')} ${waveInStage(S.wave)}/${STAGE_WAVES}</div></div></div>
+      <div class="shard-item"><div class="info"><b>${t('st.best')}</b><div class="lv">${t('lbl.stage')} ${dispStage(S.bestWave)} · ${t('lbl.wave')} ${waveInStage(S.bestWave)}/${STAGE_WAVES}</div></div></div>
+      <div class="shard-item"><div class="info"><b>${t('st.mile')}</b><div class="lv">${tf('st.mile.d',{n:dispStage(nextMilestone()), r:'💠'+(1 + Math.floor(nextMilestone()/100))+(nextMilestone()%100===0?' + 🌳1':'')})}</div></div></div>
+      <div class="shard-item"><div class="info"><b>${t('st.kills')}</b><div class="lv">${fmt(S.totalKills)}</div></div></div>
+      <div class="shard-item"><div class="info"><b>${t('st.gold')}</b><div class="lv">🪙 ${fmt(S.totalGoldEarned)}</div></div></div>
+      <div class="shard-item"><div class="info"><b>${t('st.shards')}</b><div class="lv">💠 ${S.shardsEarned}</div></div></div>
+      <div class="shard-item"><div class="info"><b>${t('st.crit')}</b><div class="lv">${Math.round(critChance()*100)}%</div></div></div>
+      <div class="shard-item"><div class="info"><b>${t('st.combo')}</b><div class="lv">🔥 ${S.bestCombo}${t('st.streak')}</div></div></div>
     </div>
-    <div class="branch-title">Gold income per wave</div>
+    <div class="branch-title">${t('st.chart')}</div>
     <canvas id="statChart" width="800" height="220"
       style="width:100%;height:110px;background:#0d1128;border:1px solid var(--line);border-radius:8px"></canvas>
-    <button class="btn" id="closeStats" style="width:100%;margin-top:12px">Close</button>`);
+    <button class="btn" id="closeStats" style="width:100%;margin-top:12px">${t('set.close')}</button>`);
   el('closeStats').onclick = closeModal;
   drawGoldChart(el('statChart'));
 }
@@ -2521,7 +2691,7 @@ function drawGoldChart(cv){
   const data = S.goldHistory || [];
   if (data.length < 2){
     g.fillStyle = '#8b93c4'; g.font = '20px system-ui'; g.textAlign = 'center';
-    g.fillText('Clear a few waves to chart your gold income…', W/2, H/2);
+    g.fillText(t('st.empty'), W/2, H/2);
     return;
   }
   const pad = { l: 64, r: 12, t: 14, b: 26 };
@@ -2565,18 +2735,17 @@ function openTalents(){
       const afford = S.talentPoints >= t.cost && !maxed;
       return `<div class="shard-item">
         <div class="info"><b>${t.name}</b> — ${L(t,'desc')}
-          <div class="lv">Lv ${lvl}/${t.max} · now ${t.fmt(lvl)}</div></div>
+          <div class="lv">Lv ${lvl}/${t.max} · ${window.t('lbl.now')} ${t.fmt(lvl)}</div></div>
         <button class="btn" data-tal="${t.id}" ${afford?'':'disabled'}>${maxed?'MAX':'🌳 '+t.cost}</button>
       </div>`;
     }).join('');
     return `<div class="branch-title">${trBranch(b)}</div>${rows}`;
   }).join('');
   openModal(`
-    <h2>🌳 Talent Tree</h2>
-    <p>Spend Talent Points on permanent bonuses. Earn <b>+2 TP</b> per reseal and
-       more from achievements. You have <b style="color:var(--hp)">${S.talentPoints} TP</b>.</p>
+    <h2>${t('tal.title')}</h2>
+    <p>${tf('tal.desc',{n:S.talentPoints})}</p>
     <div class="shard-shop">${body}</div>
-    <button class="btn" id="closeTal" style="width:100%">Close</button>`);
+    <button class="btn" id="closeTal" style="width:100%">${t('set.close')}</button>`);
   el('closeTal').onclick = closeModal;
   el('modalBox').querySelectorAll('[data-tal]').forEach(btn => {
     btn.onclick = () => {
@@ -2620,11 +2789,11 @@ function respecRace(){
 }
 function openRace(){
   if (!raceUnlocked()){
-    openModal(`<h2>🧬 Ascendancy</h2>
+    openModal(`<h2>${t('race.asc')}</h2>
       <div class="ks-lock"><div class="ks-lock-ic">🔒</div>
-        <div class="ks-lock-msg">Choose a Race at <b>Stage ${RACE_STAGE}</b>.</div>
-        <div class="ks-lock-sub">Best so far: <b>Stage ${dispStage(S.bestWave)}</b> — keep climbing.</div></div>
-      <button class="btn" id="closeRace" style="width:100%;margin-top:12px">Close</button>`);
+        <div class="ks-lock-msg">${tf('race.lockmsg',{n:RACE_STAGE})}</div>
+        <div class="ks-lock-sub">${tf('race.locksub',{n:dispStage(S.bestWave)})}</div></div>
+      <button class="btn" id="closeRace" style="width:100%;margin-top:12px">${t('set.close')}</button>`);
     el('closeRace').onclick = closeModal; return;
   }
   if (!raceValid()){                              // no race yet (or stale id) → picker
@@ -2632,21 +2801,20 @@ function openRace(){
       <div class="ks" style="--kc:${r.color}" data-race="${id}">
         <span class="ks-ic">${r.icon}</span>
         <div class="ks-info"><div class="ks-nm">${r.name} · ${Ld(id,'tag',r.tag)}</div>
-          <div class="ks-desc">${Ld(id,'desc',r.desc)}<br><span style="opacity:.8">Tree: ${r.nodes.map(n=>n.name).join(' · ')}</span></div></div>
+          <div class="ks-desc">${Ld(id,'desc',r.desc)}<br><span style="opacity:.8">${t('race.tree')} ${r.nodes.map(n=>n.name).join(' · ')}</span></div></div>
       </div>`).join('');
-    openModal(`<h2>🧬 Choose your Race</h2>
-      <p>A <b>permanent</b> mid-game identity — each race unlocks its own tech tree
-         (spent with 🌳 Talent Points). Choose wisely; it persists through Reseal.</p>
+    openModal(`<h2>${t('race.choose')}</h2>
+      <p>${t('race.choose.d')}</p>
       <div class="ks-list">${cards}</div>
-      <button class="btn" id="closeRace" style="width:100%;margin-top:8px">Decide later</button>`);
+      <button class="btn" id="closeRace" style="width:100%;margin-top:8px">${t('race.later')}</button>`);
     el('closeRace').onclick = closeModal;
     el('modalBox').querySelectorAll('[data-race]').forEach(n => n.onclick = () => {
       const id = n.dataset.race;
-      openModal(`<h2>${RACES[id].icon} Become ${RACES[id].name}?</h2>
+      openModal(`<h2>${RACES[id].icon} ${tf('race.become',{n:RACES[id].name})}</h2>
         <p>${Ld(id,'desc',RACES[id].desc)}<br><br>${t('race.permanent')}</p>
         <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="btn" id="raceYes" style="flex:1;background:${RACES[id].color};border-color:${RACES[id].color};color:#111">Confirm</button>
-          <button class="btn" id="raceNo" style="flex:1">Back</button></div>`);
+          <button class="btn" id="raceYes" style="flex:1;background:${RACES[id].color};border-color:${RACES[id].color};color:#111">${t('confirm')}</button>
+          <button class="btn" id="raceNo" style="flex:1">${t('back')}</button></div>`);
       el('raceYes').onclick = () => pickRace(id);
       el('raceNo').onclick = openRace;
     });
@@ -2680,12 +2848,12 @@ function openRace(){
     const canBuy = !locked && !maxed && S.talentPoints >= sel.cost;
     info = `<div class="rt-info"><div><b>${sel.name}</b> <span style="color:var(--muted)">Lv ${lvl}/${sel.max}</span>
         <div style="font-size:12px;color:var(--muted)">${locked?`🔒 <b>${byId(sel.req.id).name}</b> Lv ${sel.req.lv} ${t('race.req')}`:L(sel,'desc')}</div></div>
-      <button class="btn" id="rtBuy" ${canBuy?'':'disabled'} style="min-width:88px">${maxed?'MAX':(locked?'Locked':'🌳 '+sel.cost)}</button></div>`;
+      <button class="btn" id="rtBuy" ${canBuy?'':'disabled'} style="min-width:88px">${maxed?'MAX':(locked?t('race.lockedbtn'):'🌳 '+sel.cost)}</button></div>`;
   } else {
-    info = `<div class="rt-info" style="color:var(--muted);justify-content:center">Tap a node to view & upgrade it.</div>`;
+    info = `<div class="rt-info" style="color:var(--muted);justify-content:center">${t('race.tap')}</div>`;
   }
   openModal(`<h2>${r.icon} ${r.name} <span style="font-size:13px;color:var(--muted)">· ${Ld(S.race,'tag',r.tag)}</span></h2>
-    <p style="margin:0 0 4px">Spend 🌳 on your race tree — you have <b style="color:var(--hp)">${S.talentPoints} TP</b>.</p>
+    <p style="margin:0 0 4px">${tf('race.spend',{n:S.talentPoints})}</p>
     <div class="racetree">
       <svg class="rt-links" viewBox="0 0 360 360" preserveAspectRatio="xMidYMid meet">${lines}</svg>
       <div class="rt-center" style="--rc:${r.color}"><span style="font-size:22px">${r.icon}</span><span style="font-size:9px">${r.name}</span></div>
@@ -2693,18 +2861,17 @@ function openRace(){
     </div>
     ${info}
     <button class="btn" id="respecRace" ${S.shards>=RACE_RESPEC_COST?'':'disabled'}
-      style="width:100%;margin-top:8px;background:#2c1a3a;border-color:#7a3cc0;color:#e0c6ff">🔄 Change Race — ${RACE_RESPEC_COST}💠 (refunds 🌳)</button>
-    <button class="btn" id="closeRace" style="width:100%;margin-top:6px">Close</button>`);
+      style="width:100%;margin-top:8px;background:#2c1a3a;border-color:#7a3cc0;color:#e0c6ff">${tf('race.change',{c:RACE_RESPEC_COST})}</button>
+    <button class="btn" id="closeRace" style="width:100%;margin-top:6px">${t('set.close')}</button>`);
   el('closeRace').onclick = () => { raceSel = null; closeModal(); };
   el('modalBox').querySelectorAll('[data-rn]').forEach(nd => nd.onclick = () => { raceSel = nd.dataset.rn; openRace(); });
   if (el('rtBuy')) el('rtBuy').onclick = () => buyRaceNode(raceSel);
   el('respecRace').onclick = () => {
-    openModal(`<h2>🔄 Change Race?</h2>
-      <p>Costs <b>${RACE_RESPEC_COST}💠</b> and refunds every 🌳 spent in your race tree,
-         then lets you choose a new race.</p>
+    openModal(`<h2>${t('race.changeQ')}</h2>
+      <p>${tf('race.change.d',{c:RACE_RESPEC_COST})}</p>
       <div style="display:flex;gap:8px;margin-top:12px">
-        <button class="btn" id="ryes" style="flex:1;background:#7a3cc0;border-color:#7a3cc0">Confirm</button>
-        <button class="btn" id="rno" style="flex:1">Back</button></div>`);
+        <button class="btn" id="ryes" style="flex:1;background:#7a3cc0;border-color:#7a3cc0">${t('confirm')}</button>
+        <button class="btn" id="rno" style="flex:1">${t('back')}</button></div>`);
     el('ryes').onclick = respecRace;
     el('rno').onclick = openRace;
   };
@@ -2733,14 +2900,13 @@ function pickKeystone(id){
 function openKeystones(){
   if (!keystonesUnlocked()){
     openModal(`
-      <h2>⭐ Keystone</h2>
+      <h2>${t('btn.keystone')}</h2>
       <div class="ks-lock">
         <div class="ks-lock-ic">🔒</div>
-        <div class="ks-lock-msg">Keystones unlock at <b>Stage ${KEYSTONE_STAGE}</b>.</div>
-        <div class="ks-lock-sub">Reach Stage ${dispStage(S.bestWave)} → keep climbing.
-          Best so far: <b>Stage ${dispStage(S.bestWave)} · Wave ${waveInStage(S.bestWave)}/${STAGE_WAVES}</b></div>
+        <div class="ks-lock-msg">${tf('ks.lockmsg',{n:KEYSTONE_STAGE})}</div>
+        <div class="ks-lock-sub">${tf('ks.locksub',{s:dispStage(S.bestWave), w:waveInStage(S.bestWave), z:STAGE_WAVES})}</div>
       </div>
-      <button class="btn" id="closeKs" style="width:100%;margin-top:12px">Close</button>`);
+      <button class="btn" id="closeKs" style="width:100%;margin-top:12px">${t('set.close')}</button>`);
     el('closeKs').onclick = closeModal;
     return;
   }
@@ -2750,25 +2916,25 @@ function openKeystones(){
       return `<div class="ks ks-locked" style="--kc:${k.color}">
         <span class="ks-ic">🔒</span>
         <div class="ks-info"><div class="ks-nm">${k.name}</div>
-          <div class="ks-desc">Unlocks at <b>Stage ${keystoneStage(id)}</b></div></div>
+          <div class="ks-desc">${tf('ks.unlockat',{n:keystoneStage(id)})}</div></div>
       </div>`;
     }
     const on = S.keystones.includes(id);
     return `<div class="ks ${on?'on':''}" style="--kc:${k.color}" data-ks="${id}">
       <span class="ks-ic">${k.icon}</span>
-      <div class="ks-info"><div class="ks-nm">${k.name}${on?' · ACTIVE':''}</div>
+      <div class="ks-info"><div class="ks-nm">${k.name}${on?' · '+t('ks.active'):''}</div>
         <div class="ks-desc">${Ld(id,'desc',k.desc)}</div></div>
     </div>`;
   }).join('');
   const multi = allKeystonesOpen();
   const intro = multi
-    ? `All keystones unlocked — <b>activate as many as you like</b> at once (tap to toggle). Currently <b>${S.keystones.length}</b> active.`
-    : `Choose <b>one</b> build-defining keystone (only one active — tap it again to clear). A new keystone unlocks every stage from ${KEYSTONE_STAGE}; <b>${availN}/${KEYSTONE_IDS.length}</b> available so far — unlock them all to stack multiple.`;
+    ? tf('ks.multi',{n:S.keystones.length})
+    : tf('ks.single',{s:KEYSTONE_STAGE, a:availN, t:KEYSTONE_IDS.length});
   openModal(`
-    <h2>⭐ Keystone</h2>
-    <p>${intro} They persist through Reseal.</p>
+    <h2>${t('btn.keystone')}</h2>
+    <p>${intro} ${t('ks.persist')}</p>
     <div class="ks-list">${rows}</div>
-    <button class="btn" id="closeKs" style="width:100%;margin-top:12px">Close</button>`);
+    <button class="btn" id="closeKs" style="width:100%;margin-top:12px">${t('set.close')}</button>`);
   el('closeKs').onclick = closeModal;
   el('modalBox').querySelectorAll('[data-ks]').forEach(n => n.onclick = () => pickKeystone(n.dataset.ks));
 }
@@ -2838,15 +3004,15 @@ function openAchievements(){
     const reward = [a.tp?`+${a.tp} TP`:'', a.shards?`+${a.shards}💠`:''].filter(Boolean).join(' · ') || '—';
     return `<div class="shard-item" style="${got?'':'opacity:.6'}">
       <div class="info"><b>${got?'🏆':'🔒'} ${a.name}</b> — ${Ld('ach_'+a.id,'desc',a.desc)}
-        <div class="lv">Reward: ${reward}</div></div>
-      <div class="lv">${got?'DONE':''}</div>
+        <div class="lv">${t('ach.reward')} ${reward}</div></div>
+      <div class="lv">${got?t('ach.done'):''}</div>
     </div>`;
   }).join('');
   openModal(`
-    <h2>🏆 Achievements <span style="font-size:13px;color:var(--muted)">(${done}/${ACHIEVEMENTS.length})</span></h2>
-    <p>One-time milestones that reward Talent Points and Aether Shards.</p>
+    <h2>${t('ach.title')} <span style="font-size:13px;color:var(--muted)">(${done}/${ACHIEVEMENTS.length})</span></h2>
+    <p>${t('ach.desc')}</p>
     <div class="shard-shop">${rows}</div>
-    <button class="btn" id="closeAch" style="width:100%">Close</button>`);
+    <button class="btn" id="closeAch" style="width:100%">${t('set.close')}</button>`);
   el('closeAch').onclick = closeModal;
 }
 if (el('btnAch')) el('btnAch').onclick = openAchievements;
@@ -2855,38 +3021,38 @@ if (el('btnAch')) el('btnAch').onclick = openAchievements;
 // One codex entry per in-game monster sprite. Lore stats (LV/HP/MP/ELEMENT)
 // styled like a classic RPG bestiary; portraits render the real sprite art.
 const BESTIARY = [
-  { sprite:'slime',      name:'Slime',            lv:1,  hp:10,  mp:2,  el:'EARTH',  fc:'#5aa03a',
+  { bid:'bst_slime', sprite:'slime',      name:'Slime',            lv:1,  hp:10,  mp:2,  el:'EARTH',  fc:'#5aa03a',
     ability:'Splits into two minis when destroyed (Wave 15+)',
     lore:'A gelatinous crystal-eater. Slow, but they swarm the front line.' },
   { sprite:'zombie',     name:'Rotting Zombie',   lv:2,  hp:18,  mp:4,  el:'POISON', fc:'#6cbf3a',
     lore:'Reanimated fodder that leaves a toxic cloud when destroyed.' },
-  { sprite:'skeleton',   name:'Skeleton Warrior', lv:3,  hp:45,  mp:10, el:'DARK',   fc:'#9a6bd0',
+  { bid:'bst_skel', sprite:'skeleton',   name:'Skeleton Warrior', lv:3,  hp:45,  mp:10, el:'DARK',   fc:'#9a6bd0',
     ability:'Armoured; the Golem variant also carries a shield',
     lore:'Armoured bonelord. High HP — a proper tank of the horde.' },
-  { sprite:'specter',    name:'Wraith',           lv:4,  hp:26,  mp:12, el:'DARK',   fc:'#8f8be0',
+  { bid:'bst_wraith', sprite:'specter',    name:'Wraith',           lv:4,  hp:26,  mp:12, el:'DARK',   fc:'#8f8be0',
     ability:'Immune to freeze', lore:'A floating shade, immune to frost and hard to pin down.' },
   { sprite:'dragon',     name:'Red Dragon',       lv:5,  hp:150, mp:30, el:'FIRE',   fc:'#e0632a', boss:true,
     lore:'Boss. Wreathed in flame; appears on the fifth-wave assaults.' },
   { sprite:'elderghost', name:'Elder Ghost',      lv:10, hp:300, mp:60, el:'VOID',   fc:'#a05ad0', boss:true,
     lore:'Boss. An ancient void-spirit that commands the darker waves.' },
   // later-stage variants — share a sprite but tinted by their element in the codex
-  { sprite:'slime',    variant:true, tint:'#ff7a3c', name:'Ember Imp',   lv:6,  hp:8,  mp:3,  el:'FIRE',      fc:'#e0632a',
+  { bid:'bst_imp', sprite:'slime',    variant:true, tint:'#ff7a3c', name:'Ember Imp',   lv:6,  hp:8,  mp:3,  el:'FIRE',      fc:'#e0632a',
     ability:'Fast fiery slime — appears from Stage 5' },
-  { sprite:'specter',  variant:true, tint:'#7bd3ff', name:'Frostkin',    lv:7,  hp:14, mp:8,  el:'FROST',     fc:'#5bc8ff',
+  { bid:'bst_frost', sprite:'specter',  variant:true, tint:'#7bd3ff', name:'Frostkin',    lv:7,  hp:14, mp:8,  el:'FROST',     fc:'#5bc8ff',
     ability:'A chilling shade — appears from Stage 7' },
-  { sprite:'zombie',   variant:true, tint:'#9be36a', name:'Venomspawn',  lv:9,  hp:16, mp:6,  el:'POISON',    fc:'#6cbf3a',
+  { bid:'bst_venom', sprite:'zombie',   variant:true, tint:'#9be36a', name:'Venomspawn',  lv:9,  hp:16, mp:6,  el:'POISON',    fc:'#6cbf3a',
     ability:'A toxic brawler — appears from Stage 9' },
-  { sprite:'specter',  variant:true, tint:'#c58bff', name:'Void Shade',  lv:11, hp:12, mp:14, el:'VOID',      fc:'#a05ad0',
+  { bid:'bst_shade', sprite:'specter',  variant:true, tint:'#c58bff', name:'Void Shade',  lv:11, hp:12, mp:14, el:'VOID',      fc:'#a05ad0',
     ability:'Very fast, immune to freeze — from Stage 11' },
-  { sprite:'skeleton', variant:true, tint:'#cdd6f4', name:'Bone Brute',  lv:14, hp:60, mp:8,  el:'PHYSICAL',  fc:'#aab4d8',
+  { bid:'bst_brute', sprite:'skeleton', variant:true, tint:'#cdd6f4', name:'Bone Brute',  lv:14, hp:60, mp:8,  el:'PHYSICAL',  fc:'#aab4d8',
     ability:'Armoured heavy — appears from Stage 14' },
-  { sprite:'skeleton', variant:true, tint:'#ffe066', name:'Revenant',    lv:18, hp:52, mp:16, el:'LIGHTNING', fc:'#ffd75e',
+  { bid:'bst_rev', sprite:'skeleton', variant:true, tint:'#ffe066', name:'Revenant',    lv:18, hp:52, mp:16, el:'LIGHTNING', fc:'#ffd75e',
     ability:'A charged skeleton — appears from Stage 18' },
   // Stage 15+ monsters with their own sprites
-  { sprite:'harpy',     name:'Harpy',     lv:15, hp:70,  mp:20, el:'LIGHTNING', fc:'#c9a24a',
+  { bid:'bst_harpy', sprite:'harpy',     name:'Harpy',     lv:15, hp:70,  mp:20, el:'LIGHTNING', fc:'#c9a24a',
     ability:'Swift storm flyer — appears from Stage 15',
     lore:'A winged predator that dives from above on howling winds. Fast and slippery.' },
-  { sprite:'ogre',      name:'Ogre',      lv:16, hp:155, mp:10, el:'EARTH',     fc:'#c39a6a',
+  { bid:'bst_ogre', sprite:'ogre',      name:'Ogre',      lv:16, hp:155, mp:10, el:'EARTH',     fc:'#c39a6a',
     ability:'Club-swinging brute — appears from Stage 15',
     lore:'A hulking brute whose massive club shatters the front line.' },
 ];
@@ -2942,12 +3108,12 @@ function openBestiary(){
     const nm  = disc ? `${m.name.toUpperCase()}${m.boss ? ' 👑' : ''}` : '??? ??? ???';
     const hp  = disc ? `${m.hp}/${m.hp}` : '???';
     const mp  = disc ? `${m.mp}/${m.mp}` : '???';
-    const elm = disc ? m.el : '?????';
+    const elm = disc ? t('el.'+m.el.toLowerCase()) : '?????';
     const mm = ELEM_MATCH[m.el.toLowerCase()];
     const wr = disc && mm
-      ? `<div class="wr">WEAK ${ELEM_ICON[mm.weak]||''}${mm.weak.toUpperCase()} · RESIST ${ELEM_ICON[mm.resist]||''}${mm.resist.toUpperCase()}</div>`
+      ? `<div class="wr">${t('bst.weak')} ${ELEM_ICON[mm.weak]||''}${t('el.'+mm.weak)} · ${t('bst.resist')} ${ELEM_ICON[mm.resist]||''}${t('el.'+mm.resist)}</div>`
       : '';
-    const ab = disc && m.ability ? `<div class="ab">✦ ${m.ability}</div>` : '';
+    const ab = disc && m.ability ? `<div class="ab">✦ ${Ld(m.bid,'desc',m.ability)}</div>` : '';
     return `
     <div class="mon-card${disc ? '' : ' locked'}" style="--fc:${m.fc}">
       <div class="mon-frame" style="--fc:${m.fc}">
@@ -2957,7 +3123,7 @@ function openBestiary(){
       <div class="mon-plaque">
         <div class="nm">LV ${disc ? m.lv : '?'}&nbsp; ${nm}</div>
         <div class="st">HP: ${hp}&nbsp;&nbsp; MP: ${mp}</div>
-        <div class="el">ELEMENT: ${elm}</div>
+        <div class="el">${t('bst.el')}: ${elm}</div>
         ${wr}
         ${ab}
       </div>
@@ -2965,10 +3131,10 @@ function openBestiary(){
   }).join('');
   openModal(`
     <div class="bestiary">
-      <div class="bestiary-title">⚔ Bestiary: Monster Entries ⚔</div>
-      <div class="bestiary-sub">Discovered ${seen}/${BESTIARY.length} · defeat a monster to unlock its entry</div>
+      <div class="bestiary-title">${t('bst.title')}</div>
+      <div class="bestiary-sub">${t('bst.disc')} ${seen}/${BESTIARY.length} · ${t('bst.sub')}</div>
       <div class="bestiary-grid">${cards}</div>
-      <button class="btn bestiary-close" id="closeBest">Close</button>
+      <button class="btn bestiary-close" id="closeBest">${t('set.close')}</button>
     </div>`);
   el('modalBox').classList.add('wide');
   el('closeBest').onclick = closeModal;
@@ -3098,13 +3264,13 @@ function openRelics(){
     return `<div class="relic ${eq?'eq':''} ${myth?'mythic':''} ${sel?'fsel':''}" style="--rc:${relicColor(rel)}">
       <span class="ic" data-rel="${rel.id}">${t.icon}${t2?t2.icon:''}</span>
       <div style="flex:1" data-rel="${rel.id}"><div class="rn">${name}</div><div class="rd">${stats}</div>
-        <div class="rr">${relicRarityName(rel)}${eq?' · EQUIPPED':''}${sel?' · PICKED':''}</div></div>
+        <div class="rr">${relicRarityName(rel)}${eq?' · '+window.t('rel.eq'):''}${sel?' · '+window.t('rel.picked'):''}</div></div>
       <div class="relic-acts">
         ${canManualFuse(rel.rarity)?`<button class="relic-del" data-pick="${rel.id}" title="Select for fusion" style="color:${sel?'#7bffb0':'#8fd0ff'}">🧪</button>`:''}
         <button class="relic-del" data-del="${rel.id}" title="Destroy (salvage ${relicSalvage(rel)}💠)">🗑️</button>
       </div>
     </div>`;
-  }).join('') : `<p style="grid-column:1/-1;color:var(--muted)">No relics yet. Defeat bosses (every ${BOSS_EVERY} waves) to find them.</p>`;
+  }).join('') : `<p style="grid-column:1/-1;color:var(--muted)">${tf('rel.none',{n:BOSS_EVERY})}</p>`;
   // fusion: pick relics with the 🧪 button, then fuse the chosen set
   const selRar = fuseSelRarity();
   const selRarDef = selRar && RELIC_RARITY.find(r => r.id === selRar);
@@ -3120,13 +3286,12 @@ function openRelics(){
     <div class="shard-item"><div class="info">${fuseInfo}</div>
       <button class="btn" id="doFuse" ${ready?'':'disabled'} style="min-width:96px">🧪 ${ready?`Fuse ${pct}%`:`${fuseSel.length}/${FUSE_COUNT}`}</button></div>`;
   openModal(`
-    <h2>🗡️ Relics</h2>
-    <p>Bosses drop relics that grant permanent global bonuses. Equip up to
-       <b>${RELIC_SLOTS}</b>. Tap a relic to equip / unequip, or 🧪 to pick for fusion.</p>
+    <h2>${t('btn.relics')}</h2>
+    <p>${tf('rel.desc',{n:RELIC_SLOTS})}</p>
     <div class="relic-slots">${slots}</div>
     <div class="relic-list">${list}</div>
     ${fuseSection}
-    <button class="btn" id="closeRelic" style="width:100%;margin-top:12px">Close</button>`);
+    <button class="btn" id="closeRelic" style="width:100%;margin-top:12px">${t('set.close')}</button>`);
   el('closeRelic').onclick = () => { fuseSel = []; closeModal(); };
   el('modalBox').querySelectorAll('[data-rel]').forEach(n => n.onclick = () => toggleEquip(+n.dataset.rel));
   el('modalBox').querySelectorAll('[data-eq]').forEach(n => n.onclick = () => toggleEquip(+n.dataset.eq));
@@ -3149,20 +3314,18 @@ function buyTower(){
 function openTower(){
   const c = towerCost(), afford = S.gold >= c;
   openModal(`
-    <h2>🏰 Fortify Tower</h2>
-    <p>Reinforce the Crystal Tower to raise its maximum HP — each level adds
-       <b>+15% effective HP</b>, so enemies chip away less with every hit.
-       Fortify levels reset when you reseal the Crystal.</p>
+    <h2>${t('tw.title')}</h2>
+    <p>${t('tw.desc')}</p>
     <div class="shard-shop">
-      <div class="shard-item"><div class="info"><b>Tower Level</b>
+      <div class="shard-item"><div class="info"><b>${t('tw.lv')}</b>
         <div class="lv">Lv ${S.towerLv} · +${Math.round((towerHpMul()-1)*100)}% HP</div></div></div>
-      <div class="shard-item"><div class="info"><b>Effective Max HP</b>
+      <div class="shard-item"><div class="info"><b>${t('tw.hp')}</b>
         <div class="lv">💎 ${fmt(Math.round(crystalMaxHp()))}</div></div></div>
     </div>
     <button class="btn" id="buyTower" ${afford?'':'disabled'}
       style="width:100%;background:linear-gradient(#f2c14a,#e0a72e);color:#3a2a00;border:0">
-      🏰 Fortify — 🪙 ${fmt(c)}</button>
-    <button class="btn" id="closeTower" style="width:100%;margin-top:8px">Close</button>`);
+      ${tf('tw.buy',{c:fmt(c)})}</button>
+    <button class="btn" id="closeTower" style="width:100%;margin-top:8px">${t('set.close')}</button>`);
   el('buyTower').onclick = buyTower;
   el('closeTower').onclick = closeModal;
 }
