@@ -80,6 +80,18 @@ const LANG = {
     'pr.d1':'Reset your waves, gold, and hero levels to permanently reinforce the seal.',
     'pr.d2':'You will gain <b style="color:var(--shard)">+{g} Aether Shards</b> (you\'d hold {h}). Every shard earned grants <b>+2% permanent global damage</b> and can be spent in the Shard Shop.',
     'pr.go':'Reseal Now', 'pr.notyet':'Not enough progress to gain shards yet.',
+    'ad.dev.title':'Test ad — real ads appear on the game portal',
+    'ad.fail':'📺 Ad not available right now',
+    'ad.off2':'📺 Watch an ad — collect ×2',
+    'ad.off2.done':'💰 Offline reward doubled: +{g}',
+    'ad.boost.btn':'📺 ×2', 'ad.boost.left':'💰 {m}m',
+    'ad.boost.go':'💰 Double gold for 30 minutes!',
+    'ad.boost.active':'💰 Gold ×2 active — {m}m left',
+    'ad.revive.title':'💥 The Crystal shattered!',
+    'ad.revive.d':'Watch an ad to revive with <b>50% HP</b> and keep your wave — or fall back 3 waves.',
+    'ad.revive.go':'📺 Revive (50% HP)', 'ad.revive.no':'Fall back (−3 waves)',
+    'ad.revive.done':'✨ The Crystal endures! Revived at 50% HP.',
+    'crys.broke':'💥 The Crystal shattered! Fell back to Wave {w}',
   },
   ko: {
     'btn.prestige':'💠 크리스탈 재봉인', 'btn.shop':'💠 샤드 상점', 'btn.talents':'🌳 특성',
@@ -153,6 +165,18 @@ const LANG = {
     'pr.d1':'웨이브·골드·영웅 레벨을 초기화하고 봉인을 영구히 강화합니다.',
     'pr.d2':'<b style="color:var(--shard)">+{g} 에테르 샤드</b>를 얻습니다(총 {h}개). 샤드 1개당 <b>영구 전역 피해 +2%</b>, 샤드 상점에서 사용할 수 있습니다.',
     'pr.go':'지금 재봉인', 'pr.notyet':'아직 샤드를 얻을 만큼 진행하지 못했습니다.',
+    'ad.dev.title':'테스트 광고 — 실제 광고는 게임 포털에서 나옵니다',
+    'ad.fail':'📺 지금은 광고를 불러올 수 없습니다',
+    'ad.off2':'📺 광고 보고 2배 받기',
+    'ad.off2.done':'💰 오프라인 보상 2배: +{g}',
+    'ad.boost.btn':'📺 ×2', 'ad.boost.left':'💰 {m}분',
+    'ad.boost.go':'💰 30분 동안 골드 2배!',
+    'ad.boost.active':'💰 골드 2배 발동 중 — {m}분 남음',
+    'ad.revive.title':'💥 크리스탈이 파괴되었습니다!',
+    'ad.revive.d':'광고를 보면 <b>체력 50%</b>로 부활하고 웨이브를 유지합니다 — 아니면 3웨이브 후퇴합니다.',
+    'ad.revive.go':'📺 광고 보고 부활 (체력 50%)', 'ad.revive.no':'포기 (웨이브 −3)',
+    'ad.revive.done':'✨ 크리스탈이 버텨냈습니다! 체력 50%로 부활.',
+    'crys.broke':'💥 크리스탈 파괴! 웨이브 {w}로 후퇴',
   },
   ja: {
     'btn.prestige':'💠 クリスタル再封印', 'btn.shop':'💠 シャードショップ', 'btn.talents':'🌳 才能',
@@ -226,6 +250,18 @@ const LANG = {
     'pr.d1':'ウェーブ・ゴールド・ヒーローレベルをリセットし、封印を永続強化します。',
     'pr.d2':'<b style="color:var(--shard)">+{g} エーテルシャード</b>獲得(合計{h})。シャード1つにつき<b>永続全体ダメージ+2%</b>、シャードショップで使用可。',
     'pr.go':'今すぐ再封印', 'pr.notyet':'まだシャードを得るほど進行していません。',
+    'ad.dev.title':'テスト広告 — 実際の広告はゲームポータルで表示されます',
+    'ad.fail':'📺 現在広告を読み込めません',
+    'ad.off2':'📺 広告を見て2倍受け取る',
+    'ad.off2.done':'💰 オフライン報酬2倍: +{g}',
+    'ad.boost.btn':'📺 ×2', 'ad.boost.left':'💰 {m}分',
+    'ad.boost.go':'💰 30分間ゴールド2倍!',
+    'ad.boost.active':'💰 ゴールド2倍発動中 — 残り{m}分',
+    'ad.revive.title':'💥 クリスタルが砕けました!',
+    'ad.revive.d':'広告を見ると<b>HP50%</b>で復活しウェーブを維持 — 見ない場合は3ウェーブ後退。',
+    'ad.revive.go':'📺 広告を見て復活 (HP50%)', 'ad.revive.no':'あきらめる (−3ウェーブ)',
+    'ad.revive.done':'✨ クリスタルは耐えた! HP50%で復活。',
+    'crys.broke':'💥 クリスタル破壊! ウェーブ{w}へ後退',
   },
 };
 function t(k){ const l = (S && S.lang) || 'ko'; return (LANG[l] && LANG[l][k] != null) ? LANG[l][k] : (LANG.en[k] != null ? LANG.en[k] : k); }
@@ -642,7 +678,8 @@ const talent = id => (S.talents[id] || 0);
 function effInterval(def){ return Math.max(0.05, def.atkInterval * (1 - 0.05 * talent('haste')) / (odActive() ? OD_RATE : 1)); }
 function effSkillCd(def){ return def.skill.cd * (1 - 0.04 * talent('focus')); }
 function wardMul(){ return shardMul('ward') * (1 + 0.10 * talent('bulwark')); }
-function goldMulAll(){ return shardMul('gold') * (1 + 0.08 * talent('greed')) * (1 + relicBonus('gold')) * (1 + raceBonus('gold')) * (ksIs('avarice') ? 2.5 : 1); }
+const adBoostMul = () => ((S && S.adBoostUntil) || 0) > Date.now() ? 2 : 1;   // 📺 rewarded-ad gold boost
+function goldMulAll(){ return shardMul('gold') * (1 + 0.08 * talent('greed')) * (1 + relicBonus('gold')) * (1 + raceBonus('gold')) * (ksIs('avarice') ? 2.5 : 1) * adBoostMul(); }
 function goldenChance(){ return 0.03 + 0.01 * talent('fortune') + raceBonus('golden'); }
 
 // --- Relics: boss drops that grant a global bonus. Rarity scales the roll.
@@ -1267,6 +1304,35 @@ function castSkill(def, slot, lvl){
   heroFlash[def.id] = 0.22;
 }
 
+// crystal broke and no revive: the old fall-back-3-waves path
+function crystalFallback(brokeWave){
+  S.wave = Math.max(1, brokeWave - 3);
+  S.crystalHp = 1;
+  startWave(S.wave);
+  toast(tf('crys.broke', { w: S.wave }));
+  maybeWallHint(brokeWave);
+}
+// rewarded ad: revive at 50% HP on the same wave
+function offerRevive(brokeWave){
+  openModal(`<h2>${t('ad.revive.title')}</h2>
+    <p>${t('ad.revive.d')}</p>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn" id="advYes" style="flex:1;background:linear-gradient(#3a2f12,#26200e);border-color:#ffd75e;color:#ffd75e">${t('ad.revive.go')}</button>
+      <button class="btn" id="advNo" style="flex:1">${t('ad.revive.no')}</button></div>`);
+  const settle = revived => {
+    simHold = false; closeModal();
+    if (revived){
+      S.crystalHp = 0.5;
+      S.reviveCdUntil = Date.now() + 5 * 60000;
+      startWave(brokeWave);
+      toast(t('ad.revive.done')); GA('heal');
+    } else crystalFallback(brokeWave);
+    save(); updateHud();
+  };
+  el('advYes').onclick = () => Ads.rewarded(ok => { if (!ok) toast(t('ad.fail')); settle(ok); });
+  el('advNo').onclick = () => settle(false);
+}
+
 // ------------------------------------------------------------------ main tick
 function simulate(dt){
   const w = S.wave;
@@ -1360,12 +1426,14 @@ function simulate(dt){
   if (S.crystalHp <= 0){
     const brokeWave = S.wave;
     if (brokeWave === lastBreakWave) breakStreak++; else { breakStreak = 1; lastBreakWave = brokeWave; }
-    S.wave = Math.max(1, S.wave - 3);
-    S.crystalHp = 1;
     enemies.length = 0; fx.length = 0; particles.length = 0;
-    startWave(S.wave);
-    toast('💥 The Crystal shattered! Fell back to Wave ' + S.wave);
-    maybeWallHint(brokeWave);
+    // rewarded ad: offer a 50%-HP revive that keeps the wave (max 1 per 5 min)
+    if (window.Ads && Ads.canReward() && Date.now() >= (S.reviveCdUntil || 0)){
+      S.crystalHp = 0.01; simHold = true;
+      offerRevive(brokeWave);
+      return;
+    }
+    crystalFallback(brokeWave);
     return;
   }
 
@@ -2127,10 +2195,13 @@ function catchUp(dt){
   let rem = dt;
   while (rem > 1e-3){ const s = Math.min(rem, 0.1); simulate(s * gameSpeed()); rem -= s; }
 }
+let simHold = false;   // true while the revive offer is open (sim frozen)
+const adPaused = () => simHold || (window.Ads && Ads.isBusy());
 function frame(now){
   let dt = (now - lastT) / 1000;
   lastT = now;
   if (dt < 0) dt = 0;
+  if (adPaused()){ draw(now); updateHud(); requestAnimationFrame(frame); return; }
   if (bossIntroT > 0) bossIntroT = Math.max(0, bossIntroT - dt);   // real-time countdown
   if (dt > 0.25){
     catchUp(dt);                                                    // fell behind → don't drop the time
@@ -2151,6 +2222,7 @@ let bgSaveAcc = 0;
 setInterval(() => {
   if (!S) return;
   const nowP = performance.now(), behind = (nowP - lastT) / 1000;
+  if (adPaused()){ lastT = nowP; return; }        // ad break / revive offer → hold the clock
   if (!document.hidden && behind < 1.2) return;   // rAF is driving; nothing to do
   lastT = nowP;
   if (bossIntroT > 0) bossIntroT = Math.max(0, bossIntroT - behind);
@@ -2162,6 +2234,12 @@ setInterval(() => {
 // ------------------------------------------------------------------ HUD / UI
 const el = id => document.getElementById(id);
 function updateHud(){
+  const bb = el('btnBoost');
+  if (bb){
+    const left = ((S.adBoostUntil || 0) - Date.now()) / 60000;
+    bb.textContent = left > 0 ? tf('ad.boost.left', { m: Math.ceil(left) }) : t('ad.boost.btn');
+    bb.classList.toggle('sel', left > 0);
+  }
   // overdrive gauge button
   const ob = el('odBtn');
   if (ob){
@@ -2461,8 +2539,14 @@ function applyOffline(){
       <div style="flex:1"><div style="font-size:22px">🌊 <b style="color:var(--accent)">+${r.waves}</b></div><div style="font-size:11px;color:var(--muted)">${t('off.waves')}</div></div>
       <div style="flex:1"><div style="font-size:22px">🪙 <b style="color:var(--gold)">+${fmt(r.gold)}</b></div><div style="font-size:11px;color:var(--muted)">${t('off.gold')}</div></div>
     </div>
+    ${r.gold > 0 && window.Ads ? `<button class="btn" id="collectOff2" style="width:100%;margin-bottom:8px;background:linear-gradient(#3a2f12,#26200e);border-color:#ffd75e;color:#ffd75e">${t('ad.off2')}</button>` : ''}
     <button class="btn" id="collectOff" style="width:100%">${t('off.collect')}</button>`);
   el('collectOff').onclick = closeModal;
+  if (el('collectOff2')) el('collectOff2').onclick = () => Ads.rewarded(ok => {
+    if (ok){ S.gold += r.gold; S.totalGoldEarned += r.gold; toast(tf('ad.off2.done', { g: fmt(r.gold) })); GA('prestige'); save(); updateHud(); }
+    else toast(t('ad.fail'));
+    closeModal();
+  });
 }
 
 // ---- Wall signposting: nudge toward Reseal after repeated crystal breaks ----
@@ -3347,6 +3431,17 @@ if (el('btnAuto')) el('btnAuto').onclick = () => {
   save();
 };
 
+// 📺 rewarded ad → 30 minutes of double gold
+if (el('btnBoost')) el('btnBoost').onclick = () => {
+  const left = ((S.adBoostUntil || 0) - Date.now()) / 60000;
+  if (left > 0){ toast(tf('ad.boost.active', { m: Math.ceil(left) })); return; }
+  Ads.rewarded(ok => {
+    if (!ok){ toast(t('ad.fail')); return; }
+    S.adBoostUntil = Date.now() + 30 * 60000;
+    toast(t('ad.boost.go')); GA('prestige'); save(); updateHud();
+  });
+};
+
 // audio buttons + unlock-on-first-gesture
 const btnMute = el('btnMute'), btnMusic = el('btnMusic');
 if (btnMute) btnMute.onclick = () => { const m = window.GameAudio && GameAudio.toggleMute(); btnMute.textContent = m ? '🔇' : '🔊'; };
@@ -3360,6 +3455,7 @@ window.addEventListener('keydown', audioUnlock);
 // ------------------------------------------------------------------ boot
 function boot(){
   S = load() || freshState();
+  if (window.Ads) Ads.init();
   autoFuse();                             // migrate old saves: collapse piled Common/Rare relics
   if (window.Sheets && Sheets.preload) Sheets.preload();   // avoid canvas→sheet size pop
   resize();

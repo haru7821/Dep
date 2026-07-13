@@ -286,6 +286,8 @@
     <button class="btn" id="btnRelics">🗡️ Relics</button>
     <button class="btn" id="btnTower">🏰 Fortify</button>
     <button class="btn" id="btnAuto" title="Auto-buy the cheapest upgrade and auto-fire Overdrive">🅰️ Auto</button>
+    <button class="btn" id="btnBoost" title="Watch an ad for 30 minutes of double gold"
+      style="background:linear-gradient(#3a2f12,#26200e);border-color:#ffd75e;color:#ffd75e">📺 ×2</button>
     <button class="btn" id="btnMenu">⚙️ Settings</button>
     <button class="btn util-hidden" id="btnStats">📊 Stats</button>
     <button class="btn util-hidden" id="btnSave">💾 Saves</button>
@@ -307,8 +309,15 @@
   <div class="box" id="modalBox"></div>
 </div>
 
-<script src="sprites.js?v=101"></script>
-<script src="dungeon.js?v=101"></script>
-<script src="sheets.js?v=101"></script>
-<script src="audio.js?v=101"></script>
-<script src="game.js?v=101"></script>
+<script src="sprites.js?v=102"></script>
+<script src="dungeon.js?v=102"></script>
+<script src="sheets.js?v=102"></script>
+<script src="audio.js?v=102"></script>
+<!-- Portal SDKs: uncomment ONE when shipping to that portal. Without any SDK
+     the game falls back to a built-in test-ad overlay (Ads layer, ads.js).
+<script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script>
+<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
+<script src="https://html5.api.gamedistribution.com/main.min.js" data-gd-sdk></script>
+-->
+<script src="ads.js?v=102"></script>
+<script src="game.js?v=102"></script>
