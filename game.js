@@ -19,7 +19,7 @@ const LANG = {
     'set.dmgNums':'Damage numbers', 'set.dmgNums.d':'Show floating damage numbers over enemies.',
     'set.fx':'Particle effects', 'set.fx.d':'Elemental bursts, embers and sparkles. Turn off to boost performance.',
     'set.shake':'Screen shake', 'set.shake.d':'Camera shake on big hits, explosions and boss deaths.',
-    'on':'ON', 'off':'OFF',
+    'on':'ON', 'off':'OFF', 'race.permanent':'This choice is <b>permanent</b>.', 'race.req':'required',
   },
   ko: {
     'btn.prestige':'💠 크리스탈 재봉인', 'btn.shop':'💠 샤드 상점', 'btn.talents':'🌳 특성',
@@ -32,7 +32,7 @@ const LANG = {
     'set.dmgNums':'데미지 숫자', 'set.dmgNums.d':'적 위에 떠오르는 데미지 숫자를 표시합니다.',
     'set.fx':'파티클 효과', 'set.fx.d':'속성 폭발·불티·반짝임. 성능 향상을 위해 끌 수 있습니다.',
     'set.shake':'화면 흔들림', 'set.shake.d':'큰 타격·폭발·보스 처치 시 화면이 흔들립니다.',
-    'on':'켜짐', 'off':'꺼짐',
+    'on':'켜짐', 'off':'꺼짐', 'race.permanent':'이 선택은 <b>영구적</b>입니다.', 'race.req':'필요',
   },
   ja: {
     'btn.prestige':'💠 クリスタル再封印', 'btn.shop':'💠 シャードショップ', 'btn.talents':'🌳 才能',
@@ -45,10 +45,73 @@ const LANG = {
     'set.dmgNums':'ダメージ数値', 'set.dmgNums.d':'敵の上にダメージ数値を表示します。',
     'set.fx':'パーティクル効果', 'set.fx.d':'属性の爆発・火花・きらめき。オフで性能向上。',
     'set.shake':'画面の揺れ', 'set.shake.d':'大ヒット・爆発・ボス撃破時に画面が揺れます。',
-    'on':'ON', 'off':'OFF',
+    'on':'ON', 'off':'OFF', 'race.permanent':'この選択は<b>永続的</b>です。', 'race.req':'が必要',
   },
 };
 function t(k){ const l = (S && S.lang) || 'ko'; return (LANG[l] && LANG[l][k] != null) ? LANG[l][k] : (LANG.en[k] != null ? LANG.en[k] : k); }
+// localized field on a data object: L(obj,'desc') → obj.descKo / obj.descJa / obj.desc
+function langSuf(){ const l = (S && S.lang) || 'ko'; return l === 'ko' ? 'Ko' : l === 'ja' ? 'Ja' : ''; }
+// Localized data field: proper NAMES stay English; descriptions/roles/tags come
+// from the I18N table (keyed by item id), falling back to the object's own field.
+function Ld(id, field, fallback){
+  const l = (S && S.lang) || 'ko';
+  const tab = I18N[l];
+  return (tab && tab[id] && tab[id][field] != null) ? tab[id][field] : fallback;
+}
+function L(obj, field){ return obj ? Ld(obj.id, field, obj[field]) : ''; }
+const BRANCH_L = { '⚔️ Offense':{ko:'⚔️ 공격',ja:'⚔️ 攻撃'}, '🛡️ Defense':{ko:'🛡️ 방어',ja:'🛡️ 防御'},
+  '💰 Economy':{ko:'💰 경제',ja:'💰 経済'}, '✨ Skills':{ko:'✨ 스킬',ja:'✨ スキル'} };
+const trBranch = b => { const l=(S&&S.lang)||'ko'; return (BRANCH_L[b]&&BRANCH_L[b][l])||b; };
+const I18N = {
+  ko: {
+    // keystones
+    cannon:{desc:'입히는 피해 +100%, 대신 크리스탈 피해 +60%.'}, fortress:{desc:'크리스탈 피해 −60%, 대신 입히는 피해 −30%.'},
+    momentum:{desc:'킬 연속이 피해도 올리고(최대 +100%) 콤보 골드 보너스를 2배로.'}, avarice:{desc:'처치 골드 +150%, 대신 모든 적 체력 +35%.'},
+    attunement:{desc:'속성 약점 타격 ×2.2(기본 ×1.6), 적 저항 무시.'},
+    // shard shop
+    power:{desc:'전체 영웅 피해 +2%'}, gold:{desc:'처치 골드 +5%'}, speed:{desc:'게임 속도 +3%'}, ward:{desc:'크리스탈 최대 체력 +20%'}, crit:{desc:'치명타 확률 +3%'},
+    // talents
+    might:{desc:'모든 피해 +5%'}, precision:{desc:'치명타 피해 +0.1×'}, haste:{desc:'공격 속도 +5%'}, bulwark:{desc:'크리스탈 방어 +10%'},
+    regen:{desc:'크리스탈 재생 +0.1%/초'}, greed:{desc:'처치 골드 +8%'}, fortune:{desc:'황금 적 확률 +1%'}, focus:{desc:'스킬 쿨다운 −4%'},
+    empower:{desc:'스킬 피해 +10%'}, grace:{desc:'파티 버프 +1초'},
+    // achievements
+    ach_w25:{desc:'웨이브 25 도달'}, ach_w50:{desc:'웨이브 50 도달'}, ach_w100:{desc:'웨이브 100 도달'}, ach_w200:{desc:'웨이브 200 도달'},
+    ach_k1k:{desc:'적 1,000 처치'}, ach_k10k:{desc:'적 10,000 처치'}, ach_g1m:{desc:'누적 골드 100만 획득'}, ach_g1b:{desc:'누적 골드 10억 획득'},
+    ach_gold:{desc:'황금 적 처치'}, ach_team:{desc:'영웅 5명 모두 모집'}, ach_p1:{desc:'프레스티지 1회'}, ach_p10:{desc:'프레스티지 10회'},
+    // hero roles
+    garran:{role:'수호 기사 · 탱커'}, mira:{role:'엠버윈드 마법사 · 광역'}, faye:{role:'질풍 궁수 · 신속'}, rai:{role:'폭풍 낭인 · 연쇄'}, aunel:{role:'여명 치유사 · 지원'},
+    // races
+    abyss:{tag:'포식자',desc:'공허의 공격 — 압도적 피해와 보스 학살.'}, revenant:{tag:'불사',desc:'언데드 — 끈질긴 지속력과 영혼으로 얻는 부.'},
+    celestial:{tag:'광휘',desc:'신성한 행운 — 완벽한 치명타·골드·프레스티지.'}, human:{tag:'만능',desc:'적응형 — 공격·방어·경제의 균형.'},
+    // race nodes
+    ab_dmg:{desc:'영웅 피해 +4%'}, ab_boss:{desc:'보스 피해 +8%'}, ab_crit:{desc:'치명타 확률 +3%'}, ab_od:{desc:'오버드라이브 +0.5초'}, ab_rage:{desc:'영웅 피해 +3%'}, ab_sing:{desc:'보스 피해 +6%'},
+    rv_ward:{desc:'크리스탈 최대 체력 +10%'}, rv_reduce:{desc:'크리스탈 피해 −4%'}, rv_regen:{desc:'크리스탈 재생 +0.3%/초'}, rv_gold:{desc:'처치 골드 +8%'}, rv_hp:{desc:'크리스탈 최대 체력 +8%'}, rv_eter:{desc:'크리스탈 재생 +0.3%/초'},
+    ce_crit:{desc:'치명타 확률 +3%'}, ce_judge:{desc:'치명타 확률 +4%'}, ce_gold:{desc:'처치 골드 +8%'}, ce_luck:{desc:'황금 적 확률 +1%'}, ce_dmg:{desc:'영웅 피해 +4%'}, ce_shrd:{desc:'재봉인 샤드 +8%'},
+    hu_dmg:{desc:'영웅 피해 +4%'}, hu_ward:{desc:'크리스탈 최대 체력 +8%'}, hu_gold:{desc:'처치 골드 +6%'}, hu_slow:{desc:'둔화 효과 +12%'}, hu_crit:{desc:'치명타 확률 +3%'}, hu_rally:{desc:'영웅 피해 +5%'},
+    // relic rarities
+    common:{name:'일반'}, rare:{name:'희귀'}, epic:{name:'영웅'}, legendary:{name:'전설'}, mythic:{name:'신화'},
+  },
+  ja: {
+    cannon:{desc:'与ダメージ+100%、ただしクリスタル被ダメ+60%。'}, fortress:{desc:'クリスタル被ダメ−60%、ただし与ダメージ−30%。'},
+    momentum:{desc:'キル連鎖が与ダメも上昇(最大+100%)、コンボ金ボーナス2倍。'}, avarice:{desc:'撃破ゴールド+150%、ただし全敵HP+35%。'},
+    attunement:{desc:'属性弱点ヒット×2.2(通常×1.6)、敵の耐性を無視。'},
+    power:{desc:'全ヒーローダメージ+2%'}, gold:{desc:'撃破ゴールド+5%'}, speed:{desc:'ゲーム速度+3%'}, ward:{desc:'クリスタル最大HP+20%'}, crit:{desc:'クリティカル率+3%'},
+    might:{desc:'全ダメージ+5%'}, precision:{desc:'クリティカルダメージ+0.1×'}, haste:{desc:'攻撃速度+5%'}, bulwark:{desc:'クリスタル防御+10%'},
+    regen:{desc:'クリスタル再生+0.1%/秒'}, greed:{desc:'撃破ゴールド+8%'}, fortune:{desc:'黄金の敵確率+1%'}, focus:{desc:'スキルCD−4%'},
+    empower:{desc:'スキルダメージ+10%'}, grace:{desc:'パーティバフ+1秒'},
+    ach_w25:{desc:'ウェーブ25到達'}, ach_w50:{desc:'ウェーブ50到達'}, ach_w100:{desc:'ウェーブ100到達'}, ach_w200:{desc:'ウェーブ200到達'},
+    ach_k1k:{desc:'敵1,000体撃破'}, ach_k10k:{desc:'敵10,000体撃破'}, ach_g1m:{desc:'累計ゴールド100万獲得'}, ach_g1b:{desc:'累計ゴールド10億獲得'},
+    ach_gold:{desc:'黄金の敵を撃破'}, ach_team:{desc:'ヒーロー5人全員雇用'}, ach_p1:{desc:'プレステージ1回'}, ach_p10:{desc:'プレステージ10回'},
+    garran:{role:'守護の騎士 · タンク'}, mira:{role:'エンバーメイジ · 範囲'}, faye:{role:'疾風の弓 · 高速'}, rai:{role:'嵐の浪人 · 連鎖'}, aunel:{role:'暁の癒し手 · サポート'},
+    abyss:{tag:'捕食者',desc:'虚空の攻撃 — 圧倒的ダメージとボス殲滅。'}, revenant:{tag:'不死',desc:'アンデッド — 執拗な持続力と魂の富。'},
+    celestial:{tag:'光輝',desc:'神聖な幸運 — 完璧なクリ・ゴールド・プレステージ。'}, human:{tag:'万能',desc:'適応型 — 攻撃・防御・経済のバランス。'},
+    ab_dmg:{desc:'ヒーローダメージ+4%'}, ab_boss:{desc:'ボスダメージ+8%'}, ab_crit:{desc:'クリティカル率+3%'}, ab_od:{desc:'オーバードライブ+0.5秒'}, ab_rage:{desc:'ヒーローダメージ+3%'}, ab_sing:{desc:'ボスダメージ+6%'},
+    rv_ward:{desc:'クリスタル最大HP+10%'}, rv_reduce:{desc:'クリスタル被ダメ−4%'}, rv_regen:{desc:'クリスタル再生+0.3%/秒'}, rv_gold:{desc:'撃破ゴールド+8%'}, rv_hp:{desc:'クリスタル最大HP+8%'}, rv_eter:{desc:'クリスタル再生+0.3%/秒'},
+    ce_crit:{desc:'クリティカル率+3%'}, ce_judge:{desc:'クリティカル率+4%'}, ce_gold:{desc:'撃破ゴールド+8%'}, ce_luck:{desc:'黄金の敵確率+1%'}, ce_dmg:{desc:'ヒーローダメージ+4%'}, ce_shrd:{desc:'再封印シャード+8%'},
+    hu_dmg:{desc:'ヒーローダメージ+4%'}, hu_ward:{desc:'クリスタル最大HP+8%'}, hu_gold:{desc:'撃破ゴールド+6%'}, hu_slow:{desc:'スロー効果+12%'}, hu_crit:{desc:'クリティカル率+3%'}, hu_rally:{desc:'ヒーローダメージ+5%'},
+    common:{name:'コモン'}, rare:{name:'レア'}, epic:{name:'エピック'}, legendary:{name:'レジェンダリー'}, mythic:{name:'ミシック'},
+  },
+};
 
 // ------------------------------------------------------------------ constants
 const SAVE_KEY = 'aether_crystal_save_v1';
@@ -1913,7 +1976,7 @@ function buildHeroPanel(){
     const verb = lvl === 0 ? t('hero.recruit') : (S.buyMode === 1 ? t('hero.upgrade') : `${t('hero.upgrade')} ×${showN}`);
     card.innerHTML = `
       <h3><span style="color:${def.color}">◆</span> ${def.name}</h3>
-      <div class="role">${def.role}</div>
+      <div class="role">${L(def,'role')}</div>
       <div class="stat-row"><span>Level</span><b id="lv-${def.id}">${lvl}</b></div>
       <div class="stat-row"><span>${def.target==='support'?'Support':'Power'}</span><b id="dmg-${def.id}">${dmgTxt}</b></div>
       <div class="skill-row" title="Auto-cast area skill">${def.skill.icon} ${def.skill.name}</div>
@@ -2032,7 +2095,7 @@ function openShardShop(){
     const cost = Math.ceil(u.base * Math.pow(u.growth, lvl));
     const maxed = lvl >= u.max;
     return `<div class="shard-item">
-      <div class="info"><b>${u.name}</b> — ${u.desc}
+      <div class="info"><b>${u.name}</b> — ${L(u,'desc')}
         <div class="lv">Lv ${lvl}/${u.max} · now ${u.fmt(lvl)}</div></div>
       <button class="btn" data-up="${u.id}" ${maxed||S.shards<cost?'disabled':''}>${maxed?'MAX':'💠 '+cost}</button>
     </div>`;
@@ -2373,12 +2436,12 @@ function openTalents(){
       const lvl = talent(t.id), maxed = lvl >= t.max;
       const afford = S.talentPoints >= t.cost && !maxed;
       return `<div class="shard-item">
-        <div class="info"><b>${t.name}</b> — ${t.desc}
+        <div class="info"><b>${t.name}</b> — ${L(t,'desc')}
           <div class="lv">Lv ${lvl}/${t.max} · now ${t.fmt(lvl)}</div></div>
         <button class="btn" data-tal="${t.id}" ${afford?'':'disabled'}>${maxed?'MAX':'🌳 '+t.cost}</button>
       </div>`;
     }).join('');
-    return `<div class="branch-title">${b}</div>${rows}`;
+    return `<div class="branch-title">${trBranch(b)}</div>${rows}`;
   }).join('');
   openModal(`
     <h2>🌳 Talent Tree</h2>
@@ -2440,8 +2503,8 @@ function openRace(){
     const cards = Object.entries(RACES).map(([id, r]) => `
       <div class="ks" style="--kc:${r.color}" data-race="${id}">
         <span class="ks-ic">${r.icon}</span>
-        <div class="ks-info"><div class="ks-nm">${r.name} · ${r.tag}</div>
-          <div class="ks-desc">${r.desc}<br><span style="opacity:.8">Tree: ${r.nodes.map(n=>n.name).join(' · ')}</span></div></div>
+        <div class="ks-info"><div class="ks-nm">${r.name} · ${Ld(id,'tag',r.tag)}</div>
+          <div class="ks-desc">${Ld(id,'desc',r.desc)}<br><span style="opacity:.8">Tree: ${r.nodes.map(n=>n.name).join(' · ')}</span></div></div>
       </div>`).join('');
     openModal(`<h2>🧬 Choose your Race</h2>
       <p>A <b>permanent</b> mid-game identity — each race unlocks its own tech tree
@@ -2452,7 +2515,7 @@ function openRace(){
     el('modalBox').querySelectorAll('[data-race]').forEach(n => n.onclick = () => {
       const id = n.dataset.race;
       openModal(`<h2>${RACES[id].icon} Become ${RACES[id].name}?</h2>
-        <p>${RACES[id].desc}<br><br>This choice is <b>permanent</b>.</p>
+        <p>${Ld(id,'desc',RACES[id].desc)}<br><br>${t('race.permanent')}</p>
         <div style="display:flex;gap:8px;margin-top:12px">
           <button class="btn" id="raceYes" style="flex:1;background:${RACES[id].color};border-color:${RACES[id].color};color:#111">Confirm</button>
           <button class="btn" id="raceNo" style="flex:1">Back</button></div>`);
@@ -2487,12 +2550,12 @@ function openRace(){
     const lvl = raceLvl(sel.id), maxed = lvl>=sel.max, locked = raceNodeLocked(sel);
     const canBuy = !locked && !maxed && S.talentPoints >= sel.cost;
     info = `<div class="rt-info"><div><b>${sel.name}</b> <span style="color:var(--muted)">Lv ${lvl}/${sel.max}</span>
-        <div style="font-size:12px;color:var(--muted)">${locked?`🔒 Requires <b>${byId(sel.req.id).name}</b> Lv ${sel.req.lv}`:sel.desc}</div></div>
+        <div style="font-size:12px;color:var(--muted)">${locked?`🔒 <b>${byId(sel.req.id).name}</b> Lv ${sel.req.lv} ${t('race.req')}`:L(sel,'desc')}</div></div>
       <button class="btn" id="rtBuy" ${canBuy?'':'disabled'} style="min-width:88px">${maxed?'MAX':(locked?'Locked':'🌳 '+sel.cost)}</button></div>`;
   } else {
     info = `<div class="rt-info" style="color:var(--muted);justify-content:center">Tap a node to view & upgrade it.</div>`;
   }
-  openModal(`<h2>${r.icon} ${r.name} <span style="font-size:13px;color:var(--muted)">· ${r.tag}</span></h2>
+  openModal(`<h2>${r.icon} ${r.name} <span style="font-size:13px;color:var(--muted)">· ${Ld(S.race,'tag',r.tag)}</span></h2>
     <p style="margin:0 0 4px">Spend 🌳 on your race tree — you have <b style="color:var(--hp)">${S.talentPoints} TP</b>.</p>
     <div class="racetree">
       <svg class="rt-links" viewBox="0 0 360 360" preserveAspectRatio="xMidYMid meet">${lines}</svg>
@@ -2565,7 +2628,7 @@ function openKeystones(){
     return `<div class="ks ${on?'on':''}" style="--kc:${k.color}" data-ks="${id}">
       <span class="ks-ic">${k.icon}</span>
       <div class="ks-info"><div class="ks-nm">${k.name}${on?' · ACTIVE':''}</div>
-        <div class="ks-desc">${k.desc}</div></div>
+        <div class="ks-desc">${Ld(id,'desc',k.desc)}</div></div>
     </div>`;
   }).join('');
   const multi = allKeystonesOpen();
@@ -2645,7 +2708,7 @@ function openAchievements(){
     const got = !!S.achievements[a.id];
     const reward = [a.tp?`+${a.tp} TP`:'', a.shards?`+${a.shards}💠`:''].filter(Boolean).join(' · ') || '—';
     return `<div class="shard-item" style="${got?'':'opacity:.6'}">
-      <div class="info"><b>${got?'🏆':'🔒'} ${a.name}</b> — ${a.desc}
+      <div class="info"><b>${got?'🏆':'🔒'} ${a.name}</b> — ${Ld('ach_'+a.id,'desc',a.desc)}
         <div class="lv">Reward: ${reward}</div></div>
       <div class="lv">${got?'DONE':''}</div>
     </div>`;
@@ -2782,7 +2845,7 @@ if (el('btnBestiary')) el('btnBestiary').onclick = openBestiary;
 
 // ------------------------------------------------------------------ relics
 function relicColor(rel){ return (RELIC_RARITY.find(r=>r.id===rel.rarity)||RELIC_RARITY[0]).color; }
-function relicRarityName(rel){ return (RELIC_RARITY.find(r=>r.id===rel.rarity)||RELIC_RARITY[0]).name; }
+function relicRarityName(rel){ const r=RELIC_RARITY.find(r=>r.id===rel.rarity)||RELIC_RARITY[0]; return Ld(r.id,'name',r.name); }
 function toggleEquip(id){
   const i = S.equipped.indexOf(id);
   if (i >= 0) S.equipped.splice(i, 1);
