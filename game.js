@@ -264,8 +264,6 @@ const LANG = {
     'crys.broke':'💥 クリスタル破壊! ウェーブ{w}へ後退',
   },
 };
-// first-run language: match the browser (ko/ja), otherwise English
-function detectLang(){ try{ const n=(navigator.language||'').toLowerCase(); if(n.startsWith('ko'))return 'ko'; if(n.startsWith('ja'))return 'ja'; }catch(e){} return 'en'; }
 function t(k){ const l = (S && S.lang) || 'en'; return (LANG[l] && LANG[l][k] != null) ? LANG[l][k] : (LANG.en[k] != null ? LANG.en[k] : k); }
 // t() + {placeholder} interpolation: tf('sv.saved', {n:3})
 function tf(k, vars){ let str = t(k); for (const [kk, v] of Object.entries(vars)) str = str.split('{'+kk+'}').join(v); return str; }
@@ -866,7 +864,7 @@ function freshState(){
     keystones: [],          // active keystone ids (1 until all unlocked, then multi)
     race: null,             // chosen race id (mid-game) — drives a race-specific tech tree
     raceTree: {},           // race tech node id -> level
-    lang: detectLang(),     // UI language: en / ko / ja (browser-detected on first run)
+    lang: 'en',             // UI language: always starts English; switch in Settings
     settings: { dmgNums:true, fx:true, shake:true },   // display/perf toggles
     buyMode: 1,             // hero bulk-buy amount: 1, 10, or 'max'
   };
