@@ -89,6 +89,45 @@ const KEYSTONES = {
 function ksIs(id){ return !!(S && S.keystones && S.keystones.includes(id)); }
 function enemyHpMul(){ return ksIs('avarice') ? 1.35 : 1; }     // Avarice: tougher enemies
 
+// ---- Races: a mid-game identity choice. Each race grants a different tech
+// tree; nodes are bought with talent points (🌳) and fold into the same
+// multipliers via raceBonus(stat).
+const RACE_STAGE = 7;   // race choice unlocks at Stage 7
+const RACES = {
+  ember: { name:'Emberkin', icon:'🔥', color:'#ff7a3c', tag:'Aggressor',
+    desc:'Raw offense — melt everything, and hit bosses hardest.',
+    nodes:[
+      { id:'e_pow',  name:'Molten Might', desc:'+4% hero damage',          stat:'dmg',     per:0.04, max:10, cost:1 },
+      { id:'e_boss', name:'Titanslayer',  desc:'+8% damage to bosses',     stat:'bossDmg', per:0.08, max:5,  cost:2 },
+      { id:'e_crit', name:'Searing Edge', desc:'+3% critical chance',      stat:'crit',    per:0.03, max:5,  cost:2 },
+      { id:'e_rage', name:'Cinder Fury',  desc:'+3% hero damage',          stat:'dmg',     per:0.03, max:8,  cost:2 },
+    ] },
+  frost: { name:'Frostborn', icon:'❄️', color:'#7bd3ff', tag:'Warden',
+    desc:'Endurance & control — a fortress of living ice.',
+    nodes:[
+      { id:'f_ward', name:'Glacial Aegis', desc:'+10% Crystal max HP',     stat:'ward',      per:0.10, max:8, cost:1 },
+      { id:'f_wall', name:'Permafrost',    desc:'Crystal takes -4% damage', stat:'dmgReduce', per:0.04, max:6, cost:2 },
+      { id:'f_slow', name:'Rimebite',      desc:'+15% slow potency',       stat:'slow',      per:0.15, max:4, cost:2 },
+      { id:'f_core', name:'Frozen Heart',  desc:'+8% Crystal max HP',      stat:'ward',      per:0.08, max:6, cost:2 },
+    ] },
+  aurum: { name:'Aurumite', icon:'🪙', color:'#ffd75e', tag:'Merchant',
+    desc:'A wealth engine — turn gold into overwhelming power.',
+    nodes:[
+      { id:'a_gold', name:'Midas Touch',    desc:'+8% gold from kills',       stat:'gold',   per:0.08, max:10, cost:1 },
+      { id:'a_luck', name:'Golden Fortune', desc:'+1% golden-enemy chance',   stat:'golden', per:0.01, max:5,  cost:2 },
+      { id:'a_dmg',  name:'Gilded Arms',    desc:'+3% hero damage',           stat:'dmg',    per:0.03, max:6,  cost:2 },
+      { id:'a_hord', name:'Dragon Hoard',   desc:'+10% gold from kills',      stat:'gold',   per:0.10, max:6,  cost:2 },
+    ] },
+};
+const raceUnlocked = () => dispStage(S.bestWave) >= RACE_STAGE;
+const raceNodes = () => (S && S.race && RACES[S.race]) ? RACES[S.race].nodes : [];
+const raceLvl = id => (S && S.raceTree && S.raceTree[id]) || 0;
+function raceBonus(stat){
+  let v = 0;
+  for (const n of raceNodes()) if (n.stat === stat) v += n.per * raceLvl(n.id);
+  return v;
+}
+
 // Progressive feature reveal — systems stay hidden until you clear the stage
 // that unlocks them, so a fresh run starts simple (just recruit + fight) and
 // opens up as you climb. Gate is on lifetime best stage (dispStage(S.bestWave)).
@@ -106,6 +145,7 @@ const FEATURE_UNLOCKS = [
   { sel:'#btnAuto',       stage:6,  name:'🅰️ Auto-Upgrade' },
   { sel:'[data-spd="3"]', stage:6,  name:'3× Speed' },
   { sel:'#btnAch',        stage:6,  name:'🏆 Achievements' },
+  { sel:'#btnRace',       stage:7,  name:'🧬 Race' },
   { sel:'#btnPrestige',   stage:8,  name:'💠 Reseal (Prestige)', also:()=>prestigeShards(S.totalGoldEarned) >= 1 },
   { sel:'#btnShop',       stage:8,  name:'💠 Shard Shop',        also:()=>prestigeShards(S.totalGoldEarned) >= 1 },
   { sel:'#btnTalents',    stage:8,  name:'🌳 Talents' },
@@ -206,7 +246,7 @@ const SHARD_UPGRADES = [
 ];
 
 const CRIT_MULT = 2.5;                  // base critical hit damage multiplier
-function critChance(){ return Math.min(0.75, 0.03 + 0.03 * S.shardUpg.crit + relicBonus('crit')); }
+function critChance(){ return Math.min(0.75, 0.03 + 0.03 * S.shardUpg.crit + relicBonus('crit') + raceBonus('crit')); }
 function critMultiplier(){ return CRIT_MULT + 0.1 * talent('precision'); }
 function critRoll(dmg){
   return Math.random() < critChance() ? { dmg: dmg * critMultiplier(), crit:true } : { dmg, crit:false };
@@ -231,8 +271,8 @@ const talent = id => (S.talents[id] || 0);
 function effInterval(def){ return Math.max(0.05, def.atkInterval * (1 - 0.05 * talent('haste')) / (odActive() ? OD_RATE : 1)); }
 function effSkillCd(def){ return def.skill.cd * (1 - 0.04 * talent('focus')); }
 function wardMul(){ return shardMul('ward') * (1 + 0.10 * talent('bulwark')); }
-function goldMulAll(){ return shardMul('gold') * (1 + 0.08 * talent('greed')) * (1 + relicBonus('gold')) * (ksIs('avarice') ? 2.5 : 1); }
-function goldenChance(){ return 0.03 + 0.01 * talent('fortune'); }
+function goldMulAll(){ return shardMul('gold') * (1 + 0.08 * talent('greed')) * (1 + relicBonus('gold')) * (1 + raceBonus('gold')) * (ksIs('avarice') ? 2.5 : 1); }
+function goldenChance(){ return 0.03 + 0.01 * talent('fortune') + raceBonus('golden'); }
 
 // --- Relics: boss drops that grant a global bonus. Rarity scales the roll.
 const RELIC_SLOTS = 4;
@@ -411,6 +451,8 @@ function freshState(){
     autoUp: false,          // auto-buy the cheapest affordable hero upgrade
     seenIntro: false,       // shown the first-run tutorial yet?
     keystones: [],          // active keystone ids (1 until all unlocked, then multi)
+    race: null,             // chosen race id (mid-game) — drives a race-specific tech tree
+    raceTree: {},           // race tech node id -> level
     settings: { dmgNums:true, fx:true, shake:true },   // display/perf toggles
     buyMode: 1,             // hero bulk-buy amount: 1, 10, or 'max'
   };
@@ -430,6 +472,7 @@ function load(){
       relics:   Array.isArray(d.relics)   ? d.relics   : [],
       equipped: Array.isArray(d.equipped) ? d.equipped : [],
       keystones: Array.isArray(d.keystones) ? d.keystones : (d.keystone ? [d.keystone] : []),  // migrate single→multi
+      raceTree: Object.assign(base.raceTree, d.raceTree || {}),
     });
   }catch(e){ return null; }
 }
@@ -451,6 +494,7 @@ function globalDmgMul(){
   const aunelLv = S.heroLevels.aunel;
   if (aunelLv > 0) m *= 1 + 0.03 * aunelLv;          // Aunel passive damage aura
   m *= 1 + relicBonus('dmg');                         // equipped relics
+  m *= 1 + raceBonus('dmg');                          // race tech tree
   return m;
 }
 function ksDmgMul(){
@@ -462,7 +506,7 @@ function combatMul(){ return globalDmgMul() * (partyBuffT > 0 ? PARTY_BUFF_MUL :
 function towerHpMul(){ return 1 + 0.15 * S.towerLv; }          // Fortify Tower (gold)
 // Fortify is a premium sink: first upgrade costs 50K, then climbs steeply.
 function towerCost(){ return Math.ceil(50000 * Math.pow(1.6, S.towerLv)); }
-function crystalMaxHp(){ return 100 * wardMul() * (1 + relicBonus('ward')) * towerHpMul(); }
+function crystalMaxHp(){ return 100 * wardMul() * (1 + relicBonus('ward')) * (1 + raceBonus('ward')) * towerHpMul(); }
 function gameSpeed(){ return S.speed * shardMul('speed'); }
 
 // ------------------------------------------------------------------ combat sim
@@ -731,6 +775,7 @@ function addDamageNumber(e, dmg, crit, kind){
 function damageEnemy(e, dmg, crit, element){
   const vs = elemVs(e.element, element);
   dmg *= vs.mult;
+  if (e.boss) dmg *= 1 + raceBonus('bossDmg');        // Emberkin: anti-boss
   if (e.armor) dmg *= (1 - e.armor);
   addDamageNumber(e, dmg, crit, vs.kind);
   if (e.shield > 0){                       // shield soaks damage before HP
@@ -804,7 +849,7 @@ function castSkill(def, slot, lvl){
     for (let i = enemies.length - 1; i >= 0; i--){
       const e = enemies[i];
       if (!engaged(e)) continue;
-      if (!ENEMY_TYPES[e.type] || !ENEMY_TYPES[e.type].slowImmune){ e.slow = 3; spawnParticles(e.x, e.y-14, 'frost', 0.4); }  // freeze
+      if (!ENEMY_TYPES[e.type] || !ENEMY_TYPES[e.type].slowImmune){ e.slow = 3 * (1 + raceBonus('slow')); spawnParticles(e.x, e.y-14, 'frost', 0.4); }  // freeze
       if (damageEnemy(e, dmg, roll.crit, HERO_ELEM[def.id])) enemies.splice(i, 1);
     }
     GA('ice');
@@ -890,7 +935,7 @@ function simulate(dt){
         e.atkTimer -= 1;
         const ksTake = ksIs('cannon') ? 1.6 : ksIs('fortress') ? 0.4 : 1;
         const mitig = Math.min(DMG_MITIGATION_CAP, wardMul() * towerHpMul());
-        const dmgFrac = (e.boss ? 0.20 : 0.05) * ksTake / mitig;
+        const dmgFrac = (e.boss ? 0.20 : 0.05) * ksTake / mitig * (1 - Math.min(0.75, raceBonus('dmgReduce')));
         S.crystalHp = Math.max(0, S.crystalHp - dmgFrac);
         if (e.boss) shake(6);
         addFloater(view.crystalX, view.ground - 60*px, '-' + Math.round(dmgFrac*100) + '%', '#ff6b6b');
@@ -1894,6 +1939,7 @@ function doPrestige(){
       kills: S.kills, bestCombo: S.bestCombo,                 // lifetime records
       autoUp: S.autoUp, seenIntro: S.seenIntro,               // keep QoL/tutorial flags
       keystones: S.keystones,                                 // keep the build choice(s)
+      race: S.race, raceTree: S.raceTree,                     // keep race + its tech tree
     };
     S = freshState();
     Object.assign(S, keep);
@@ -2283,6 +2329,75 @@ function openTalents(){
   });
 }
 if (el('btnTalents')) el('btnTalents').onclick = openTalents;
+
+// Race panel — pick a race (once), then spend Talent Points on its tech tree.
+function pickRace(id){
+  if (!RACES[id] || S.race) return;
+  S.race = id;
+  GA('prestige'); spawnParticles(view.w/2, view.h*0.4, 'holy', 2.2);
+  toast(`${RACES[id].icon} You are now ${RACES[id].name}!`);
+  save(); openRace(); updateHud();
+}
+function buyRaceNode(nid){
+  const n = raceNodes().find(x => x.id === nid); if (!n) return;
+  const lvl = raceLvl(nid);
+  if (lvl >= n.max || S.talentPoints < n.cost) return;
+  S.talentPoints -= n.cost;
+  S.raceTree[nid] = lvl + 1;
+  GA('upgrade'); save(); openRace(); updateHud();
+}
+function openRace(){
+  if (!raceUnlocked()){
+    openModal(`<h2>🧬 Ascendancy</h2>
+      <div class="ks-lock"><div class="ks-lock-ic">🔒</div>
+        <div class="ks-lock-msg">Choose a Race at <b>Stage ${RACE_STAGE}</b>.</div>
+        <div class="ks-lock-sub">Best so far: <b>Stage ${dispStage(S.bestWave)}</b> — keep climbing.</div></div>
+      <button class="btn" id="closeRace" style="width:100%;margin-top:12px">Close</button>`);
+    el('closeRace').onclick = closeModal; return;
+  }
+  if (!S.race){                                   // race picker (one-time choice)
+    const cards = Object.entries(RACES).map(([id, r]) => `
+      <div class="ks" style="--kc:${r.color}" data-race="${id}">
+        <span class="ks-ic">${r.icon}</span>
+        <div class="ks-info"><div class="ks-nm">${r.name} · ${r.tag}</div>
+          <div class="ks-desc">${r.desc}<br><span style="opacity:.8">Tree: ${r.nodes.map(n=>n.name).join(' · ')}</span></div></div>
+      </div>`).join('');
+    openModal(`<h2>🧬 Choose your Race</h2>
+      <p>A <b>permanent</b> mid-game identity — each race unlocks its own tech tree
+         (spent with 🌳 Talent Points). Choose wisely; it persists through Reseal.</p>
+      <div class="ks-list">${cards}</div>
+      <button class="btn" id="closeRace" style="width:100%;margin-top:8px">Decide later</button>`);
+    el('closeRace').onclick = closeModal;
+    el('modalBox').querySelectorAll('[data-race]').forEach(n => n.onclick = () => {
+      const id = n.dataset.race;
+      openModal(`<h2>${RACES[id].icon} Become ${RACES[id].name}?</h2>
+        <p>${RACES[id].desc}<br><br>This choice is <b>permanent</b>.</p>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn" id="raceYes" style="flex:1;background:${RACES[id].color};border-color:${RACES[id].color};color:#111">Confirm</button>
+          <button class="btn" id="raceNo" style="flex:1">Back</button></div>`);
+      el('raceYes').onclick = () => pickRace(id);
+      el('raceNo').onclick = openRace;
+    });
+    return;
+  }
+  const r = RACES[S.race];
+  const rows = r.nodes.map(n => {
+    const lvl = raceLvl(n.id), maxed = lvl >= n.max, afford = S.talentPoints >= n.cost && !maxed;
+    return `<div class="shard-item">
+      <div class="info"><b>${n.name}</b> — ${n.desc}
+        <div class="lv">Lv ${lvl}/${n.max}</div></div>
+      <button class="btn" data-rn="${n.id}" ${afford?'':'disabled'}>${maxed?'MAX':'🌳 '+n.cost}</button>
+    </div>`;
+  }).join('');
+  openModal(`<h2>${r.icon} ${r.name} — ${r.tag}</h2>
+    <p>${r.desc} Spend 🌳 Talent Points on your race tree. You have
+       <b style="color:var(--hp)">${S.talentPoints} TP</b>.</p>
+    <div class="shard-shop">${rows}</div>
+    <button class="btn" id="closeRace" style="width:100%">Close</button>`);
+  el('closeRace').onclick = closeModal;
+  el('modalBox').querySelectorAll('[data-rn]').forEach(btn => btn.onclick = () => buyRaceNode(btn.dataset.rn));
+}
+if (el('btnRace')) el('btnRace').onclick = openRace;
 
 // Keystone panel — pick ONE build-defining perk (mutually exclusive).
 // From Stage 10 the keystones unlock one at a time, one per stage
