@@ -110,6 +110,10 @@
   .ks-lock-msg{font-size:15px;font-weight:800;color:#e8ecff;margin-top:10px}
   .ks-lock-sub{font-size:12px;color:var(--muted);line-height:1.5;margin-top:8px}
   .btn.locked{opacity:.55}
+  .util-hidden{display:none!important}
+  .menu-list{display:grid;gap:8px;margin:12px 0}
+  .menu-item{width:100%;text-align:left;display:flex;align-items:center;justify-content:space-between;font-size:14px}
+  .menu-item .mi-state{color:var(--muted);font-weight:700}
   /* Race radial tech tree */
   .racetree{position:relative;width:100%;max-width:340px;aspect-ratio:1;margin:10px auto}
   .rt-links{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
@@ -260,12 +264,13 @@
     <button class="btn" id="btnRelics">🗡️ Relics</button>
     <button class="btn" id="btnTower">🏰 Fortify</button>
     <button class="btn" id="btnAuto" title="Auto-buy the cheapest upgrade and auto-fire Overdrive">🅰️ Auto</button>
-    <button class="btn" id="btnStats">📊 Stats</button>
-    <button class="btn" id="btnSave" title="Save slots — keep up to 5 games and load any of them">💾 Saves</button>
-    <button class="btn" id="btnNewStart" title="Delete all progress and start a fresh game">🆕 New Start</button>
-    <button class="btn icon" id="btnMusic" title="Music on/off">♪</button>
-    <button class="btn icon" id="btnMute" title="Mute all">🔊</button>
-    <button class="btn icon" id="btnSettings" title="Settings">⚙️</button>
+    <button class="btn" id="btnMenu">⚙️ Settings</button>
+    <button class="btn util-hidden" id="btnStats">📊 Stats</button>
+    <button class="btn util-hidden" id="btnSave">💾 Saves</button>
+    <button class="btn util-hidden" id="btnNewStart">🆕 New Start</button>
+    <button class="btn icon util-hidden" id="btnMusic" title="Music on/off">♪</button>
+    <button class="btn icon util-hidden" id="btnMute" title="Mute all">🔊</button>
+    <button class="btn icon util-hidden" id="btnSettings" title="Settings">⚙️</button>
     <button class="btn" id="btnBuyMode" title="Hero buy amount">🛒 Buy ×1</button>
     <div class="spd">
       <span id="lblSpeed">Speed</span>
@@ -281,8 +286,8 @@
   <div class="box" id="modalBox"></div>
 </div>
 
-<script src="sprites.js?v=85"></script>
-<script src="dungeon.js?v=85"></script>
-<script src="sheets.js?v=85"></script>
-<script src="audio.js?v=85"></script>
-<script src="game.js?v=85"></script>
+<script src="sprites.js?v=86"></script>
+<script src="dungeon.js?v=86"></script>
+<script src="sheets.js?v=86"></script>
+<script src="audio.js?v=86"></script>
+<script src="game.js?v=86"></script>

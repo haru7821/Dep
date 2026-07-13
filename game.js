@@ -15,7 +15,7 @@ const LANG = {
     'btn.keystone':'⭐ Keystone', 'btn.keystoneLocked':'🔒 Keystone',
     'btn.autoOn':'🅰️ Auto: On', 'btn.autoOff':'🅰️ Auto', 'btn.buy':'🛒 Buy', 'buy.max':'Max',
     'lbl.speed':'Speed', 'hero.recruit':'Recruit', 'hero.upgrade':'Upgrade',
-    'set.title':'⚙️ Settings', 'set.close':'Close', 'set.lang':'Language',
+    'set.title':'⚙️ Settings', 'set.close':'Close', 'set.lang':'Language', 'btn.menu':'⚙️ Settings', 'menu.title':'Settings & More', 'menu.music':'♪ Music', 'menu.sound':'🔊 Sound', 'menu.display':'🎨 Display & Language',
     'set.dmgNums':'Damage numbers', 'set.dmgNums.d':'Show floating damage numbers over enemies.',
     'set.fx':'Particle effects', 'set.fx.d':'Elemental bursts, embers and sparkles. Turn off to boost performance.',
     'set.shake':'Screen shake', 'set.shake.d':'Camera shake on big hits, explosions and boss deaths.',
@@ -28,7 +28,7 @@ const LANG = {
     'btn.keystone':'⭐ 키스톤', 'btn.keystoneLocked':'🔒 키스톤',
     'btn.autoOn':'🅰️ 자동: 켜짐', 'btn.autoOff':'🅰️ 자동', 'btn.buy':'🛒 구매', 'buy.max':'최대',
     'lbl.speed':'속도', 'hero.recruit':'모집', 'hero.upgrade':'강화',
-    'set.title':'⚙️ 설정', 'set.close':'닫기', 'set.lang':'언어',
+    'set.title':'⚙️ 설정', 'set.close':'닫기', 'set.lang':'언어', 'btn.menu':'⚙️ 설정', 'menu.title':'설정 및 기타', 'menu.music':'♪ 음악', 'menu.sound':'🔊 효과음', 'menu.display':'🎨 화면 및 언어',
     'set.dmgNums':'데미지 숫자', 'set.dmgNums.d':'적 위에 떠오르는 데미지 숫자를 표시합니다.',
     'set.fx':'파티클 효과', 'set.fx.d':'속성 폭발·불티·반짝임. 성능 향상을 위해 끌 수 있습니다.',
     'set.shake':'화면 흔들림', 'set.shake.d':'큰 타격·폭발·보스 처치 시 화면이 흔들립니다.',
@@ -41,7 +41,7 @@ const LANG = {
     'btn.keystone':'⭐ キーストーン', 'btn.keystoneLocked':'🔒 キーストーン',
     'btn.autoOn':'🅰️ オート: ON', 'btn.autoOff':'🅰️ オート', 'btn.buy':'🛒 購入', 'buy.max':'最大',
     'lbl.speed':'速度', 'hero.recruit':'雇用', 'hero.upgrade':'強化',
-    'set.title':'⚙️ 設定', 'set.close':'閉じる', 'set.lang':'言語',
+    'set.title':'⚙️ 設定', 'set.close':'閉じる', 'set.lang':'言語', 'btn.menu':'⚙️ 設定', 'menu.title':'設定・その他', 'menu.music':'♪ 音楽', 'menu.sound':'🔊 効果音', 'menu.display':'🎨 表示・言語',
     'set.dmgNums':'ダメージ数値', 'set.dmgNums.d':'敵の上にダメージ数値を表示します。',
     'set.fx':'パーティクル効果', 'set.fx.d':'属性の爆発・火花・きらめき。オフで性能向上。',
     'set.shake':'画面の揺れ', 'set.shake.d':'大ヒット・爆発・ボス撃破時に画面が揺れます。',
@@ -2319,7 +2319,7 @@ function openSaves(){
 if (el('btnSave')) el('btnSave').onclick = () => { savePending = null; openSaves(); };
 // New Start — wipe the save and reload into a fresh game. skipSave stops the
 // beforeunload handler from writing the current state back on the way out.
-if (el('btnNewStart')) el('btnNewStart').onclick = () => {
+function confirmNewStart(){
   openModal(`<h2>🆕 New Start?</h2>
     <p>This permanently deletes <b>all</b> progress — waves, gold, shards, heroes,
        talents, relics and upgrades — and begins a brand-new game from Wave 1.
@@ -2333,7 +2333,35 @@ if (el('btnNewStart')) el('btnNewStart').onclick = () => {
     location.reload();
   };
   el('noNewStart').onclick = closeModal;
-};
+}
+if (el('btnNewStart')) el('btnNewStart').onclick = confirmNewStart;
+
+// ⚙️ Settings menu — collapses the utility buttons (Stats / Saves / New Start /
+// Music / Mute / Display+Language) into one panel to declutter the control bar.
+function openMenu(){
+  const A = window.GameAudio;
+  const musicOn = !!(A && A.isMusicOn && A.isMusicOn());
+  const muted = !!(A && A.isMuted && A.isMuted());
+  const row = (id, label, state) => `<button class="btn menu-item" id="${id}">${label}${state!=null?`<span class="mi-state">${state}</span>`:''}</button>`;
+  openModal(`<h2>⚙️ ${t('menu.title')}</h2>
+    <div class="menu-list">
+      ${row('mStats',   t('btn.stats'))}
+      ${row('mSaves',   t('btn.saves'))}
+      ${row('mDisplay', t('menu.display'))}
+      ${row('mMusic',   t('menu.music'), musicOn ? t('on') : t('off'))}
+      ${row('mSound',   t('menu.sound'), muted ? t('off') : t('on'))}
+      ${row('mNew',     t('btn.newstart'))}
+    </div>
+    <button class="btn" id="closeMenu" style="width:100%">${t('set.close')}</button>`);
+  el('closeMenu').onclick = closeModal;
+  el('mStats').onclick   = openStats;
+  el('mSaves').onclick   = openSaves;
+  el('mDisplay').onclick = openSettings;
+  el('mNew').onclick     = confirmNewStart;
+  el('mMusic').onclick = () => { const bm = el('btnMusic'); if (bm) bm.onclick(); openMenu(); };
+  el('mSound').onclick = () => { const bt = el('btnMute'); if (bt) bt.onclick(); openMenu(); };
+}
+if (el('btnMenu')) el('btnMenu').onclick = openMenu;
 document.querySelectorAll('[data-spd]').forEach(b => {
   b.onclick = () => {
     S.speed = +b.dataset.spd;
@@ -2681,7 +2709,7 @@ function openSettings(){
 function applyLang(){
   const map = { btnPrestige:'btn.prestige', btnShop:'btn.shop', btnTalents:'btn.talents', btnRace:'btn.race',
     btnAch:'btn.ach', btnBestiary:'btn.bestiary', btnRelics:'btn.relics', btnTower:'btn.fortify',
-    btnStats:'btn.stats', btnSave:'btn.saves', btnNewStart:'btn.newstart' };
+    btnStats:'btn.stats', btnSave:'btn.saves', btnNewStart:'btn.newstart', btnMenu:'btn.menu' };
   for (const id in map){ const e = el(id); if (e) e.textContent = t(map[id]); }
   const sp = el('lblSpeed'); if (sp) sp.textContent = t('lbl.speed');
   refreshAutoBtn(); refreshBuyModeBtn();
