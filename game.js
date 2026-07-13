@@ -15,7 +15,7 @@ const LANG = {
     'btn.keystone':'⭐ Keystone', 'btn.keystoneLocked':'🔒 Keystone',
     'btn.autoOn':'🅰️ Auto: On', 'btn.autoOff':'🅰️ Auto', 'btn.buy':'🛒 Buy', 'buy.max':'Max',
     'lbl.speed':'Speed', 'hero.recruit':'Recruit', 'hero.upgrade':'Upgrade',
-    'set.title':'⚙️ Settings', 'set.close':'Close', 'set.lang':'Language', 'btn.menu':'⚙️ Settings', 'menu.title':'Settings & More', 'menu.music':'♪ Music', 'menu.sound':'🔊 Sound', 'menu.display':'🎨 Display & Language',
+    'set.title':'⚙️ Settings', 'set.close':'Close', 'set.lang':'Language', 'btn.menu':'⚙️ Settings', 'menu.title':'Settings & More', 'menu.music':'♪ Music', 'menu.sound':'🔊 Sound', 'menu.display':'🎨 Display & Language', 'shop.tp':'Talent Point', 'shop.tp.d':'Convert Aether Shards into a Talent Point.', 'shop.have':'You have', 'shop.convert':'Convert shards',
     'set.dmgNums':'Damage numbers', 'set.dmgNums.d':'Show floating damage numbers over enemies.',
     'set.fx':'Particle effects', 'set.fx.d':'Elemental bursts, embers and sparkles. Turn off to boost performance.',
     'set.shake':'Screen shake', 'set.shake.d':'Camera shake on big hits, explosions and boss deaths.',
@@ -28,7 +28,7 @@ const LANG = {
     'btn.keystone':'⭐ 키스톤', 'btn.keystoneLocked':'🔒 키스톤',
     'btn.autoOn':'🅰️ 자동: 켜짐', 'btn.autoOff':'🅰️ 자동', 'btn.buy':'🛒 구매', 'buy.max':'최대',
     'lbl.speed':'속도', 'hero.recruit':'모집', 'hero.upgrade':'강화',
-    'set.title':'⚙️ 설정', 'set.close':'닫기', 'set.lang':'언어', 'btn.menu':'⚙️ 설정', 'menu.title':'설정 및 기타', 'menu.music':'♪ 음악', 'menu.sound':'🔊 효과음', 'menu.display':'🎨 화면 및 언어',
+    'set.title':'⚙️ 설정', 'set.close':'닫기', 'set.lang':'언어', 'btn.menu':'⚙️ 설정', 'menu.title':'설정 및 기타', 'menu.music':'♪ 음악', 'menu.sound':'🔊 효과음', 'menu.display':'🎨 화면 및 언어', 'shop.tp':'특성 포인트', 'shop.tp.d':'샤드를 특성 포인트로 전환합니다.', 'shop.have':'보유', 'shop.convert':'샤드 전환',
     'set.dmgNums':'데미지 숫자', 'set.dmgNums.d':'적 위에 떠오르는 데미지 숫자를 표시합니다.',
     'set.fx':'파티클 효과', 'set.fx.d':'속성 폭발·불티·반짝임. 성능 향상을 위해 끌 수 있습니다.',
     'set.shake':'화면 흔들림', 'set.shake.d':'큰 타격·폭발·보스 처치 시 화면이 흔들립니다.',
@@ -41,7 +41,7 @@ const LANG = {
     'btn.keystone':'⭐ キーストーン', 'btn.keystoneLocked':'🔒 キーストーン',
     'btn.autoOn':'🅰️ オート: ON', 'btn.autoOff':'🅰️ オート', 'btn.buy':'🛒 購入', 'buy.max':'最大',
     'lbl.speed':'速度', 'hero.recruit':'雇用', 'hero.upgrade':'強化',
-    'set.title':'⚙️ 設定', 'set.close':'閉じる', 'set.lang':'言語', 'btn.menu':'⚙️ 設定', 'menu.title':'設定・その他', 'menu.music':'♪ 音楽', 'menu.sound':'🔊 効果音', 'menu.display':'🎨 表示・言語',
+    'set.title':'⚙️ 設定', 'set.close':'閉じる', 'set.lang':'言語', 'btn.menu':'⚙️ 設定', 'menu.title':'設定・その他', 'menu.music':'♪ 音楽', 'menu.sound':'🔊 効果音', 'menu.display':'🎨 表示・言語', 'shop.tp':'才能ポイント', 'shop.tp.d':'シャードを才能ポイントに変換します。', 'shop.have':'所持', 'shop.convert':'シャード変換',
     'set.dmgNums':'ダメージ数値', 'set.dmgNums.d':'敵の上にダメージ数値を表示します。',
     'set.fx':'パーティクル効果', 'set.fx.d':'属性の爆発・火花・きらめき。オフで性能向上。',
     'set.shake':'画面の揺れ', 'set.shake.d':'大ヒット・爆発・ボス撃破時に画面が揺れます。',
@@ -2100,12 +2100,21 @@ function openShardShop(){
       <button class="btn" data-up="${u.id}" ${maxed||S.shards<cost?'disabled':''}>${maxed?'MAX':'💠 '+cost}</button>
     </div>`;
   }).join('');
+  // Convert shards into Talent Points (100 💠 → 1 🌳)
+  const tpAfford = S.shards >= TP_SHARD_COST;
+  const tpRow = `<div class="shard-item">
+      <div class="info"><b>🌳 ${t('shop.tp')}</b> — ${t('shop.tp.d')}
+        <div class="lv">${TP_SHARD_COST}💠 → 1🌳 · ${t('shop.have')} ${S.talentPoints}🌳</div></div>
+      <button class="btn" id="buyTp" ${tpAfford?'':'disabled'}>💠 ${TP_SHARD_COST}</button>
+    </div>`;
   openModal(`
     <h2>💠 Shard Shop</h2>
     <p>Permanent upgrades bought with Aether Shards. These persist through every reseal.
        You have <b style="color:var(--shard)">${S.shards}</b> shards.</p>
     <div class="shard-shop">${rows}</div>
-    <button class="btn" id="closeShop" style="width:100%">Close</button>`);
+    <div class="branch-title">🌳 ${t('shop.convert')}</div>
+    ${tpRow}
+    <button class="btn" id="closeShop" style="width:100%;margin-top:8px">Close</button>`);
   el('closeShop').onclick = closeModal;
   el('modalBox').querySelectorAll('[data-up]').forEach(b => {
     b.onclick = () => {
@@ -2117,7 +2126,14 @@ function openShardShop(){
       save(); openShardShop(); updateHud();
     };
   });
+  el('buyTp').onclick = () => {
+    if (S.shards < TP_SHARD_COST) return;
+    S.shards -= TP_SHARD_COST; S.talentPoints += 1; GA('prestige');
+    toast(`🌳 +1 TP (−${TP_SHARD_COST}💠)`);
+    save(); openShardShop(); updateHud();
+  };
 }
+const TP_SHARD_COST = 100;   // shards to buy one Talent Point
 
 // ------------------------------------------------------------------ offline
 // ---- Idle progression: simulate wave clears while the player is away ----
