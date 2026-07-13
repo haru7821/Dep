@@ -295,7 +295,6 @@ const FEATURE_UNLOCKS = [
   { sel:'#btnBuyMode',    stage:5,  name:'🛒 Bulk Buy' },
   { sel:'#btnRelics',     stage:5,  name:'🗡️ Relics', flag:'relics' },
   { sel:'#btnAuto',       stage:6,  name:'🅰️ Auto-Upgrade' },
-  { sel:'[data-spd="3"]', stage:6,  name:'3× Speed' },
   { sel:'#btnAch',        stage:6,  name:'🏆 Achievements' },
   { sel:'#btnRace',       stage:7,  name:'🧬 Race' },
   { sel:'#btnPrestige',   stage:8,  name:'💠 Reseal (Prestige)', also:()=>prestigeShards(S.totalGoldEarned) >= 1 },
@@ -3115,7 +3114,9 @@ function boot(){
   refreshAutoBtn();
   refreshBuyModeBtn();
   applyLang();                        // skin the persistent UI to the saved language
-  document.querySelector('[data-spd="1"]').classList.add('sel');
+  if (S.speed > 2) S.speed = 2;       // speed caps at 2× now (was 3×)
+  const spBtn = document.querySelector(`[data-spd="${S.speed}"]`) || document.querySelector('[data-spd="1"]');
+  spBtn.classList.add('sel');
   window.addEventListener('beforeunload', save);
   setInterval(save, 15000);
   requestAnimationFrame(frame);
