@@ -2547,15 +2547,29 @@ function makeRelic(rarId){
   }
   return { id: ++S.relicSeq, type: types[(Math.random()*types.length)|0], rarity: rarId };
 }
-function fuseRelics(rar){
-  const next = nextRarity(rar);
-  const pool = relicsOfRarity(rar);
-  if (!next || pool.length < FUSE_COUNT) return;
-  // consume 3, spending unequipped relics before equipped ones
-  const order = pool.slice().sort((a,b) => (S.equipped.includes(a.id)?1:0) - (S.equipped.includes(b.id)?1:0));
-  const consume = order.slice(0, FUSE_COUNT).map(r => r.id);
-  S.relics = S.relics.filter(r => !consume.includes(r.id));
-  consume.forEach(id => { const ei = S.equipped.indexOf(id); if (ei >= 0) S.equipped.splice(ei, 1); });
+// player-picked fusion selection (relic ids, all same rarity, up to FUSE_COUNT)
+let fuseSel = [];
+function fuseSelRarity(){ const r = S.relics.find(x => x.id === fuseSel[0]); return r ? r.rarity : null; }
+function fuseSelToggle(id){
+  const rel = S.relics.find(r => r.id === id); if (!rel) return;
+  if (rel.rarity === 'mythic'){ toast('Mythic relics can\'t be fused further'); return; }
+  const i = fuseSel.indexOf(id);
+  if (i >= 0){ fuseSel.splice(i, 1); }
+  else {
+    if (fuseSel.length && rel.rarity !== fuseSelRarity()){ fuseSel = [id]; openRelics(); return; }  // new rarity → restart pick
+    if (fuseSel.length >= FUSE_COUNT){ toast(`Pick only ${FUSE_COUNT} to fuse`); return; }
+    fuseSel.push(id);
+  }
+  openRelics();
+}
+function fuseSelected(){
+  if (fuseSel.length !== FUSE_COUNT) return;
+  const ids = fuseSel.slice();
+  const rar = fuseSelRarity(), next = nextRarity(rar);
+  if (!next) return;
+  S.relics = S.relics.filter(r => !ids.includes(r.id));               // consume the picked relics
+  ids.forEach(id => { const ei = S.equipped.indexOf(id); if (ei >= 0) S.equipped.splice(ei, 1); });
+  fuseSel = [];
   const success = Math.random() < (FUSE_CHANCE[rar] || 0.5);
   const rel = makeRelic(success ? next.id : rar);
   S.relics.push(rel);
@@ -2580,46 +2594,53 @@ function openRelics(){
     const ra = RELIC_RARITY.findIndex(r=>r.id===a.rarity), rb = RELIC_RARITY.findIndex(r=>r.id===b.rarity);
     return rb-ra || b.id-a.id;
   });
+  // keep the fusion selection valid if relics changed
+  fuseSel = fuseSel.filter(id => S.relics.some(r => r.id === id));
   const list = owned.length ? owned.map(rel => {
     const t = RELIC_TYPES[rel.type], eq = S.equipped.includes(rel.id);
     const t2 = rel.type2 ? RELIC_TYPES[rel.type2] : null;
     const myth = rel.rarity === 'mythic';
+    const sel = fuseSel.includes(rel.id);
     const name = t2 ? `${t.name} + ${t2.name}` : t.name;
     const stats = t2
       ? `${t.fmt(relicValue(rel))} · ${t2.fmt(relicValue2(rel))}`
       : t.fmt(relicValue(rel));
-    return `<div class="relic ${eq?'eq':''} ${myth?'mythic':''}" style="--rc:${relicColor(rel)}">
+    return `<div class="relic ${eq?'eq':''} ${myth?'mythic':''} ${sel?'fsel':''}" style="--rc:${relicColor(rel)}">
       <span class="ic" data-rel="${rel.id}">${t.icon}${t2?t2.icon:''}</span>
       <div style="flex:1" data-rel="${rel.id}"><div class="rn">${name}</div><div class="rd">${stats}</div>
-        <div class="rr">${relicRarityName(rel)}${eq?' · EQUIPPED':''}</div></div>
+        <div class="rr">${relicRarityName(rel)}${eq?' · EQUIPPED':''}${sel?' · PICKED':''}</div></div>
+      ${myth?'':`<button class="relic-del" data-pick="${rel.id}" title="Select for fusion" style="color:${sel?'#7bffb0':'#8fd0ff'}">🧪</button>`}
       <button class="relic-del" data-del="${rel.id}" title="Destroy (salvage ${relicSalvage(rel)}💠)">🗑️</button>
     </div>`;
   }).join('') : `<p style="grid-column:1/-1;color:var(--muted)">No relics yet. Defeat bosses (every ${BOSS_EVERY} waves) to find them.</p>`;
-  // fusion rows: any rarity (below Mythic) you own 3+ of can be fused up
-  const fusable = RELIC_RARITY.filter(r => r.id !== 'mythic' && relicsOfRarity(r.id).length >= FUSE_COUNT);
-  const fuseRows = fusable.map(r => {
-    const next = nextRarity(r.id), pct = Math.round((FUSE_CHANCE[r.id] || 0.5) * 100);
-    return `<div class="shard-item">
-      <div class="info">3× <b style="color:${r.color}">${r.name}</b> → <b style="color:${next.color}">${next.name}</b>
-        <div class="lv">${pct}% success · on fail you keep one ${r.name} (${relicsOfRarity(r.id).length} owned)</div></div>
-      <button class="btn" data-fuse="${r.id}" style="min-width:92px">🧪 ${pct}%</button>
-    </div>`;
-  }).join('');
-  const fuseSection = `<div class="branch-title">🧪 Fusion — gamble 3 relics for the next tier</div>` +
-    (fuseRows || `<p style="color:var(--muted);font-size:12px;margin:4px 2px">Collect <b>${FUSE_COUNT}</b> relics of the same rarity to fuse them upward.</p>`);
+  // fusion: pick relics with the 🧪 button, then fuse the chosen set
+  const selRar = fuseSelRarity();
+  const selRarDef = selRar && RELIC_RARITY.find(r => r.id === selRar);
+  const next = selRar && nextRarity(selRar);
+  const pct = selRar ? Math.round((FUSE_CHANCE[selRar] || 0.5) * 100) : 0;
+  const ready = fuseSel.length === FUSE_COUNT;
+  const fuseInfo = fuseSel.length === 0
+    ? `Tap 🧪 on <b>${FUSE_COUNT}</b> relics of the same rarity to pick them.`
+    : ready
+      ? `<b style="color:${selRarDef.color}">${FUSE_COUNT}× ${selRarDef.name}</b> → <b style="color:${next.color}">${next.name}</b> · <b>${pct}%</b> success (fail keeps one ${selRarDef.name})`
+      : `Picked <b>${fuseSel.length}/${FUSE_COUNT}</b> <b style="color:${selRarDef.color}">${selRarDef.name}</b> — pick ${FUSE_COUNT - fuseSel.length} more.`;
+  const fuseSection = `<div class="branch-title">🧪 Fusion — pick 3 relics to gamble upward</div>
+    <div class="shard-item"><div class="info">${fuseInfo}</div>
+      <button class="btn" id="doFuse" ${ready?'':'disabled'} style="min-width:96px">🧪 ${ready?`Fuse ${pct}%`:`${fuseSel.length}/${FUSE_COUNT}`}</button></div>`;
   openModal(`
     <h2>🗡️ Relics</h2>
     <p>Bosses drop relics that grant permanent global bonuses. Equip up to
-       <b>${RELIC_SLOTS}</b>. Tap a relic to equip / unequip.</p>
+       <b>${RELIC_SLOTS}</b>. Tap a relic to equip / unequip, or 🧪 to pick for fusion.</p>
     <div class="relic-slots">${slots}</div>
     <div class="relic-list">${list}</div>
     ${fuseSection}
     <button class="btn" id="closeRelic" style="width:100%;margin-top:12px">Close</button>`);
-  el('closeRelic').onclick = closeModal;
+  el('closeRelic').onclick = () => { fuseSel = []; closeModal(); };
   el('modalBox').querySelectorAll('[data-rel]').forEach(n => n.onclick = () => toggleEquip(+n.dataset.rel));
   el('modalBox').querySelectorAll('[data-eq]').forEach(n => n.onclick = () => toggleEquip(+n.dataset.eq));
+  el('modalBox').querySelectorAll('[data-pick]').forEach(n => n.onclick = e => { e.stopPropagation(); fuseSelToggle(+n.dataset.pick); });
   el('modalBox').querySelectorAll('[data-del]').forEach(n => n.onclick = e => { e.stopPropagation(); destroyRelic(+n.dataset.del); });
-  el('modalBox').querySelectorAll('[data-fuse]').forEach(n => n.onclick = () => fuseRelics(n.dataset.fuse));
+  if (el('doFuse')) el('doFuse').onclick = fuseSelected;
   const newList = el('modalBox').querySelector('.relic-list');
   if (newList) newList.scrollTop = prevScroll;
 }
