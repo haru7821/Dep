@@ -832,8 +832,8 @@ function castSkill(def, slot, lvl){
     GA('lightning');
   }
   else if (s.kind === 'blessing'){
-    // HOLY: golden sparkles + heal (healer restores at most 20% per cast)
-    S.crystalHp = Math.min(1, S.crystalHp + 0.20);
+    // HOLY: golden sparkles + heal (Dawn Blessing restores 12% per cast)
+    S.crystalHp = Math.min(1, S.crystalHp + 0.12);
     partyBuffT = 5 + talent('grace');
     const holy = skillBase(def, lvl) * combatMul() * 2.5;
     addFx({ kind:'nova', x: view.crystalX, y: slot.y - 18, r0:8, r:220, dur:0.7, color:s.fx });
@@ -1000,7 +1000,7 @@ function basicAttack(def, slot, lvl){
   const hx = slot.x, hy = slot.y - 22;
   if (!(heroAnim[def.id] && heroAnim[def.id].name === 'cast')) heroAnim[def.id] = { name:'attack', t:0.35 };
   if (def.target === 'support'){
-    S.crystalHp = Math.min(1, S.crystalHp + Math.min(0.20, 0.01 * lvl));   // healer heals ≤20% per tick
+    S.crystalHp = Math.min(1, S.crystalHp + Math.min(0.08, 0.004 * lvl));   // passive heal ≤8%/tick
     return;
   }
   const dmg = heroDmg(def, lvl) * combatMul();
