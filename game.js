@@ -1554,12 +1554,14 @@ function resize(){
   view.ground = ch * 0.78;
   view.crystalX = cw * 0.14;
   view.laneRight = cw - 20;
-  // enemies store absolute pixel positions — remap them onto the new lane so a
-  // rotation/resize keeps every monster at the same RELATIVE spot (no teleport)
+  // enemies store absolute pixel positions — remap them onto the new lane on ANY
+  // resize (rotation, fullscreen, window drag) so every monster keeps its RELATIVE
+  // spot and stays on the ground line. Height-only changes still need the y re-snap.
   const oldSpan = old.right - old.cx, newSpan = view.laneRight - view.crystalX;
-  if (typeof enemies !== 'undefined' && enemies.length && oldSpan > 0 && Math.abs(newSpan - oldSpan) > 0.5){
+  if (typeof enemies !== 'undefined' && enemies.length){
+    const sc = oldSpan > 0 ? newSpan / oldSpan : 1;
     for (const e of enemies){
-      if (Number.isFinite(e.x)) e.x = view.crystalX + (e.x - old.cx) * (newSpan / oldSpan);
+      if (Number.isFinite(e.x)) e.x = view.crystalX + (e.x - old.cx) * sc;
       e.y = view.ground;                       // ground-locked (flyers get their lift at draw time)
     }
   }
