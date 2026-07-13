@@ -196,7 +196,7 @@ const ENEMY_TYPES = {
   brute:   { hp:3.2, spd:17, size:1.6,  gold:3, element:'physical', armor:0.20, sprite:'skeleton' },
   revenant:{ hp:2.6, spd:21, size:1.4,  gold:3, element:'lightning', sprite:'skeleton' },
   // ---- Stage 15+ monsters (own sprites) ----
-  harpy:    { hp:2.4, spd:52, size:1.2,  gold:4, element:'lightning', float:true, fly:0.55, sprite:'harpy' },  // flies through the air
+  harpy:    { hp:2.4, spd:26, size:1.2,  gold:4, element:'lightning', float:true, fly:0.55, sprite:'harpy' },  // slow glide through the air
   ogre:     { hp:7.5, spd:13, size:1.95, gold:6, element:'earth',     armor:0.38, sprite:'ogre'  },
 };
 // Element matchups: attacking an enemy with its `weak` element deals +60%,
@@ -1722,8 +1722,10 @@ function draw(now){
     // fade in over the first second so it reads as "arriving" (not yet targetable)
     ctx.save();
     ctx.globalAlpha = Math.min(1, 0.3 + 0.7 * ((e.age || 0) / ENGAGE_DELAY));
-    // airborne lift (fly = fraction of sprite height; float = small hover)
-    const floatOff = t.fly ? (th*t.fly + Math.sin(now/320 + e.x*0.05)*th*0.07)
+    // airborne lift (fly = fraction of sprite height; float = small hover).
+    // Flyers ride a wave: phase follows x so the path undulates as they travel.
+    const floatOff = t.fly ? (th*t.fly + Math.sin(now/650 + e.x*0.045)*th*0.18
+                                       + Math.sin(now/240 + e.x*0.11)*th*0.05)
                    : (t.float ? (10 + Math.sin(now/300)*4) : 0);
     if (window.Sheets && sid){
       let ax = e.x, aby = e.y - floatOff, ath = th;
