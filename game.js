@@ -5,6 +5,51 @@
    ========================================================================== */
 'use strict';
 
+// ------------------------------------------------------------------ i18n
+const LANG_DEFS = [ { id:'en', name:'English' }, { id:'ko', name:'한국어' }, { id:'ja', name:'日本語' } ];
+const LANG = {
+  en: {
+    'btn.prestige':'💠 Reseal Crystal (Prestige)', 'btn.shop':'💠 Shard Shop', 'btn.talents':'🌳 Talents',
+    'btn.race':'🧬 Race', 'btn.ach':'🏆 Achievements', 'btn.bestiary':'📖 Bestiary', 'btn.relics':'🗡️ Relics',
+    'btn.fortify':'🏰 Fortify', 'btn.stats':'📊 Stats', 'btn.saves':'💾 Saves', 'btn.newstart':'🆕 New Start',
+    'btn.keystone':'⭐ Keystone', 'btn.keystoneLocked':'🔒 Keystone',
+    'btn.autoOn':'🅰️ Auto: On', 'btn.autoOff':'🅰️ Auto', 'btn.buy':'🛒 Buy', 'buy.max':'Max',
+    'lbl.speed':'Speed', 'hero.recruit':'Recruit', 'hero.upgrade':'Upgrade',
+    'set.title':'⚙️ Settings', 'set.close':'Close', 'set.lang':'Language',
+    'set.dmgNums':'Damage numbers', 'set.dmgNums.d':'Show floating damage numbers over enemies.',
+    'set.fx':'Particle effects', 'set.fx.d':'Elemental bursts, embers and sparkles. Turn off to boost performance.',
+    'set.shake':'Screen shake', 'set.shake.d':'Camera shake on big hits, explosions and boss deaths.',
+    'on':'ON', 'off':'OFF',
+  },
+  ko: {
+    'btn.prestige':'💠 크리스탈 재봉인', 'btn.shop':'💠 샤드 상점', 'btn.talents':'🌳 특성',
+    'btn.race':'🧬 종족', 'btn.ach':'🏆 업적', 'btn.bestiary':'📖 도감', 'btn.relics':'🗡️ 유물',
+    'btn.fortify':'🏰 요새화', 'btn.stats':'📊 통계', 'btn.saves':'💾 저장', 'btn.newstart':'🆕 새 게임',
+    'btn.keystone':'⭐ 키스톤', 'btn.keystoneLocked':'🔒 키스톤',
+    'btn.autoOn':'🅰️ 자동: 켜짐', 'btn.autoOff':'🅰️ 자동', 'btn.buy':'🛒 구매', 'buy.max':'최대',
+    'lbl.speed':'속도', 'hero.recruit':'모집', 'hero.upgrade':'강화',
+    'set.title':'⚙️ 설정', 'set.close':'닫기', 'set.lang':'언어',
+    'set.dmgNums':'데미지 숫자', 'set.dmgNums.d':'적 위에 떠오르는 데미지 숫자를 표시합니다.',
+    'set.fx':'파티클 효과', 'set.fx.d':'속성 폭발·불티·반짝임. 성능 향상을 위해 끌 수 있습니다.',
+    'set.shake':'화면 흔들림', 'set.shake.d':'큰 타격·폭발·보스 처치 시 화면이 흔들립니다.',
+    'on':'켜짐', 'off':'꺼짐',
+  },
+  ja: {
+    'btn.prestige':'💠 クリスタル再封印', 'btn.shop':'💠 シャードショップ', 'btn.talents':'🌳 才能',
+    'btn.race':'🧬 種族', 'btn.ach':'🏆 実績', 'btn.bestiary':'📖 図鑑', 'btn.relics':'🗡️ 遺物',
+    'btn.fortify':'🏰 要塞化', 'btn.stats':'📊 統計', 'btn.saves':'💾 セーブ', 'btn.newstart':'🆕 ニューゲーム',
+    'btn.keystone':'⭐ キーストーン', 'btn.keystoneLocked':'🔒 キーストーン',
+    'btn.autoOn':'🅰️ オート: ON', 'btn.autoOff':'🅰️ オート', 'btn.buy':'🛒 購入', 'buy.max':'最大',
+    'lbl.speed':'速度', 'hero.recruit':'雇用', 'hero.upgrade':'強化',
+    'set.title':'⚙️ 設定', 'set.close':'閉じる', 'set.lang':'言語',
+    'set.dmgNums':'ダメージ数値', 'set.dmgNums.d':'敵の上にダメージ数値を表示します。',
+    'set.fx':'パーティクル効果', 'set.fx.d':'属性の爆発・火花・きらめき。オフで性能向上。',
+    'set.shake':'画面の揺れ', 'set.shake.d':'大ヒット・爆発・ボス撃破時に画面が揺れます。',
+    'on':'ON', 'off':'OFF',
+  },
+};
+function t(k){ const l = (S && S.lang) || 'ko'; return (LANG[l] && LANG[l][k] != null) ? LANG[l][k] : (LANG.en[k] != null ? LANG.en[k] : k); }
+
 // ------------------------------------------------------------------ constants
 const SAVE_KEY = 'aether_crystal_save_v1';
 const OFFLINE_CAP_S = 8 * 3600;        // offline earnings capped at 8h
@@ -473,6 +518,7 @@ function freshState(){
     keystones: [],          // active keystone ids (1 until all unlocked, then multi)
     race: null,             // chosen race id (mid-game) — drives a race-specific tech tree
     raceTree: {},           // race tech node id -> level
+    lang: 'ko',             // UI language: en / ko / ja
     settings: { dmgNums:true, fx:true, shake:true },   // display/perf toggles
     buyMode: 1,             // hero bulk-buy amount: 1, 10, or 'max'
   };
@@ -1798,7 +1844,7 @@ function updateHud(){
   if (kb){
     const unlocked = keystonesUnlocked();
     kb.classList.toggle('locked', !unlocked);
-    kb.textContent = unlocked ? '⭐ Keystone' : '🔒 Keystone';
+    kb.textContent = unlocked ? t('btn.keystone') : t('btn.keystoneLocked');
   }
   el('s-wave').textContent = dispStage(S.wave) + '-' + waveInStage(S.wave);
   el('s-gold').textContent = fmt(S.gold);
@@ -1826,7 +1872,7 @@ function updateHud(){
       const aff = bulkBuyPlan(def);
       const showN = aff.count > 0 ? aff.count : 1;
       const showCost = aff.count > 0 ? aff.cost : heroCost(def, lvl);
-      const verb = lvl === 0 ? 'Recruit' : (S.buyMode === 1 ? 'Upgrade' : `Upgrade ×${showN}`);
+      const verb = lvl === 0 ? t('hero.recruit') : (S.buyMode === 1 ? t('hero.upgrade') : `${t('hero.upgrade')} ×${showN}`);
       // update in place (stable DOM) so a rebuild never cancels an in-flight tap
       const vEl = btn.querySelector('.buy-verb'), cEl = btn.querySelector('.buy-cost');
       if (vEl && vEl.textContent !== verb) vEl.textContent = verb;
@@ -1864,7 +1910,7 @@ function buildHeroPanel(){
     const aff = bulkBuyPlan(def);                       // levels affordable right now
     const showN = aff.count > 0 ? aff.count : 1;
     const showCost = aff.count > 0 ? aff.cost : heroCost(def, lvl);
-    const verb = lvl === 0 ? 'Recruit' : (S.buyMode === 1 ? 'Upgrade' : `Upgrade ×${showN}`);
+    const verb = lvl === 0 ? t('hero.recruit') : (S.buyMode === 1 ? t('hero.upgrade') : `${t('hero.upgrade')} ×${showN}`);
     card.innerHTML = `
       <h3><span style="color:${def.color}">◆</span> ${def.name}</h3>
       <div class="role">${def.role}</div>
@@ -2538,26 +2584,45 @@ if (el('btnKeystone')) el('btnKeystone').onclick = openKeystones;
 
 // Settings — display / performance toggles
 const SETTING_DEFS = [
-  { id:'dmgNums', name:'Damage numbers', desc:'Show floating damage numbers over enemies.' },
-  { id:'fx',      name:'Particle effects', desc:'Elemental bursts, embers and sparkles. Turn off to boost performance.' },
-  { id:'shake',   name:'Screen shake',    desc:'Camera shake on big hits, explosions and boss deaths.' },
+  { id:'dmgNums', k:'set.dmgNums' },
+  { id:'fx',      k:'set.fx' },
+  { id:'shake',   k:'set.shake' },
 ];
+// Set the language, re-skin the persistent UI, and reopen the panel.
+function setLang(id){ S.lang = id; save(); applyLang(); openSettings(); }
 function openSettings(){
+  const langBtns = LANG_DEFS.map(L => {
+    const on = (S.lang || 'ko') === L.id;
+    return `<button class="btn" data-lang="${L.id}" style="flex:1;${on?'background:var(--accent);border-color:var(--accent);color:#062':''}">${L.name}</button>`;
+  }).join('');
   const rows = SETTING_DEFS.map(s => {
     const on = !!S.settings[s.id];
     return `<div class="shard-item">
-      <div class="info"><b>${s.name}</b> — ${s.desc}</div>
-      <button class="btn" data-set="${s.id}" style="min-width:56px;${on?'background:var(--hp);border-color:var(--hp);color:#062':''}">${on?'ON':'OFF'}</button>
+      <div class="info"><b>${t(s.k)}</b> — ${t(s.k+'.d')}</div>
+      <button class="btn" data-set="${s.id}" style="min-width:56px;${on?'background:var(--hp);border-color:var(--hp);color:#062':''}">${on?t('on'):t('off')}</button>
     </div>`;
   }).join('');
   openModal(`
-    <h2>⚙️ Settings</h2>
+    <h2>${t('set.title')}</h2>
+    <div class="branch-title">🌐 ${t('set.lang')}</div>
+    <div style="display:flex;gap:8px;margin:6px 0 4px">${langBtns}</div>
     <div class="shard-shop">${rows}</div>
-    <button class="btn" id="closeSet" style="width:100%">Close</button>`);
+    <button class="btn" id="closeSet" style="width:100%">${t('set.close')}</button>`);
   el('closeSet').onclick = closeModal;
+  el('modalBox').querySelectorAll('[data-lang]').forEach(b => b.onclick = () => setLang(b.dataset.lang));
   el('modalBox').querySelectorAll('[data-set]').forEach(b => b.onclick = () => {
     S.settings[b.dataset.set] = !S.settings[b.dataset.set]; save(); openSettings();
   });
+}
+// Re-skin all persistent (non-modal) UI text for the current language.
+function applyLang(){
+  const map = { btnPrestige:'btn.prestige', btnShop:'btn.shop', btnTalents:'btn.talents', btnRace:'btn.race',
+    btnAch:'btn.ach', btnBestiary:'btn.bestiary', btnRelics:'btn.relics', btnTower:'btn.fortify',
+    btnStats:'btn.stats', btnSave:'btn.saves', btnNewStart:'btn.newstart' };
+  for (const id in map){ const e = el(id); if (e) e.textContent = t(map[id]); }
+  const sp = el('lblSpeed'); if (sp) sp.textContent = t('lbl.speed');
+  refreshAutoBtn(); refreshBuyModeBtn();
+  if (S) buildHeroPanel();
 }
 if (el('btnSettings')) el('btnSettings').onclick = openSettings;
 
@@ -2565,7 +2630,7 @@ if (el('btnSettings')) el('btnSettings').onclick = openSettings;
 const BUY_CYCLE = [1, 10, 'max'];
 function refreshBuyModeBtn(){
   const b = el('btnBuyMode'); if (!b) return;
-  b.textContent = '🛒 Buy ' + (S.buyMode === 'max' ? 'Max' : '×' + S.buyMode);
+  b.textContent = t('btn.buy') + ' ' + (S.buyMode === 'max' ? t('buy.max') : '×' + S.buyMode);
 }
 if (el('btnBuyMode')) el('btnBuyMode').onclick = () => {
   const i = BUY_CYCLE.indexOf(S.buyMode);
@@ -2883,7 +2948,7 @@ if (el('btnTower')) el('btnTower').onclick = openTower;
 function refreshAutoBtn(){
   const b = el('btnAuto'); if (!b) return;
   b.classList.toggle('sel', !!S.autoUp);
-  b.textContent = S.autoUp ? '🅰️ Auto: On' : '🅰️ Auto';
+  b.textContent = S.autoUp ? t('btn.autoOn') : t('btn.autoOff');
 }
 if (el('btnAuto')) el('btnAuto').onclick = () => {
   S.autoUp = !S.autoUp; refreshAutoBtn();
@@ -2917,6 +2982,7 @@ function boot(){
   updateHud();
   refreshAutoBtn();
   refreshBuyModeBtn();
+  applyLang();                        // skin the persistent UI to the saved language
   document.querySelector('[data-spd="1"]').classList.add('sel');
   window.addEventListener('beforeunload', save);
   setInterval(save, 15000);
