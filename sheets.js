@@ -57,9 +57,9 @@ window.Sheets = (function () {
     // map EVERY state to the attack row so they play their attack motion while
     // marching (not just at the crystal).
     harpy: { file:'harpy.png', rows:2, cols:2, fit:1.1, flip:true,   // swift storm flyer
-      anim:{ idle:{row:1,frames:2,fps:8}, walk:{row:1,frames:2,fps:8}, attack:{row:1,frames:2,fps:9}, cast:{row:1,frames:2,fps:9} } },
-    ogre:  { file:'ogre.png',  rows:2, cols:2, fit:1.2, flip:true,   // club-swinging brute
       anim:{ idle:{row:1,frames:2,fps:5}, walk:{row:1,frames:2,fps:5}, attack:{row:1,frames:2,fps:6}, cast:{row:1,frames:2,fps:6} } },
+    ogre:  { file:'ogre.png',  rows:2, cols:2, fit:1.2, flip:true,   // club-swinging brute
+      anim:{ idle:{row:1,frames:2,fps:3}, walk:{row:1,frames:2,fps:3}, attack:{row:1,frames:2,fps:4}, cast:{row:1,frames:2,fps:4} } },
   };
 
   const imgs = {};   // id -> { img, ok, failed }

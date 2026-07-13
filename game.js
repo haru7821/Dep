@@ -1413,8 +1413,9 @@ function drawIceBlock(cx, topY, w, h, now){
 
 // Living fire on the burning tower: flickering flame tongues + pulsing glow +
 // rising embers, layered over the static sprite. level 1..3 = small/med/big.
+// blue=true swaps the warm palette for a cool aether flame (full-HP crown).
 let _towerEmberT = 0;
-function drawTowerFire(cx, topY, tH, level, now){
+function drawTowerFire(cx, topY, tH, level, now, blue){
   if (level <= 0) return;
   const dw = tH * 0.602;                 // on-screen tower width (cell 153/254)
   const baseY = topY + tH * 0.30;        // flames sit at the top battlement
@@ -1424,13 +1425,19 @@ function drawTowerFire(cx, topY, tH, level, now){
 
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
-  // pulsing warm glow behind the flames
+  // pulsing glow behind the flames
   const gy = baseY - tH*0.08;
   const glowR = tH * (0.15 + 0.05*level) * (0.9 + 0.12*Math.sin(now/110));
   const gg = ctx.createRadialGradient(cx, gy, 0, cx, gy, glowR);
-  gg.addColorStop(0,   'rgba(255,180,70,0.5)');
-  gg.addColorStop(0.5, 'rgba(255,110,30,0.24)');
-  gg.addColorStop(1,   'rgba(255,80,20,0)');
+  if (blue){
+    gg.addColorStop(0,   'rgba(120,205,255,0.5)');
+    gg.addColorStop(0.5, 'rgba(80,145,255,0.24)');
+    gg.addColorStop(1,   'rgba(60,100,255,0)');
+  } else {
+    gg.addColorStop(0,   'rgba(255,180,70,0.5)');
+    gg.addColorStop(0.5, 'rgba(255,110,30,0.24)');
+    gg.addColorStop(1,   'rgba(255,80,20,0)');
+  }
   ctx.fillStyle = gg;
   ctx.beginPath(); ctx.arc(cx, gy, glowR, 0, PI2); ctx.fill();
 
@@ -1445,10 +1452,17 @@ function drawTowerFire(cx, topY, tH, level, now){
     const by = baseY - Math.abs(fp)*tH*0.03;
     const sway = Math.sin(t*4 + i*1.7) * fw*0.7;        // flame tip leans
     const grad = ctx.createLinearGradient(0, by - fh, 0, by);
-    grad.addColorStop(0,   'rgba(255,255,225,0.85)');
-    grad.addColorStop(0.35,'rgba(255,196,80,0.8)');
-    grad.addColorStop(0.7, 'rgba(255,110,30,0.6)');
-    grad.addColorStop(1,   'rgba(210,45,10,0)');
+    if (blue){
+      grad.addColorStop(0,   'rgba(235,250,255,0.85)');
+      grad.addColorStop(0.35,'rgba(140,215,255,0.8)');
+      grad.addColorStop(0.7, 'rgba(70,135,255,0.6)');
+      grad.addColorStop(1,   'rgba(35,60,220,0)');
+    } else {
+      grad.addColorStop(0,   'rgba(255,255,225,0.85)');
+      grad.addColorStop(0.35,'rgba(255,196,80,0.8)');
+      grad.addColorStop(0.7, 'rgba(255,110,30,0.6)');
+      grad.addColorStop(1,   'rgba(210,45,10,0)');
+    }
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.moveTo(fx - fw, by);
@@ -1472,7 +1486,7 @@ function drawTowerFire(cx, topY, tH, level, now){
         vy: -(55 + Math.random()*75),
         life, max: life,
         size: 1.6 + Math.random()*2.4,
-        color: ['#ffe27a','#ff9d3c','#ff5a1a'][(Math.random()*3)|0],
+        color: (blue ? ['#bfe6ff','#7bd3ff','#4a86ff'] : ['#ffe27a','#ff9d3c','#ff5a1a'])[(Math.random()*3)|0],
         shape:'circle', grav:-26, drag:0.93, glow:true,
       });
     }
@@ -1690,8 +1704,10 @@ function draw(now){
   const towerFrame = hp >= 0.70 ? 0 : hp >= 0.30 ? 1 : hp >= 0.10 ? 2 : 3;
   const drewTower = window.Sheets && Sheets.draw(ctx, 'tower', view.crystalX, view.ground, towerH, 'idle', towerFrame * 1000);
   if (drewTower){
-    // animate the burning tower's fire (more intense as HP drops)
-    drawTowerFire(view.crystalX, view.ground - towerH, towerH, towerFrame, now);
+    // animate the burning tower's fire (more intense as HP drops).
+    // At full HP the crystal wears a calm BLUE aether flame instead.
+    if (hp >= 0.995) drawTowerFire(view.crystalX, view.ground - towerH, towerH, 1, now, true);
+    else drawTowerFire(view.crystalX, view.ground - towerH, towerH, towerFrame, now);
   } else if (!sheetPending('tower')){        // skip low-res fallback while the HD sheet is still loading
     const pulse = 0.5 + 0.5*Math.sin(now/500);
     if (Spr().drawCrystal) Spr().drawCrystal(ctx, view.crystalX, view.ground - size*10, size*3, pulse, S.crystalHp);
