@@ -51,11 +51,12 @@ window.Sheets = (function () {
     dragon:     { file:'dragon.png',     rows:1, cols:1,  fit:1.0, flip:false,   // Boss (fire) — single-pose pixel art, already faces the crystal
                   anim:{ idle:{row:0,frames:1,fps:1}, walk:{row:0,frames:1,fps:1}, attack:{row:0,frames:1,fps:1}, cast:{row:0,frames:1,fps:1} } },
     elderghost: { file:'elderghost.png', rows:2, cols:5,  fit:1.0, flip:true, anim:bmob(3,5)  },  // Boss (dark)
-    // Stage 15+ monsters (sliced from uploaded raw sheets → idle row / attack row).
+    // Stage 15+ monsters (sliced from uploaded sheets → idle row0 / attack row1).
     // Art faces right; enemies march left, so flip to face their travel direction.
-    gargoyle:   { file:'gargoyle.png',   rows:2, cols:3,  fit:1.05, flip:true, anim:bmob(2,3) },  // stone flyer
-    manticore:  { file:'manticore.png',  rows:2, cols:4,  fit:1.1,  flip:true, anim:bmob(4,3) },  // fierce beast
-    minotaur:   { file:'minotaur.png',   rows:2, cols:3,  fit:1.15, flip:true, anim:bmob(2,3) },  // heavy bruiser
+    // 3-pose sheets: 1 idle frame, 2 attack frames.
+    minotaur:   { file:'minotaur.png',   rows:2, cols:2,  fit:1.15, flip:true, anim:bmob(1,2) },  // heavy axe bruiser
+    harpy:      { file:'harpy.png',      rows:2, cols:2,  fit:1.1,  flip:true, anim:bmob(1,2) },  // swift storm flyer
+    ogre:       { file:'ogre.png',       rows:2, cols:2,  fit:1.2,  flip:true, anim:bmob(1,2) },  // club-swinging brute
   };
 
   const imgs = {};   // id -> { img, ok, failed }
