@@ -110,6 +110,31 @@
   .ks-lock-msg{font-size:15px;font-weight:800;color:#e8ecff;margin-top:10px}
   .ks-lock-sub{font-size:12px;color:var(--muted);line-height:1.5;margin-top:8px}
   .btn.locked{opacity:.55}
+  /* Race radial tech tree */
+  .racetree{position:relative;width:100%;max-width:340px;aspect-ratio:1;margin:10px auto}
+  .rt-links{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .rt-link{stroke:#2a3160;stroke-width:2}
+  .rt-link.on{stroke:var(--rc,#7bd3ff);stroke-width:2.5;opacity:.85}
+  .rt-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;
+    width:58px;height:58px;border-radius:50%;border:2px solid var(--rc);
+    background:radial-gradient(circle,color-mix(in srgb,var(--rc) 25%,transparent),transparent);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--rc);font-weight:800}
+  .rt-node{position:absolute;width:15%;aspect-ratio:1;transform:translate(-50%,-50%);z-index:2;
+    display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .rt-hex{position:absolute;inset:0;background:var(--rc);
+    clip-path:polygon(25% 5%,75% 5%,98% 50%,75% 95%,25% 95%,2% 50%)}
+  .rt-hex::after{content:'';position:absolute;inset:2px;background:var(--panel2);
+    clip-path:polygon(25% 5%,75% 5%,98% 50%,75% 95%,25% 95%,2% 50%)}
+  .rt-node.has .rt-hex::after{background:color-mix(in srgb,var(--rc) 30%,var(--panel2))}
+  .rt-node.max .rt-hex{filter:drop-shadow(0 0 6px var(--rc))}
+  .rt-node.locked{opacity:.5;filter:grayscale(.7);cursor:not-allowed}
+  .rt-node.sel{outline:2px solid #fff;outline-offset:2px;border-radius:6px}
+  .rt-ic{position:relative;z-index:1;font-size:16px;line-height:1}
+  .rt-badge{position:absolute;right:-4px;bottom:-4px;z-index:3;background:#0b0d1a;border:1px solid var(--rc);
+    border-radius:8px;font-size:8.5px;font-weight:800;color:#fff;padding:0 3px;line-height:1.5}
+  .rt-info{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:9px;padding:9px 11px;font-size:13px;min-height:48px}
+  .rt-info>div{flex:1}
   /* not-yet-unlocked controls: shown but greyed + non-interactive */
   .feat-locked{opacity:.4;filter:grayscale(.7);cursor:not-allowed}
   .feat-locked:active{transform:none}
@@ -256,8 +281,8 @@
   <div class="box" id="modalBox"></div>
 </div>
 
-<script src="sprites.js?v=80"></script>
-<script src="dungeon.js?v=80"></script>
-<script src="sheets.js?v=80"></script>
-<script src="audio.js?v=80"></script>
-<script src="game.js?v=80"></script>
+<script src="sprites.js?v=82"></script>
+<script src="dungeon.js?v=82"></script>
+<script src="sheets.js?v=82"></script>
+<script src="audio.js?v=82"></script>
+<script src="game.js?v=82"></script>

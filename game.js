@@ -93,35 +93,55 @@ function enemyHpMul(){ return ksIs('avarice') ? 1.35 : 1; }     // Avarice: toug
 // tree; nodes are bought with talent points (🌳) and fold into the same
 // multipliers via raceBonus(stat).
 const RACE_STAGE = 7;   // race choice unlocks at Stage 7
+// Each race's tree is a radial hex layout: 6 nodes around a central race node.
+// `ang` = position angle (deg); `req` gates a node until a sibling is levelled.
 const RACES = {
-  ember: { name:'Emberkin', icon:'🔥', color:'#ff7a3c', tag:'Aggressor',
-    desc:'Raw offense — melt everything, and hit bosses hardest.',
+  abyss: { name:'Abyss', icon:'🌀', color:'#b07bff', tag:'Devourer',
+    desc:'Void aggression — overwhelming damage and boss annihilation.',
     nodes:[
-      { id:'e_pow',  name:'Molten Might', desc:'+4% hero damage',          stat:'dmg',     per:0.04, max:10, cost:1 },
-      { id:'e_boss', name:'Titanslayer',  desc:'+8% damage to bosses',     stat:'bossDmg', per:0.08, max:5,  cost:2 },
-      { id:'e_crit', name:'Searing Edge', desc:'+3% critical chance',      stat:'crit',    per:0.03, max:5,  cost:2 },
-      { id:'e_rage', name:'Cinder Fury',  desc:'+3% hero damage',          stat:'dmg',     per:0.03, max:8,  cost:2 },
+      { id:'ab_dmg',  name:'Void Might',   icon:'⚔️', desc:'+4% hero damage',       stat:'dmg',     per:0.04, max:10, cost:1, ang:270 },
+      { id:'ab_boss', name:'Devourer',     icon:'💀', desc:'+8% damage to bosses',  stat:'bossDmg', per:0.08, max:5,  cost:2, ang:330 },
+      { id:'ab_crit', name:'Abyssal Eye',  icon:'🎯', desc:'+3% critical chance',   stat:'crit',    per:0.03, max:5,  cost:2, ang:30  },
+      { id:'ab_od',   name:'Void Surge',   icon:'⚡', desc:'Overdrive lasts +0.5s', stat:'odDur',   per:0.5,  max:4,  cost:2, ang:90  },
+      { id:'ab_rage', name:'Dread Edge',   icon:'🔥', desc:'+3% hero damage',       stat:'dmg',     per:0.03, max:8,  cost:2, ang:150 },
+      { id:'ab_sing', name:'Singularity',  icon:'🕳️', desc:'+6% damage to bosses',  stat:'bossDmg', per:0.06, max:5,  cost:3, ang:210, req:{id:'ab_boss',lv:3} },
     ] },
-  frost: { name:'Frostborn', icon:'❄️', color:'#7bd3ff', tag:'Warden',
-    desc:'Endurance & control — a fortress of living ice.',
+  revenant: { name:'Revenant', icon:'💀', color:'#5be18a', tag:'Undying',
+    desc:'Undeath — relentless sustain and soul-fed wealth.',
     nodes:[
-      { id:'f_ward', name:'Glacial Aegis', desc:'+10% Crystal max HP',     stat:'ward',      per:0.10, max:8, cost:1 },
-      { id:'f_wall', name:'Permafrost',    desc:'Crystal takes -4% damage', stat:'dmgReduce', per:0.04, max:6, cost:2 },
-      { id:'f_slow', name:'Rimebite',      desc:'+15% slow potency',       stat:'slow',      per:0.15, max:4, cost:2 },
-      { id:'f_core', name:'Frozen Heart',  desc:'+8% Crystal max HP',      stat:'ward',      per:0.08, max:6, cost:2 },
+      { id:'rv_ward', name:'Bone Aegis',    icon:'🛡️', desc:'+10% Crystal max HP',      stat:'ward',      per:0.10, max:8, cost:1, ang:270 },
+      { id:'rv_reduce',name:'Grave Ward',   icon:'🧱', desc:'Crystal takes -4% damage', stat:'dmgReduce', per:0.04, max:6, cost:2, ang:330 },
+      { id:'rv_regen',name:'Undying',       icon:'♻️', desc:'+0.3%/s Crystal regen',    stat:'regen',     per:0.003,max:4, cost:2, ang:30  },
+      { id:'rv_gold', name:'Soul Harvest',  icon:'🪙', desc:'+8% gold from kills',      stat:'gold',      per:0.08, max:8, cost:2, ang:90  },
+      { id:'rv_hp',   name:'Rotten Heart',  icon:'❤️', desc:'+8% Crystal max HP',       stat:'ward',      per:0.08, max:6, cost:2, ang:150 },
+      { id:'rv_eter', name:'Eternal Return',icon:'🩸', desc:'+0.3%/s Crystal regen',    stat:'regen',     per:0.003,max:4, cost:3, ang:210, req:{id:'rv_regen',lv:2} },
     ] },
-  aurum: { name:'Aurumite', icon:'🪙', color:'#ffd75e', tag:'Merchant',
-    desc:'A wealth engine — turn gold into overwhelming power.',
+  celestial: { name:'Celestial', icon:'✨', color:'#ffd75e', tag:'Radiant',
+    desc:'Divine fortune — pristine crits, gold and prestige gains.',
     nodes:[
-      { id:'a_gold', name:'Midas Touch',    desc:'+8% gold from kills',       stat:'gold',   per:0.08, max:10, cost:1 },
-      { id:'a_luck', name:'Golden Fortune', desc:'+1% golden-enemy chance',   stat:'golden', per:0.01, max:5,  cost:2 },
-      { id:'a_dmg',  name:'Gilded Arms',    desc:'+3% hero damage',           stat:'dmg',    per:0.03, max:6,  cost:2 },
-      { id:'a_hord', name:'Dragon Hoard',   desc:'+10% gold from kills',      stat:'gold',   per:0.10, max:6,  cost:2 },
+      { id:'ce_crit', name:'Divine Focus', icon:'🎯', desc:'+3% critical chance',     stat:'crit',      per:0.03, max:6, cost:1, ang:270 },
+      { id:'ce_judge',name:'Judgment',     icon:'🌟', desc:'+4% critical chance',     stat:'crit',      per:0.04, max:4, cost:3, ang:330, req:{id:'ce_crit',lv:3} },
+      { id:'ce_gold', name:'Blessing',     icon:'🪙', desc:'+8% gold from kills',     stat:'gold',      per:0.08, max:8, cost:2, ang:30  },
+      { id:'ce_luck', name:'Fortune',      icon:'🍀', desc:'+1% golden-enemy chance', stat:'golden',    per:0.01, max:5, cost:2, ang:90  },
+      { id:'ce_dmg',  name:'Radiance',     icon:'⚔️', desc:'+4% hero damage',         stat:'dmg',       per:0.04, max:8, cost:2, ang:150 },
+      { id:'ce_shrd', name:'Ascension',    icon:'💠', desc:'+8% shards from Reseal',  stat:'shardGain', per:0.08, max:5, cost:3, ang:210, req:{id:'ce_gold',lv:3} },
+    ] },
+  human: { name:'Human', icon:'⚜️', color:'#7bd3ff', tag:'Versatile',
+    desc:'Adaptable — a balanced hand in offense, defense and economy.',
+    nodes:[
+      { id:'hu_dmg',  name:'Discipline', icon:'⚔️', desc:'+4% hero damage',    stat:'dmg',   per:0.04, max:8, cost:1, ang:270 },
+      { id:'hu_ward', name:'Bastion',    icon:'🛡️', desc:'+8% Crystal max HP', stat:'ward',  per:0.08, max:6, cost:2, ang:330 },
+      { id:'hu_gold', name:'Trade',      icon:'🪙', desc:'+6% gold from kills',stat:'gold',  per:0.06, max:8, cost:2, ang:30  },
+      { id:'hu_slow', name:'Tactics',    icon:'❄️', desc:'+12% slow potency',  stat:'slow',  per:0.12, max:4, cost:2, ang:90  },
+      { id:'hu_crit', name:'Precision',  icon:'🎯', desc:'+3% critical chance',stat:'crit',  per:0.03, max:5, cost:2, ang:150 },
+      { id:'hu_rally',name:'Rally',      icon:'🎖️', desc:'+5% hero damage',    stat:'dmg',   per:0.05, max:5, cost:3, ang:210, req:{id:'hu_dmg',lv:3} },
     ] },
 };
 const raceUnlocked = () => dispStage(S.bestWave) >= RACE_STAGE;
-const raceNodes = () => (S && S.race && RACES[S.race]) ? RACES[S.race].nodes : [];
+const raceValid = () => !!(S && S.race && RACES[S.race]);
+const raceNodes = () => raceValid() ? RACES[S.race].nodes : [];
 const raceLvl = id => (S && S.raceTree && S.raceTree[id]) || 0;
+const raceNodeLocked = n => n.req && raceLvl(n.req.id) < n.req.lv;
 function raceBonus(stat){
   let v = 0;
   for (const n of raceNodes()) if (n.stat === stat) v += n.per * raceLvl(n.id);
@@ -555,7 +575,7 @@ function autoUpgradeStep(){
 }
 function tryOverdrive(){
   if (odActive() || odCharge < 1) return false;
-  odCharge = 0; odT = OD_DUR;
+  odCharge = 0; odT = OD_DUR + raceBonus('odDur');   // Emberkin Overload extends it
   toast('⚡ OVERDRIVE! ×2 damage, ×1.5 attack speed');
   spawnParticles(view.w/2, view.ground - 60, 'holy', 2.2);
   GA('prestige');
@@ -901,6 +921,8 @@ function simulate(dt){
   if (partyBuffT > 0) partyBuffT -= dt;
   if (talent('regen') > 0 && S.crystalHp > 0)
     S.crystalHp = Math.min(1, S.crystalHp + 0.001 * talent('regen') * dt);
+  if (raceBonus('regen') > 0 && S.crystalHp > 0)                 // Frostborn Everfrost
+    S.crystalHp = Math.min(1, S.crystalHp + raceBonus('regen') * dt);
 
   // spawn
   if (spawnedThisWave < totalToSpawn){
@@ -1929,8 +1951,10 @@ function doPrestige(){
       <button class="btn" id="cancPrestige" style="flex:1">Cancel</button>
     </div>`);
   el('confPrestige').onclick = () => {
+    const shardBonus = Math.floor(gain * raceBonus('shardGain'));   // race shard bonus (Celestial Ascension)
+    if (shardBonus > 0) toast(`💠 Race bonus: +${shardBonus} shards`);
     const keep = {
-      shards: S.shards + gain, shardsEarned: S.shardsEarned + gain,
+      shards: S.shards + gain + shardBonus, shardsEarned: S.shardsEarned + gain,
       shardUpg: S.shardUpg, totalGoldEarned: S.totalGoldEarned,
       bestWave: S.bestWave, totalKills: S.totalKills, goldenKills: S.goldenKills,
       prestiges: S.prestiges + 1, achievements: S.achievements,
@@ -2332,19 +2356,30 @@ if (el('btnTalents')) el('btnTalents').onclick = openTalents;
 
 // Race panel — pick a race (once), then spend Talent Points on its tech tree.
 function pickRace(id){
-  if (!RACES[id] || S.race) return;
-  S.race = id;
+  if (!RACES[id] || raceValid()) return;          // raceValid guards a stale/old race id too
+  S.race = id; S.raceTree = {};
   GA('prestige'); spawnParticles(view.w/2, view.h*0.4, 'holy', 2.2);
   toast(`${RACES[id].icon} You are now ${RACES[id].name}!`);
   save(); openRace(); updateHud();
 }
+let raceSel = null;   // focused tree node id (for the radial UI)
 function buyRaceNode(nid){
   const n = raceNodes().find(x => x.id === nid); if (!n) return;
   const lvl = raceLvl(nid);
-  if (lvl >= n.max || S.talentPoints < n.cost) return;
+  if (raceNodeLocked(n) || lvl >= n.max || S.talentPoints < n.cost) return;
   S.talentPoints -= n.cost;
   S.raceTree[nid] = lvl + 1;
   GA('upgrade'); save(); openRace(); updateHud();
+}
+const RACE_RESPEC_COST = 3;   // shards to switch race (refunds all race-tree TP)
+function respecRace(){
+  if (!S.race || S.shards < RACE_RESPEC_COST) return;
+  let refund = 0;
+  for (const n of raceNodes()) refund += raceLvl(n.id) * n.cost;   // give back everything spent
+  S.talentPoints += refund; S.shards -= RACE_RESPEC_COST;
+  S.race = null; S.raceTree = {};
+  toast(`🔄 Race reset — refunded ${refund}🌳 (−${RACE_RESPEC_COST}💠)`);
+  GA('prestige'); save(); openRace(); updateHud();
 }
 function openRace(){
   if (!raceUnlocked()){
@@ -2355,7 +2390,7 @@ function openRace(){
       <button class="btn" id="closeRace" style="width:100%;margin-top:12px">Close</button>`);
     el('closeRace').onclick = closeModal; return;
   }
-  if (!S.race){                                   // race picker (one-time choice)
+  if (!raceValid()){                              // no race yet (or stale id) → picker
     const cards = Object.entries(RACES).map(([id, r]) => `
       <div class="ks" style="--kc:${r.color}" data-race="${id}">
         <span class="ks-ic">${r.icon}</span>
@@ -2380,22 +2415,61 @@ function openRace(){
     });
     return;
   }
+  // ---- radial hex tree ----
   const r = RACES[S.race];
-  const rows = r.nodes.map(n => {
-    const lvl = raceLvl(n.id), maxed = lvl >= n.max, afford = S.talentPoints >= n.cost && !maxed;
-    return `<div class="shard-item">
-      <div class="info"><b>${n.name}</b> — ${n.desc}
-        <div class="lv">Lv ${lvl}/${n.max}</div></div>
-      <button class="btn" data-rn="${n.id}" ${afford?'':'disabled'}>${maxed?'MAX':'🌳 '+n.cost}</button>
-    </div>`;
+  if (!r.nodes.some(n => n.id === raceSel)) raceSel = null;
+  const C = 180, R1 = 120, DEG = Math.PI/180;         // 360-unit space; center + ring radius
+  const pos = n => ({ x: C + R1*Math.cos(n.ang*DEG), y: C + R1*Math.sin(n.ang*DEG) });
+  const byId = id => r.nodes.find(n => n.id === id);
+  // connector lines: centre→node, plus req→node for gated ones
+  const lines = r.nodes.map(n => {
+    const p = pos(n); let s = `<line x1="${C}" y1="${C}" x2="${p.x}" y2="${p.y}" class="rt-link ${raceLvl(n.id)>0?'on':''}"/>`;
+    if (n.req){ const q = pos(byId(n.req.id)); s += `<line x1="${q.x}" y1="${q.y}" x2="${p.x}" y2="${p.y}" class="rt-link ${raceNodeLocked(n)?'':'on'}" stroke-dasharray="4 3"/>`; }
+    return s;
   }).join('');
-  openModal(`<h2>${r.icon} ${r.name} — ${r.tag}</h2>
-    <p>${r.desc} Spend 🌳 Talent Points on your race tree. You have
-       <b style="color:var(--hp)">${S.talentPoints} TP</b>.</p>
-    <div class="shard-shop">${rows}</div>
-    <button class="btn" id="closeRace" style="width:100%">Close</button>`);
-  el('closeRace').onclick = closeModal;
-  el('modalBox').querySelectorAll('[data-rn]').forEach(btn => btn.onclick = () => buyRaceNode(btn.dataset.rn));
+  const nodes = r.nodes.map(n => {
+    const p = pos(n), lvl = raceLvl(n.id), maxed = lvl>=n.max, locked = raceNodeLocked(n);
+    const cls = ['rt-node', lvl>0?'has':'', maxed?'max':'', locked?'locked':'', raceSel===n.id?'sel':''].join(' ');
+    return `<div class="${cls}" style="left:${p.x/3.6}%;top:${p.y/3.6}%;--rc:${r.color}" data-rn="${n.id}">
+      <div class="rt-hex"></div><span class="rt-ic">${locked?'🔒':n.icon}</span>
+      <span class="rt-badge">${lvl}${maxed?'':'/'+n.max}</span></div>`;
+  }).join('');
+  // info panel for the focused node
+  const sel = raceSel && byId(raceSel);
+  let info;
+  if (sel){
+    const lvl = raceLvl(sel.id), maxed = lvl>=sel.max, locked = raceNodeLocked(sel);
+    const canBuy = !locked && !maxed && S.talentPoints >= sel.cost;
+    info = `<div class="rt-info"><div><b>${sel.name}</b> <span style="color:var(--muted)">Lv ${lvl}/${sel.max}</span>
+        <div style="font-size:12px;color:var(--muted)">${locked?`🔒 Requires <b>${byId(sel.req.id).name}</b> Lv ${sel.req.lv}`:sel.desc}</div></div>
+      <button class="btn" id="rtBuy" ${canBuy?'':'disabled'} style="min-width:88px">${maxed?'MAX':(locked?'Locked':'🌳 '+sel.cost)}</button></div>`;
+  } else {
+    info = `<div class="rt-info" style="color:var(--muted);justify-content:center">Tap a node to view & upgrade it.</div>`;
+  }
+  openModal(`<h2>${r.icon} ${r.name} <span style="font-size:13px;color:var(--muted)">· ${r.tag}</span></h2>
+    <p style="margin:0 0 4px">Spend 🌳 on your race tree — you have <b style="color:var(--hp)">${S.talentPoints} TP</b>.</p>
+    <div class="racetree">
+      <svg class="rt-links" viewBox="0 0 360 360" preserveAspectRatio="xMidYMid meet">${lines}</svg>
+      <div class="rt-center" style="--rc:${r.color}"><span style="font-size:22px">${r.icon}</span><span style="font-size:9px">${r.name}</span></div>
+      ${nodes}
+    </div>
+    ${info}
+    <button class="btn" id="respecRace" ${S.shards>=RACE_RESPEC_COST?'':'disabled'}
+      style="width:100%;margin-top:8px;background:#2c1a3a;border-color:#7a3cc0;color:#e0c6ff">🔄 Change Race — ${RACE_RESPEC_COST}💠 (refunds 🌳)</button>
+    <button class="btn" id="closeRace" style="width:100%;margin-top:6px">Close</button>`);
+  el('closeRace').onclick = () => { raceSel = null; closeModal(); };
+  el('modalBox').querySelectorAll('[data-rn]').forEach(nd => nd.onclick = () => { raceSel = nd.dataset.rn; openRace(); });
+  if (el('rtBuy')) el('rtBuy').onclick = () => buyRaceNode(raceSel);
+  el('respecRace').onclick = () => {
+    openModal(`<h2>🔄 Change Race?</h2>
+      <p>Costs <b>${RACE_RESPEC_COST}💠</b> and refunds every 🌳 spent in your race tree,
+         then lets you choose a new race.</p>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn" id="ryes" style="flex:1;background:#7a3cc0;border-color:#7a3cc0">Confirm</button>
+        <button class="btn" id="rno" style="flex:1">Back</button></div>`);
+    el('ryes').onclick = respecRace;
+    el('rno').onclick = openRace;
+  };
 }
 if (el('btnRace')) el('btnRace').onclick = openRace;
 
