@@ -195,6 +195,10 @@ const ENEMY_TYPES = {
   shade:   { hp:0.9, spd:54, size:0.95, gold:2, element:'void',   sprite:'specter', slowImmune:true, float:true },
   brute:   { hp:3.2, spd:17, size:1.6,  gold:3, element:'physical', armor:0.20, sprite:'skeleton' },
   revenant:{ hp:2.6, spd:21, size:1.4,  gold:3, element:'lightning', sprite:'skeleton' },
+  // ---- Stage 15+ monsters (own sprites) ----
+  gargoyle: { hp:3.4, spd:32, size:1.35, gold:3, element:'earth',    armor:0.22, float:true, sprite:'gargoyle'  },
+  manticore:{ hp:3.6, spd:44, size:1.4,  gold:4, element:'fire',     sprite:'manticore' },
+  minotaur: { hp:6.4, spd:15, size:1.8,  gold:5, element:'physical', armor:0.32, sprite:'minotaur'  },
 };
 // Element matchups: attacking an enemy with its `weak` element deals +60%,
 // with its `resist` element deals -50%. Bosses: dragon=fire, elderghost=void.
@@ -405,7 +409,8 @@ function elemVs(enemyEl, atkEl){
 }
 // which bestiary monster each enemy type uses (falls back to canvas art)
 const ENEMY_SPRITE = { normal:'slime', fast:'zombie', runner:'zombie', tank:'skeleton', golem:'skeleton', wraith:'specter',
-  imp:'slime', frostkin:'specter', venom:'zombie', shade:'specter', brute:'skeleton', revenant:'skeleton' };
+  imp:'slime', frostkin:'specter', venom:'zombie', shade:'specter', brute:'skeleton', revenant:'skeleton',
+  gargoyle:'gargoyle', manticore:'manticore', minotaur:'minotaur' };
 const SLOW_FACTOR = 0.42;              // movement multiplier while frozen
 const BURN_DUR = 1.6;                  // seconds an enemy shows the burning FX
 const PARTY_BUFF_MUL = 1.30;           // Aunel's Dawn Blessing damage buff
@@ -776,6 +781,7 @@ function pickType(w){
   if (st >= 9)  pool.push('venom');
   if (st >= 11) pool.push('shade');
   if (st >= 14) pool.push('brute');
+  if (st >= 15) pool.push('gargoyle', 'manticore', 'minotaur');
   if (st >= 18) pool.push('revenant');
   return pool[Math.floor(Math.random() * pool.length)];
 }
@@ -2856,6 +2862,16 @@ const BESTIARY = [
     ability:'Armoured heavy — appears from Stage 14' },
   { sprite:'skeleton', variant:true, tint:'#ffe066', name:'Revenant',    lv:18, hp:52, mp:16, el:'LIGHTNING', fc:'#ffd75e',
     ability:'A charged skeleton — appears from Stage 18' },
+  // Stage 15+ monsters with their own sprites
+  { sprite:'gargoyle',  name:'Stone Gargoyle', lv:15, hp:75,  mp:12, el:'EARTH',    fc:'#9aa6b8',
+    ability:'Armoured flyer — appears from Stage 15',
+    lore:'A winged stone sentinel that glides over the front line, hard as rock.' },
+  { sprite:'manticore', name:'Manticore',      lv:16, hp:85,  mp:24, el:'FIRE',     fc:'#d98a3c',
+    ability:'Swift fanged beast — appears from Stage 15',
+    lore:'A lion-bodied horror with bat wings and a barbed tail. Terrifyingly fast.' },
+  { sprite:'minotaur',  name:'Minotaur',       lv:16, hp:130, mp:14, el:'PHYSICAL', fc:'#b07a4a',
+    ability:'Heavy axe bruiser — appears from Stage 15',
+    lore:'A towering axe-wielder that cleaves straight through the defenders.' },
 ];
 
 // draw the monster's real sprite (sheet frame 0) into a codex portrait canvas.
