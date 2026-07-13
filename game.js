@@ -1549,12 +1549,22 @@ function resize(){
   const wrap = canvas.parentElement;
   dpr = Math.min(window.devicePixelRatio || 1, 2);
   const cw = wrap.clientWidth, ch = wrap.clientHeight;
+  const old = { cx: view.crystalX, right: view.laneRight };   // lane before the change
   canvas.width = cw * dpr; canvas.height = ch * dpr;
   ctx.setTransform(dpr,0,0,dpr,0,0);
   view.w = cw; view.h = ch;
   view.ground = ch * 0.78;
   view.crystalX = cw * 0.14;
   view.laneRight = cw - 20;
+  // enemies store absolute pixel positions — remap them onto the new lane so a
+  // rotation/resize keeps every monster at the same RELATIVE spot (no teleport)
+  const oldSpan = old.right - old.cx, newSpan = view.laneRight - view.crystalX;
+  if (typeof enemies !== 'undefined' && enemies.length && oldSpan > 0 && Math.abs(newSpan - oldSpan) > 0.5){
+    for (const e of enemies){
+      if (Number.isFinite(e.x)) e.x = view.crystalX + (e.x - old.cx) * (newSpan / oldSpan);
+      e.y = view.ground;                       // ground-locked (flyers get their lift at draw time)
+    }
+  }
 }
 window.addEventListener('resize', resize);
 // orientation flips can fire before the new viewport size settles — resize again after it does
