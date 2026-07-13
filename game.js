@@ -2309,7 +2309,7 @@ function openModal(html){
   box.scrollTop = keep;
 }
 function closeModal(){
-  el('modal').classList.remove('show'); el('modalBox').classList.remove('wide');
+  el('modal').classList.remove('show'); el('modalBox').classList.remove('wide','racebig');
   if (unlockQueue.length) setTimeout(flushUnlockPopup, 80);   // show any queued unlock popup next
 }
 el('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
@@ -2794,6 +2794,7 @@ function openRace(){
         <div class="ks-lock-msg">${tf('race.lockmsg',{n:RACE_STAGE})}</div>
         <div class="ks-lock-sub">${tf('race.locksub',{n:dispStage(S.bestWave)})}</div></div>
       <button class="btn" id="closeRace" style="width:100%;margin-top:12px">${t('set.close')}</button>`);
+    el('modalBox').classList.add('racebig');
     el('closeRace').onclick = closeModal; return;
   }
   if (!raceValid()){                              // no race yet (or stale id) → picker
@@ -2807,6 +2808,7 @@ function openRace(){
       <p>${t('race.choose.d')}</p>
       <div class="ks-list">${cards}</div>
       <button class="btn" id="closeRace" style="width:100%;margin-top:8px">${t('race.later')}</button>`);
+    el('modalBox').classList.add('racebig');
     el('closeRace').onclick = closeModal;
     el('modalBox').querySelectorAll('[data-race]').forEach(n => n.onclick = () => {
       const id = n.dataset.race;
@@ -2847,8 +2849,8 @@ function openRace(){
     const lvl = raceLvl(sel.id), maxed = lvl>=sel.max, locked = raceNodeLocked(sel);
     const canBuy = !locked && !maxed && S.talentPoints >= sel.cost;
     info = `<div class="rt-info"><div><b>${sel.name}</b> <span style="color:var(--muted)">Lv ${lvl}/${sel.max}</span>
-        <div style="font-size:12px;color:var(--muted)">${locked?`🔒 <b>${byId(sel.req.id).name}</b> Lv ${sel.req.lv} ${t('race.req')}`:L(sel,'desc')}</div></div>
-      <button class="btn" id="rtBuy" ${canBuy?'':'disabled'} style="min-width:88px">${maxed?'MAX':(locked?t('race.lockedbtn'):'🌳 '+sel.cost)}</button></div>`;
+        <div style="font-size:13.5px;color:var(--muted)">${locked?`🔒 <b>${byId(sel.req.id).name}</b> Lv ${sel.req.lv} ${t('race.req')}`:L(sel,'desc')}</div></div>
+      <button class="btn" id="rtBuy" ${canBuy?'':'disabled'} style="min-width:96px;font-size:14px">${maxed?'MAX':(locked?t('race.lockedbtn'):'🌳 '+sel.cost)}</button></div>`;
   } else {
     info = `<div class="rt-info" style="color:var(--muted);justify-content:center">${t('race.tap')}</div>`;
   }
@@ -2856,13 +2858,14 @@ function openRace(){
     <p style="margin:0 0 4px">${tf('race.spend',{n:S.talentPoints})}</p>
     <div class="racetree">
       <svg class="rt-links" viewBox="0 0 360 360" preserveAspectRatio="xMidYMid meet">${lines}</svg>
-      <div class="rt-center" style="--rc:${r.color}"><span style="font-size:22px">${r.icon}</span><span style="font-size:9px">${r.name}</span></div>
+      <div class="rt-center" style="--rc:${r.color}"><span style="font-size:28px">${r.icon}</span><span style="font-size:11px">${r.name}</span></div>
       ${nodes}
     </div>
     ${info}
     <button class="btn" id="respecRace" ${S.shards>=RACE_RESPEC_COST?'':'disabled'}
       style="width:100%;margin-top:8px;background:#2c1a3a;border-color:#7a3cc0;color:#e0c6ff">${tf('race.change',{c:RACE_RESPEC_COST})}</button>
     <button class="btn" id="closeRace" style="width:100%;margin-top:6px">${t('set.close')}</button>`);
+  el('modalBox').classList.add('racebig');
   el('closeRace').onclick = () => { raceSel = null; closeModal(); };
   el('modalBox').querySelectorAll('[data-rn]').forEach(nd => nd.onclick = () => { raceSel = nd.dataset.rn; openRace(); });
   if (el('rtBuy')) el('rtBuy').onclick = () => buyRaceNode(raceSel);
