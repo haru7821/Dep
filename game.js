@@ -196,9 +196,8 @@ const ENEMY_TYPES = {
   brute:   { hp:3.2, spd:17, size:1.6,  gold:3, element:'physical', armor:0.20, sprite:'skeleton' },
   revenant:{ hp:2.6, spd:21, size:1.4,  gold:3, element:'lightning', sprite:'skeleton' },
   // ---- Stage 15+ monsters (own sprites) ----
-  minotaur: { hp:5.5, spd:19, size:1.7,  gold:4, element:'physical',  armor:0.28, sprite:'minotaur' },
-  harpy:    { hp:2.4, spd:52, size:1.2,  gold:4, element:'lightning', float:true, sprite:'harpy'    },
-  ogre:     { hp:7.5, spd:13, size:1.95, gold:6, element:'earth',     armor:0.38, sprite:'ogre'     },
+  harpy:    { hp:2.4, spd:52, size:1.2,  gold:4, element:'lightning', float:true, fly:0.55, sprite:'harpy' },  // flies through the air
+  ogre:     { hp:7.5, spd:13, size:1.95, gold:6, element:'earth',     armor:0.38, sprite:'ogre'  },
 };
 // Element matchups: attacking an enemy with its `weak` element deals +60%,
 // with its `resist` element deals -50%. Bosses: dragon=fire, elderghost=void.
@@ -410,7 +409,7 @@ function elemVs(enemyEl, atkEl){
 // which bestiary monster each enemy type uses (falls back to canvas art)
 const ENEMY_SPRITE = { normal:'slime', fast:'zombie', runner:'zombie', tank:'skeleton', golem:'skeleton', wraith:'specter',
   imp:'slime', frostkin:'specter', venom:'zombie', shade:'specter', brute:'skeleton', revenant:'skeleton',
-  minotaur:'minotaur', harpy:'harpy', ogre:'ogre' };
+  harpy:'harpy', ogre:'ogre' };
 const SLOW_FACTOR = 0.42;              // movement multiplier while frozen
 const BURN_DUR = 1.6;                  // seconds an enemy shows the burning FX
 const PARTY_BUFF_MUL = 1.30;           // Aunel's Dawn Blessing damage buff
@@ -781,7 +780,7 @@ function pickType(w){
   if (st >= 9)  pool.push('venom');
   if (st >= 11) pool.push('shade');
   if (st >= 14) pool.push('brute');
-  if (st >= 15) pool.push('minotaur', 'harpy', 'ogre');
+  if (st >= 15) pool.push('harpy', 'ogre');
   if (st >= 18) pool.push('revenant');
   return pool[Math.floor(Math.random() * pool.length)];
 }
@@ -1723,8 +1722,12 @@ function draw(now){
     // fade in over the first second so it reads as "arriving" (not yet targetable)
     ctx.save();
     ctx.globalAlpha = Math.min(1, 0.3 + 0.7 * ((e.age || 0) / ENGAGE_DELAY));
+    // airborne lift (fly = fraction of sprite height; float = small hover)
+    const floatOff = t.fly ? (th*t.fly + Math.sin(now/320 + e.x*0.05)*th*0.07)
+                   : (t.float ? (10 + Math.sin(now/300)*4) : 0);
     if (window.Sheets && sid){
-      let ax = e.x, aby = e.y, ath = th;
+      let ax = e.x, aby = e.y - floatOff, ath = th;
+      by = aby;                                   // keep hp-bar / overlays with the sprite
       if (e.boss && e.bossKind === 'dragon'){
         aby = e.y + Math.sin(now/320 + e.x*0.05) * es * 0.45;      // gentle hover
         ath = th * (1 + 0.03*Math.sin(now/260) + 0.14*(e.lunge||0)); // breathing + lunge grow
@@ -1763,7 +1766,6 @@ function draw(now){
       }
     }
     if (!drew && !sheetPending(sid)){        // skip low-res fallback while the HD sheet is still loading
-      const floatOff = t.float ? (10 + Math.sin(now/300)*4) : 0;
       by = e.y - floatOff;
       if (e.boss){ if (Spr().drawBoss) Spr().drawBoss(ctx, e.x, by, es, e.frame); else drawFallbackChar(e.x, by, es, '#b3407a'); }
       else if (Spr().drawEnemy) Spr().drawEnemy(ctx, e.x, by, es, e.type, e.frame, e.hp/e.maxHp);
@@ -2863,9 +2865,6 @@ const BESTIARY = [
   { sprite:'skeleton', variant:true, tint:'#ffe066', name:'Revenant',    lv:18, hp:52, mp:16, el:'LIGHTNING', fc:'#ffd75e',
     ability:'A charged skeleton — appears from Stage 18' },
   // Stage 15+ monsters with their own sprites
-  { sprite:'minotaur',  name:'Minotaur',  lv:16, hp:130, mp:14, el:'PHYSICAL',  fc:'#b07a4a',
-    ability:'Heavy axe bruiser — appears from Stage 15',
-    lore:'A towering axe-wielder that cleaves straight through the defenders.' },
   { sprite:'harpy',     name:'Harpy',     lv:15, hp:70,  mp:20, el:'LIGHTNING', fc:'#c9a24a',
     ability:'Swift storm flyer — appears from Stage 15',
     lore:'A winged predator that dives from above on howling winds. Fast and slippery.' },

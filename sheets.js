@@ -53,10 +53,13 @@ window.Sheets = (function () {
     elderghost: { file:'elderghost.png', rows:2, cols:5,  fit:1.0, flip:true, anim:bmob(3,5)  },  // Boss (dark)
     // Stage 15+ monsters (sliced from uploaded sheets → idle row0 / attack row1).
     // Art faces right; enemies march left, so flip to face their travel direction.
-    // 3-pose sheets: 1 idle frame, 2 attack frames.
-    minotaur:   { file:'minotaur.png',   rows:2, cols:2,  fit:1.15, flip:true, anim:bmob(1,2) },  // heavy axe bruiser
-    harpy:      { file:'harpy.png',      rows:2, cols:2,  fit:1.1,  flip:true, anim:bmob(1,2) },  // swift storm flyer
-    ogre:       { file:'ogre.png',       rows:2, cols:2,  fit:1.2,  flip:true, anim:bmob(1,2) },  // club-swinging brute
+    // 3-pose sheets: 1 idle frame (row0) + 2 attack frames (row1). Harpy & Ogre
+    // map EVERY state to the attack row so they play their attack motion while
+    // marching (not just at the crystal).
+    harpy: { file:'harpy.png', rows:2, cols:2, fit:1.1, flip:true,   // swift storm flyer
+      anim:{ idle:{row:1,frames:2,fps:8}, walk:{row:1,frames:2,fps:8}, attack:{row:1,frames:2,fps:9}, cast:{row:1,frames:2,fps:9} } },
+    ogre:  { file:'ogre.png',  rows:2, cols:2, fit:1.2, flip:true,   // club-swinging brute
+      anim:{ idle:{row:1,frames:2,fps:5}, walk:{row:1,frames:2,fps:5}, attack:{row:1,frames:2,fps:6}, cast:{row:1,frames:2,fps:6} } },
   };
 
   const imgs = {};   // id -> { img, ok, failed }
