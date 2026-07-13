@@ -1555,6 +1555,8 @@ function resize(){
   view.laneRight = cw - 20;
 }
 window.addEventListener('resize', resize);
+// orientation flips can fire before the new viewport size settles — resize again after it does
+window.addEventListener('orientationchange', () => setTimeout(resize, 250));
 
 function drawFallbackChar(x, y, size, color){
   ctx.fillStyle = color;

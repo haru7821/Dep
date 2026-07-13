@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Echoes of the Aether Crystal — 방치형 디펜스</title>
 <style>
   :root{
@@ -78,6 +78,34 @@
     .spd{width:100%;margin-left:0;justify-content:flex-end}
   }
   @media (max-width:380px){ .hero-card{min-width:120px} }
+  /* phones: controls collapse to ONE horizontally-scrollable row (saves ~80px) */
+  @media (max-width:600px), (max-height:480px){
+    .controls{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
+      padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+    .controls::-webkit-scrollbar{display:none}
+    .controls .btn{flex:0 0 auto;white-space:nowrap}
+    .spd{width:auto;margin-left:auto;flex:0 0 auto}
+  }
+  /* landscape phones: compress header/panel/controls so the battlefield stays big */
+  @media (orientation:landscape) and (max-height:480px){
+    #game{max-width:none}
+    header{padding:3px calc(10px + env(safe-area-inset-left)) 3px calc(10px + env(safe-area-inset-right));gap:8px;flex-wrap:nowrap}
+    header h1{display:none}
+    .stats{margin-left:0;gap:10px;font-size:11.5px;width:auto;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+    .stats::-webkit-scrollbar{display:none}
+    .hpbar{width:64px;height:12px}
+    .panel{padding:4px 6px}
+    .hero-card{min-width:100px;padding:4px 7px}
+    .hero-card .role,.hero-card .skill-row{display:none}
+    .hero-card h3{font-size:11px;margin:0}
+    .hero-card .stat-row{font-size:9.5px}
+    .cd-bar{margin-top:2px;height:3px}
+    .buy{margin-top:3px;padding:3px;font-size:10.5px}
+    .buy small{display:inline;font-size:9px;margin-left:3px}
+    .controls{padding:4px 6px calc(4px + env(safe-area-inset-bottom))}
+    .controls .btn{padding:5px 8px;font-size:10.5px}
+    .modal .box{max-height:96vh;padding:12px 14px}
+  }
   .modal{position:fixed;inset:0;background:rgba(4,6,15,.82);display:none;
     align-items:center;justify-content:center;z-index:30;padding:16px}
   .modal.show{display:flex}
@@ -309,15 +337,15 @@
   <div class="box" id="modalBox"></div>
 </div>
 
-<script src="sprites.js?v=103"></script>
-<script src="dungeon.js?v=103"></script>
-<script src="sheets.js?v=103"></script>
-<script src="audio.js?v=103"></script>
+<script src="sprites.js?v=104"></script>
+<script src="dungeon.js?v=104"></script>
+<script src="sheets.js?v=104"></script>
+<script src="audio.js?v=104"></script>
 <!-- Portal SDKs: uncomment ONE when shipping to that portal. Without any SDK
      the game falls back to a built-in test-ad overlay (Ads layer, ads.js).
 <script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script>
 <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
 <script src="https://html5.api.gamedistribution.com/main.min.js" data-gd-sdk></script>
 -->
-<script src="ads.js?v=103"></script>
-<script src="game.js?v=103"></script>
+<script src="ads.js?v=104"></script>
+<script src="game.js?v=104"></script>
