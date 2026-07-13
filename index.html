@@ -123,8 +123,11 @@
     width:58px;height:58px;border-radius:50%;border:2px solid var(--rc);
     background:radial-gradient(circle,color-mix(in srgb,var(--rc) 25%,transparent),transparent);
     display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--rc);font-weight:800}
-  .rt-node{position:absolute;width:15%;aspect-ratio:1;transform:translate(-50%,-50%);z-index:2;
+  .rt-node{position:absolute;width:13%;aspect-ratio:1;transform:translate(-50%,-50%);z-index:2;
     display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .rt-node.rt-cap{width:16%;z-index:3}
+  .rt-node.rt-cap .rt-hex{filter:drop-shadow(0 0 7px var(--rc))}
+  .rt-node.rt-cap .rt-ic{font-size:18px}
   .rt-hex{position:absolute;inset:0;background:var(--rc);
     clip-path:polygon(25% 5%,75% 5%,98% 50%,75% 95%,25% 95%,2% 50%)}
   .rt-hex::after{content:'';position:absolute;inset:2px;background:var(--panel2);
@@ -286,8 +289,8 @@
   <div class="box" id="modalBox"></div>
 </div>
 
-<script src="sprites.js?v=87"></script>
-<script src="dungeon.js?v=87"></script>
-<script src="sheets.js?v=87"></script>
-<script src="audio.js?v=87"></script>
-<script src="game.js?v=87"></script>
+<script src="sprites.js?v=88"></script>
+<script src="dungeon.js?v=88"></script>
+<script src="sheets.js?v=88"></script>
+<script src="audio.js?v=88"></script>
+<script src="game.js?v=88"></script>

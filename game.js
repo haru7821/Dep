@@ -88,6 +88,10 @@ const I18N = {
     rv_ward:{desc:'크리스탈 최대 체력 +10%'}, rv_reduce:{desc:'크리스탈 피해 −4%'}, rv_regen:{desc:'크리스탈 재생 +0.3%/초'}, rv_gold:{desc:'처치 골드 +8%'}, rv_hp:{desc:'크리스탈 최대 체력 +8%'}, rv_eter:{desc:'크리스탈 재생 +0.3%/초'},
     ce_crit:{desc:'치명타 확률 +3%'}, ce_judge:{desc:'치명타 확률 +4%'}, ce_gold:{desc:'처치 골드 +8%'}, ce_luck:{desc:'황금 적 확률 +1%'}, ce_dmg:{desc:'영웅 피해 +4%'}, ce_shrd:{desc:'재봉인 샤드 +8%'},
     hu_dmg:{desc:'영웅 피해 +4%'}, hu_ward:{desc:'크리스탈 최대 체력 +8%'}, hu_gold:{desc:'처치 골드 +6%'}, hu_slow:{desc:'둔화 효과 +12%'}, hu_crit:{desc:'치명타 확률 +3%'}, hu_rally:{desc:'영웅 피해 +5%'},
+    ab_r2a:{desc:'영웅 피해 +6%'}, ab_r2b:{desc:'치명타 확률 +4%'}, ab_r2c:{desc:'보스 피해 +10%'}, ab_cap:{desc:'치명타 피해 +0.2×'},
+    rv_r2a:{desc:'크리스탈 최대 체력 +12%'}, rv_r2b:{desc:'크리스탈 재생 +0.4%/초'}, rv_r2c:{desc:'크리스탈 피해 −3%'}, rv_cap:{desc:'크리스탈 재생 +0.5%/초'},
+    ce_r2a:{desc:'치명타 확률 +4%'}, ce_r2b:{desc:'처치 골드 +10%'}, ce_r2c:{desc:'영웅 피해 +5%'}, ce_cap:{desc:'재봉인 샤드 +15%'},
+    hu_r2a:{desc:'영웅 피해 +5%'}, hu_r2b:{desc:'처치 골드 +8%'}, hu_r2c:{desc:'치명타 확률 +4%'}, hu_cap:{desc:'영웅 피해 +8%'},
     // relic rarities
     common:{name:'일반'}, rare:{name:'희귀'}, epic:{name:'영웅'}, legendary:{name:'전설'}, mythic:{name:'신화'},
   },
@@ -109,6 +113,10 @@ const I18N = {
     rv_ward:{desc:'クリスタル最大HP+10%'}, rv_reduce:{desc:'クリスタル被ダメ−4%'}, rv_regen:{desc:'クリスタル再生+0.3%/秒'}, rv_gold:{desc:'撃破ゴールド+8%'}, rv_hp:{desc:'クリスタル最大HP+8%'}, rv_eter:{desc:'クリスタル再生+0.3%/秒'},
     ce_crit:{desc:'クリティカル率+3%'}, ce_judge:{desc:'クリティカル率+4%'}, ce_gold:{desc:'撃破ゴールド+8%'}, ce_luck:{desc:'黄金の敵確率+1%'}, ce_dmg:{desc:'ヒーローダメージ+4%'}, ce_shrd:{desc:'再封印シャード+8%'},
     hu_dmg:{desc:'ヒーローダメージ+4%'}, hu_ward:{desc:'クリスタル最大HP+8%'}, hu_gold:{desc:'撃破ゴールド+6%'}, hu_slow:{desc:'スロー効果+12%'}, hu_crit:{desc:'クリティカル率+3%'}, hu_rally:{desc:'ヒーローダメージ+5%'},
+    ab_r2a:{desc:'ヒーローダメージ+6%'}, ab_r2b:{desc:'クリティカル率+4%'}, ab_r2c:{desc:'ボスダメージ+10%'}, ab_cap:{desc:'クリティカルダメージ+0.2×'},
+    rv_r2a:{desc:'クリスタル最大HP+12%'}, rv_r2b:{desc:'クリスタル再生+0.4%/秒'}, rv_r2c:{desc:'クリスタル被ダメ−3%'}, rv_cap:{desc:'クリスタル再生+0.5%/秒'},
+    ce_r2a:{desc:'クリティカル率+4%'}, ce_r2b:{desc:'撃破ゴールド+10%'}, ce_r2c:{desc:'ヒーローダメージ+5%'}, ce_cap:{desc:'再封印シャード+15%'},
+    hu_r2a:{desc:'ヒーローダメージ+5%'}, hu_r2b:{desc:'撃破ゴールド+8%'}, hu_r2c:{desc:'クリティカル率+4%'}, hu_cap:{desc:'ヒーローダメージ+8%'},
     common:{name:'コモン'}, rare:{name:'レア'}, epic:{name:'エピック'}, legendary:{name:'レジェンダリー'}, mythic:{name:'ミシック'},
   },
 };
@@ -213,6 +221,10 @@ const RACES = {
       { id:'ab_od',   name:'Void Surge',   icon:'⚡', desc:'Overdrive lasts +0.5s', stat:'odDur',   per:0.5,  max:4,  cost:2, ang:90  },
       { id:'ab_rage', name:'Dread Edge',   icon:'🔥', desc:'+3% hero damage',       stat:'dmg',     per:0.03, max:8,  cost:2, ang:150 },
       { id:'ab_sing', name:'Singularity',  icon:'🕳️', desc:'+6% damage to bosses',  stat:'bossDmg', per:0.06, max:5,  cost:3, ang:210, req:{id:'ab_boss',lv:3} },
+      { id:'ab_r2a', name:'Rift Edge',   icon:'⚔️', desc:'+6% hero damage',      stat:'dmg',     per:0.06, max:5, cost:3, ring:2, ang:270, req:{id:'ab_dmg',lv:3} },
+      { id:'ab_r2b', name:'Death Gaze',  icon:'🎯', desc:'+4% critical chance',  stat:'crit',    per:0.04, max:4, cost:3, ring:2, ang:30,  req:{id:'ab_crit',lv:3} },
+      { id:'ab_r2c', name:'World Ender', icon:'💀', desc:'+10% damage to bosses',stat:'bossDmg', per:0.10, max:4, cost:3, ring:2, ang:150, req:{id:'ab_rage',lv:3} },
+      { id:'ab_cap', name:'⭐ Oblivion', icon:'🌑', desc:'+0.2× critical damage', stat:'critDmg', per:0.2, max:4, cost:5, ring:3, ang:270, req:{id:'ab_r2a',lv:2}, cap:true },
     ] },
   revenant: { name:'Revenant', icon:'💀', color:'#5be18a', tag:'Undying',
     desc:'Undeath — relentless sustain and soul-fed wealth.',
@@ -223,6 +235,10 @@ const RACES = {
       { id:'rv_gold', name:'Soul Harvest',  icon:'🪙', desc:'+8% gold from kills',      stat:'gold',      per:0.08, max:8, cost:2, ang:90  },
       { id:'rv_hp',   name:'Rotten Heart',  icon:'❤️', desc:'+8% Crystal max HP',       stat:'ward',      per:0.08, max:6, cost:2, ang:150 },
       { id:'rv_eter', name:'Eternal Return',icon:'🩸', desc:'+0.3%/s Crystal regen',    stat:'regen',     per:0.003,max:4, cost:3, ang:210, req:{id:'rv_regen',lv:2} },
+      { id:'rv_r2a', name:'Iron Tomb', icon:'🛡️', desc:'+12% Crystal max HP',      stat:'ward',      per:0.12, max:5, cost:3, ring:2, ang:270, req:{id:'rv_ward',lv:3} },
+      { id:'rv_r2b', name:'Soul Font', icon:'♻️', desc:'+0.4%/s Crystal regen',     stat:'regen',     per:0.004,max:4, cost:3, ring:2, ang:30,  req:{id:'rv_regen',lv:2} },
+      { id:'rv_r2c', name:'Deathless', icon:'🧱', desc:'Crystal takes -3% damage',  stat:'dmgReduce', per:0.03, max:5, cost:3, ring:2, ang:150, req:{id:'rv_hp',lv:3} },
+      { id:'rv_cap', name:'⭐ Immortal Coil', icon:'💀', desc:'+0.5%/s Crystal regen', stat:'regen', per:0.005, max:4, cost:5, ring:3, ang:270, req:{id:'rv_r2a',lv:2}, cap:true },
     ] },
   celestial: { name:'Celestial', icon:'✨', color:'#ffd75e', tag:'Radiant',
     desc:'Divine fortune — pristine crits, gold and prestige gains.',
@@ -233,6 +249,10 @@ const RACES = {
       { id:'ce_luck', name:'Fortune',      icon:'🍀', desc:'+1% golden-enemy chance', stat:'golden',    per:0.01, max:5, cost:2, ang:90  },
       { id:'ce_dmg',  name:'Radiance',     icon:'⚔️', desc:'+4% hero damage',         stat:'dmg',       per:0.04, max:8, cost:2, ang:150 },
       { id:'ce_shrd', name:'Ascension',    icon:'💠', desc:'+8% shards from Reseal',  stat:'shardGain', per:0.08, max:5, cost:3, ang:210, req:{id:'ce_gold',lv:3} },
+      { id:'ce_r2a', name:'Sanctify',   icon:'🎯', desc:'+4% critical chance', stat:'crit', per:0.04, max:5, cost:3, ring:2, ang:270, req:{id:'ce_crit',lv:3} },
+      { id:'ce_r2b', name:'Golden Halo',icon:'🪙', desc:'+10% gold from kills',stat:'gold', per:0.10, max:5, cost:3, ring:2, ang:30,  req:{id:'ce_gold',lv:3} },
+      { id:'ce_r2c', name:'Holy Wrath', icon:'⚔️', desc:'+5% hero damage',     stat:'dmg',  per:0.05, max:5, cost:3, ring:2, ang:150, req:{id:'ce_dmg',lv:3} },
+      { id:'ce_cap', name:'⭐ Apotheosis', icon:'🌟', desc:'+15% shards from Reseal', stat:'shardGain', per:0.15, max:4, cost:5, ring:3, ang:270, req:{id:'ce_r2a',lv:2}, cap:true },
     ] },
   human: { name:'Human', icon:'⚜️', color:'#7bd3ff', tag:'Versatile',
     desc:'Adaptable — a balanced hand in offense, defense and economy.',
@@ -243,6 +263,10 @@ const RACES = {
       { id:'hu_slow', name:'Tactics',    icon:'❄️', desc:'+12% slow potency',  stat:'slow',  per:0.12, max:4, cost:2, ang:90  },
       { id:'hu_crit', name:'Precision',  icon:'🎯', desc:'+3% critical chance',stat:'crit',  per:0.03, max:5, cost:2, ang:150 },
       { id:'hu_rally',name:'Rally',      icon:'🎖️', desc:'+5% hero damage',    stat:'dmg',   per:0.05, max:5, cost:3, ang:210, req:{id:'hu_dmg',lv:3} },
+      { id:'hu_r2a', name:'Vanguard',      icon:'⚔️', desc:'+5% hero damage',     stat:'dmg',  per:0.05, max:5, cost:3, ring:2, ang:270, req:{id:'hu_dmg',lv:3} },
+      { id:'hu_r2b', name:'Merchant Guild',icon:'🪙', desc:'+8% gold from kills', stat:'gold', per:0.08, max:5, cost:3, ring:2, ang:30,  req:{id:'hu_gold',lv:3} },
+      { id:'hu_r2c', name:'Sharpshooter',  icon:'🎯', desc:'+4% critical chance', stat:'crit', per:0.04, max:4, cost:3, ring:2, ang:150, req:{id:'hu_crit',lv:3} },
+      { id:'hu_cap', name:'⭐ Grand Strategy', icon:'🎖️', desc:'+8% hero damage', stat:'dmg', per:0.08, max:5, cost:5, ring:3, ang:270, req:{id:'hu_r2a',lv:2}, cap:true },
     ] },
 };
 const raceUnlocked = () => dispStage(S.bestWave) >= RACE_STAGE;
@@ -375,7 +399,7 @@ const SHARD_UPGRADES = [
 
 const CRIT_MULT = 2.5;                  // base critical hit damage multiplier
 function critChance(){ return Math.min(0.75, 0.03 + 0.03 * S.shardUpg.crit + relicBonus('crit') + raceBonus('crit')); }
-function critMultiplier(){ return CRIT_MULT + 0.1 * talent('precision'); }
+function critMultiplier(){ return CRIT_MULT + 0.1 * talent('precision') + raceBonus('critDmg'); }
 function critRoll(dmg){
   return Math.random() < critChance() ? { dmg: dmg * critMultiplier(), crit:true } : { dmg, crit:false };
 }
@@ -2571,18 +2595,19 @@ function openRace(){
   // ---- radial hex tree ----
   const r = RACES[S.race];
   if (!r.nodes.some(n => n.id === raceSel)) raceSel = null;
-  const C = 180, R1 = 120, DEG = Math.PI/180;         // 360-unit space; center + ring radius
-  const pos = n => ({ x: C + R1*Math.cos(n.ang*DEG), y: C + R1*Math.sin(n.ang*DEG) });
+  const C = 180, DEG = Math.PI/180, RING_R = { 1:72, 2:116, 3:150 };   // per-ring radius
+  const pos = n => { const R = RING_R[n.ring || 1]; return { x: C + R*Math.cos(n.ang*DEG), y: C + R*Math.sin(n.ang*DEG) }; };
   const byId = id => r.nodes.find(n => n.id === id);
-  // connector lines: centre→node, plus req→node for gated ones
+  // connectors: ring-1 nodes link to the centre; gated (outer) nodes link to their prerequisite
   const lines = r.nodes.map(n => {
-    const p = pos(n); let s = `<line x1="${C}" y1="${C}" x2="${p.x}" y2="${p.y}" class="rt-link ${raceLvl(n.id)>0?'on':''}"/>`;
-    if (n.req){ const q = pos(byId(n.req.id)); s += `<line x1="${q.x}" y1="${q.y}" x2="${p.x}" y2="${p.y}" class="rt-link ${raceNodeLocked(n)?'':'on'}" stroke-dasharray="4 3"/>`; }
-    return s;
+    const p = pos(n);
+    if (!n.req) return `<line x1="${C}" y1="${C}" x2="${p.x}" y2="${p.y}" class="rt-link ${raceLvl(n.id)>0?'on':''}"/>`;
+    const q = pos(byId(n.req.id));
+    return `<line x1="${q.x}" y1="${q.y}" x2="${p.x}" y2="${p.y}" class="rt-link ${raceNodeLocked(n)?'':'on'}" stroke-dasharray="4 3"/>`;
   }).join('');
   const nodes = r.nodes.map(n => {
     const p = pos(n), lvl = raceLvl(n.id), maxed = lvl>=n.max, locked = raceNodeLocked(n);
-    const cls = ['rt-node', lvl>0?'has':'', maxed?'max':'', locked?'locked':'', raceSel===n.id?'sel':''].join(' ');
+    const cls = ['rt-node', n.cap?'rt-cap':'', lvl>0?'has':'', maxed?'max':'', locked?'locked':'', raceSel===n.id?'sel':''].join(' ');
     return `<div class="${cls}" style="left:${p.x/3.6}%;top:${p.y/3.6}%;--rc:${r.color}" data-rn="${n.id}">
       <div class="rt-hex"></div><span class="rt-ic">${locked?'🔒':n.icon}</span>
       <span class="rt-badge">${lvl}${maxed?'':'/'+n.max}</span></div>`;
