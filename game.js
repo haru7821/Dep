@@ -2614,7 +2614,7 @@ function openRace(){
   // ---- radial hex tree ----
   const r = RACES[S.race];
   if (!r.nodes.some(n => n.id === raceSel)) raceSel = null;
-  const C = 180, DEG = Math.PI/180, RING_R = { 1:72, 2:116, 3:150 };   // per-ring radius
+  const C = 180, DEG = Math.PI/180, RING_R = { 1:54, 2:98, 3:144 };   // per-ring radius (spaced so hexes never overlap)
   const pos = n => { const R = RING_R[n.ring || 1]; return { x: C + R*Math.cos(n.ang*DEG), y: C + R*Math.sin(n.ang*DEG) }; };
   const byId = id => r.nodes.find(n => n.id === id);
   // connectors: ring-1 nodes link to the centre; gated (outer) nodes link to their prerequisite
