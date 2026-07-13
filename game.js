@@ -264,15 +264,17 @@ const LANG = {
     'crys.broke':'💥 クリスタル破壊! ウェーブ{w}へ後退',
   },
 };
-function t(k){ const l = (S && S.lang) || 'ko'; return (LANG[l] && LANG[l][k] != null) ? LANG[l][k] : (LANG.en[k] != null ? LANG.en[k] : k); }
+// first-run language: match the browser (ko/ja), otherwise English
+function detectLang(){ try{ const n=(navigator.language||'').toLowerCase(); if(n.startsWith('ko'))return 'ko'; if(n.startsWith('ja'))return 'ja'; }catch(e){} return 'en'; }
+function t(k){ const l = (S && S.lang) || 'en'; return (LANG[l] && LANG[l][k] != null) ? LANG[l][k] : (LANG.en[k] != null ? LANG.en[k] : k); }
 // t() + {placeholder} interpolation: tf('sv.saved', {n:3})
 function tf(k, vars){ let str = t(k); for (const [kk, v] of Object.entries(vars)) str = str.split('{'+kk+'}').join(v); return str; }
 // localized field on a data object: L(obj,'desc') → obj.descKo / obj.descJa / obj.desc
-function langSuf(){ const l = (S && S.lang) || 'ko'; return l === 'ko' ? 'Ko' : l === 'ja' ? 'Ja' : ''; }
+function langSuf(){ const l = (S && S.lang) || 'en'; return l === 'ko' ? 'Ko' : l === 'ja' ? 'Ja' : ''; }
 // Localized data field: proper NAMES stay English; descriptions/roles/tags come
 // from the I18N table (keyed by item id), falling back to the object's own field.
 function Ld(id, field, fallback){
-  const l = (S && S.lang) || 'ko';
+  const l = (S && S.lang) || 'en';
   const tab = I18N[l];
   return (tab && tab[id] && tab[id][field] != null) ? tab[id][field] : fallback;
 }
@@ -864,7 +866,7 @@ function freshState(){
     keystones: [],          // active keystone ids (1 until all unlocked, then multi)
     race: null,             // chosen race id (mid-game) — drives a race-specific tech tree
     raceTree: {},           // race tech node id -> level
-    lang: 'ko',             // UI language: en / ko / ja
+    lang: detectLang(),     // UI language: en / ko / ja (browser-detected on first run)
     settings: { dmgNums:true, fx:true, shake:true },   // display/perf toggles
     buyMode: 1,             // hero bulk-buy amount: 1, 10, or 'max'
   };
@@ -3039,7 +3041,7 @@ const SETTING_DEFS = [
 function setLang(id){ S.lang = id; save(); applyLang(); openSettings(); }
 function openSettings(){
   const langBtns = LANG_DEFS.map(L => {
-    const on = (S.lang || 'ko') === L.id;
+    const on = (S.lang || 'en') === L.id;
     return `<button class="btn" data-lang="${L.id}" style="flex:1;${on?'background:var(--accent);border-color:var(--accent);color:#062':''}">${L.name}</button>`;
   }).join('');
   const rows = SETTING_DEFS.map(s => {

@@ -1,0 +1,101 @@
+<!doctype html><meta charset="utf-8">
+<style>
+  html,body{margin:0;padding:0;background:#0b0d1a;overflow:hidden}
+  #cv{position:relative;overflow:hidden;font-family:'DejaVu Sans',system-ui,sans-serif;
+    background:radial-gradient(120% 90% at 50% 108%, #14304a 0%, #0e1830 45%, #070a16 100%)}
+  .wide  #cv{width:1920px;height:1080px}
+  .sq    #cv{width:1080px;height:1080px}
+  .tall  #cv{width:800px;height:1200px}
+  /* aether glow behind the tower */
+  .glow{position:absolute;border-radius:50%;filter:blur(4px);
+    background:radial-gradient(circle,rgba(160,225,255,.85) 0%,rgba(123,211,255,.30) 42%,transparent 68%)}
+  /* pixel sprites, cropped to one frame via background-position */
+  .sp{position:absolute;image-rendering:pixelated;background-repeat:no-repeat}
+  .flip{transform:scaleX(-1)}
+  .tower {background-image:url(assets/tower.png);   background-size:400% 100%;background-position:0 0}
+  .ogre  {background-image:url(assets/ogre.png);    background-size:200% 200%;background-position:0 100%}
+  .harpy {background-image:url(assets/harpy.png);   background-size:200% 200%;background-position:0 100%}
+  .slime {background-image:url(assets/slime.png);   background-size:1100% 200%;background-position:0 0}
+  .skel  {background-image:url(assets/skeleton.png);background-size:700% 200%;background-position:0 0}
+  .dragon{background-image:url(assets/dragon.png);  background-size:100% 100%}
+  .knight{background-image:url(assets/warrior.png); background-size:400% 200%;background-position:0 0}
+  .mage  {background-image:url(assets/wizard.png);  background-size:300% 200%;background-position:0 0}
+  .ground{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(#0000,#05060f 80%)}
+  .ember{position:absolute;border-radius:50%;background:#7bd3ff;box-shadow:0 0 12px 4px rgba(123,211,255,.8)}
+  .ember.g{background:#ffd75e;box-shadow:0 0 12px 4px rgba(255,215,94,.8)}
+  .title{position:absolute;left:0;right:0;text-align:center;color:#eaf6ff;font-weight:800;
+    letter-spacing:.04em;line-height:1.08;
+    text-shadow:0 0 18px rgba(123,211,255,.95),0 0 60px rgba(123,211,255,.55),0 4px 0 rgba(0,0,0,.55)}
+  .title small{display:block;font-weight:700;color:#ffd75e;letter-spacing:.42em;
+    text-shadow:0 0 14px rgba(255,215,94,.9),0 3px 0 rgba(0,0,0,.5)}
+  .vig{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(115% 100% at 50% 45%, transparent 62%, rgba(3,4,10,.78) 100%)}
+</style>
+<body>
+<div id="cv">
+  <div class="glow" id="glow"></div>
+  <div class="sp tower"  id="tower"></div>
+  <div class="sp knight" id="knight"></div>
+  <div class="sp mage"   id="mage"></div>
+  <div class="sp dragon" id="dragon"></div>
+  <div class="sp ogre flip"  id="ogre"></div>
+  <div class="sp harpy flip" id="harpy"></div>
+  <div class="sp skel flip"  id="skel"></div>
+  <div class="sp slime flip" id="slime"></div>
+  <div class="ground" id="ground"></div>
+  <div class="vig"></div>
+  <div class="title" id="title">ECHOES OF THE<br>AETHER CRYSTAL<small>IDLE DEFENSE</small></div>
+</div>
+<script>
+// layout per aspect (values are % of canvas box so all three sizes share one scene)
+const MODE = new URLSearchParams(location.search).get('m') || 'wide';
+document.body.className = MODE;
+const L = {
+  wide: { title:{top:6,size:110,sub:40}, glow:[13.4,49,17],
+          tower:[6,89,44], knight:[26,90,14], mage:[31.5,90,15],
+          dragon:[76,86,34], ogre:[58,89,20], harpy:[66,52,17], skel:[50,88,15], slime:[42,90,10] },
+  sq:   { title:{top:4.5,size:78,sub:28}, glow:[16.6,41,20],
+          tower:[1,88,52], knight:[24,90,16], mage:[31,90,17],
+          dragon:[68,85,38], ogre:[55,89,23], harpy:[58,36,19], skel:[47,89,16], slime:[40,91,11] },
+  tall: { title:{top:4,size:62,sub:23}, glow:[23,28,22],
+          tower:[-4,84,60], knight:[27,86,18], mage:[38,86,19],
+          dragon:[60,82,42], ogre:[47,85,25], harpy:[56,36,21], skel:[-999,84,18], slime:[-999,86,13] },
+}[MODE];
+const cv = document.getElementById('cv');
+const W = cv.offsetWidth, H = cv.offsetHeight;
+function place(id, [x, bottomPct, hPct], wRatio){
+  const e = document.getElementById(id);
+  const h = H*hPct/100, w = h*wRatio;
+  e.style.left = (W*x/100)+'px';
+  e.style.top  = (H*bottomPct/100 - h)+'px';
+  e.style.width = w+'px'; e.style.height = h+'px';
+}
+// width:height ratios of one frame per sheet
+place('tower', L.tower, 153/254);
+place('knight',L.knight, 1.0); place('mage', L.mage, 1.0);
+place('dragon',L.dragon, 1.15);
+place('ogre',  L.ogre,  0.71); place('harpy', L.harpy, 1.81);
+place('skel',  L.skel,  0.94); place('slime', L.slime, 1.55);
+const g = document.getElementById('glow');
+const gs = H*L.glow[2]/100*2;
+g.style.width=gs+'px'; g.style.height=gs+'px';
+g.style.left=(W*L.glow[0]/100-gs/2)+'px'; g.style.top=(H*L.glow[1]/100-gs/2)+'px';
+const t = document.getElementById('title');
+t.style.top = (H*L.title.top/100)+'px';
+t.style.fontSize = L.title.size+'px';
+t.querySelector('small').style.fontSize = L.title.sub+'px';
+t.querySelector('small').style.marginTop = (L.title.sub*0.6)+'px';
+const gr = document.getElementById('ground'); gr.style.height = (H*0.16)+'px';
+// scattered aether embers
+for (let i=0;i<26;i++){
+  const e=document.createElement('div');
+  e.className='ember'+(Math.random()<0.4?' g':'');
+  const s=2+Math.random()*5;
+  e.style.width=e.style.height=s+'px';
+  e.style.left=(Math.random()*100)+'%';
+  e.style.top=(28+Math.random()*62)+'%';
+  e.style.opacity=0.35+Math.random()*0.6;
+  cv.appendChild(e);
+}
+</script>
+</body>
