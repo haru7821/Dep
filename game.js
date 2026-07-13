@@ -20,6 +20,10 @@ const LANG = {
     'set.fx':'Particle effects', 'set.fx.d':'Elemental bursts, embers and sparkles. Turn off to boost performance.',
     'set.shake':'Screen shake', 'set.shake.d':'Camera shake on big hits, explosions and boss deaths.',
     'on':'ON', 'off':'OFF', 'race.permanent':'This choice is <b>permanent</b>.', 'race.req':'required',
+    'relic.autofuse':'Common & Rare relics fuse automatically.',
+    'relic.fuse.title':'🧪 Fusion — pick 3 Epic+ relics to gamble upward',
+    'relic.fuse.hint':'Common & Rare auto-fuse. Tap 🧪 on <b>3</b> Epic (or Legendary) relics of the same rarity to gamble them upward.',
+    'relic.fuse.success':'success (fail keeps one)', 'relic.fuse.picked':'Picked',
   },
   ko: {
     'btn.prestige':'💠 크리스탈 재봉인', 'btn.shop':'💠 샤드 상점', 'btn.talents':'🌳 특성',
@@ -33,6 +37,10 @@ const LANG = {
     'set.fx':'파티클 효과', 'set.fx.d':'속성 폭발·불티·반짝임. 성능 향상을 위해 끌 수 있습니다.',
     'set.shake':'화면 흔들림', 'set.shake.d':'큰 타격·폭발·보스 처치 시 화면이 흔들립니다.',
     'on':'켜짐', 'off':'꺼짐', 'race.permanent':'이 선택은 <b>영구적</b>입니다.', 'race.req':'필요',
+    'relic.autofuse':'일반·희귀 유물은 자동으로 합성됩니다.',
+    'relic.fuse.title':'🧪 합성 — 에픽 이상 유물 3개를 골라 상위 도전',
+    'relic.fuse.hint':'일반·희귀는 자동 합성됩니다. 같은 등급의 에픽(또는 전설) 유물 <b>3개</b>에 🧪를 눌러 상위 등급에 도전하세요.',
+    'relic.fuse.success':'성공 (실패 시 1개 유지)', 'relic.fuse.picked':'선택됨',
   },
   ja: {
     'btn.prestige':'💠 クリスタル再封印', 'btn.shop':'💠 シャードショップ', 'btn.talents':'🌳 才能',
@@ -46,6 +54,10 @@ const LANG = {
     'set.fx':'パーティクル効果', 'set.fx.d':'属性の爆発・火花・きらめき。オフで性能向上。',
     'set.shake':'画面の揺れ', 'set.shake.d':'大ヒット・爆発・ボス撃破時に画面が揺れます。',
     'on':'ON', 'off':'OFF', 'race.permanent':'この選択は<b>永続的</b>です。', 'race.req':'が必要',
+    'relic.autofuse':'コモン・レアの遺物は自動で合成されます。',
+    'relic.fuse.title':'🧪 合成 — エピック以上の遺物を3つ選んで上位に挑戦',
+    'relic.fuse.hint':'コモン・レアは自動合成されます。同じレアリティのエピック（または伝説）遺物<b>3つ</b>の🧪を押して上位に挑戦。',
+    'relic.fuse.success':'成功（失敗時は1つ保持）', 'relic.fuse.picked':'選択中',
   },
 };
 function t(k){ const l = (S && S.lang) || 'ko'; return (LANG[l] && LANG[l][k] != null) ? LANG[l][k] : (LANG.en[k] != null ? LANG.en[k] : k); }
@@ -503,6 +515,9 @@ function grantRelic(wave){
   const t = RELIC_TYPES[type];
   toast(`${t.icon} ${rar.name} ${t.name} dropped! (${t.fmt(relicValue(rel))})`);
   GA('prestige');
+  const grad = autoFuse();                          // Common/Rare auto-combine upward
+  if (grad){ const gt = RELIC_TYPES[grad.type];
+    toast(`♻️ Auto-fused → ${gt.icon} ${relicRarityName(grad)} ${gt.name}!`); }
 }
 
 // --- Achievements: one-time unlocks that pay Talent Points + spendable Shards
@@ -2958,6 +2973,28 @@ const FUSE_COUNT = 3;
 const FUSE_CHANCE = { common:0.80, rare:0.50, epic:0.10, legendary:0.05 };
 const relicsOfRarity = rar => S.relics.filter(r => r.rarity === rar);
 const nextRarity = rar => RELIC_RARITY[RELIC_RARITY.findIndex(r => r.id === rar) + 1];
+// Common & Rare auto-fuse (declutter low tiers); Epic+ are fused manually by choice.
+const AUTO_FUSE = ['common', 'rare'];
+const canManualFuse = rar => rar === 'epic' || rar === 'legendary';
+// Repeatedly fuse any 3 unequipped Common/Rare relics upward. Common→Rare feeds
+// Rare→Epic in the same pass. Returns the best relic that "graduated" to Epic+.
+function autoFuse(){
+  let graduate = null;
+  for (const rar of AUTO_FUSE){
+    while (true){
+      const pool = S.relics.filter(r => r.rarity === rar && !S.equipped.includes(r.id));
+      if (pool.length < FUSE_COUNT) break;
+      const ids = pool.slice(0, FUSE_COUNT).map(r => r.id);
+      S.relics = S.relics.filter(r => !ids.includes(r.id));
+      const next = nextRarity(rar);
+      const success = Math.random() < (FUSE_CHANCE[rar] || 0.5);
+      const rel = makeRelic(success ? next.id : rar);
+      S.relics.push(rel);   // stays unequipped so it keeps chaining up through the tiers
+      if (success && !AUTO_FUSE.includes(rel.rarity)) graduate = rel;   // reached Epic+
+    }
+  }
+  return graduate;
+}
 function makeRelic(rarId){
   const types = Object.keys(RELIC_TYPES);
   if (rarId === 'mythic'){
@@ -2972,6 +3009,7 @@ function fuseSelRarity(){ const r = S.relics.find(x => x.id === fuseSel[0]); ret
 function fuseSelToggle(id){
   const rel = S.relics.find(r => r.id === id); if (!rel) return;
   if (rel.rarity === 'mythic'){ toast('Mythic relics can\'t be fused further'); return; }
+  if (!canManualFuse(rel.rarity)){ toast(t('relic.autofuse')); return; }   // Common/Rare fuse automatically
   const i = fuseSel.indexOf(id);
   if (i >= 0){ fuseSel.splice(i, 1); }
   else {
@@ -3029,7 +3067,7 @@ function openRelics(){
       <div style="flex:1" data-rel="${rel.id}"><div class="rn">${name}</div><div class="rd">${stats}</div>
         <div class="rr">${relicRarityName(rel)}${eq?' · EQUIPPED':''}${sel?' · PICKED':''}</div></div>
       <div class="relic-acts">
-        ${myth?'':`<button class="relic-del" data-pick="${rel.id}" title="Select for fusion" style="color:${sel?'#7bffb0':'#8fd0ff'}">🧪</button>`}
+        ${canManualFuse(rel.rarity)?`<button class="relic-del" data-pick="${rel.id}" title="Select for fusion" style="color:${sel?'#7bffb0':'#8fd0ff'}">🧪</button>`:''}
         <button class="relic-del" data-del="${rel.id}" title="Destroy (salvage ${relicSalvage(rel)}💠)">🗑️</button>
       </div>
     </div>`;
@@ -3041,11 +3079,11 @@ function openRelics(){
   const pct = selRar ? Math.round((FUSE_CHANCE[selRar] || 0.5) * 100) : 0;
   const ready = fuseSel.length === FUSE_COUNT;
   const fuseInfo = fuseSel.length === 0
-    ? `Tap 🧪 on <b>${FUSE_COUNT}</b> relics of the same rarity to pick them.`
+    ? t('relic.fuse.hint')
     : ready
-      ? `<b style="color:${selRarDef.color}">${FUSE_COUNT}× ${selRarDef.name}</b> → <b style="color:${next.color}">${next.name}</b> · <b>${pct}%</b> success (fail keeps one ${selRarDef.name})`
-      : `Picked <b>${fuseSel.length}/${FUSE_COUNT}</b> <b style="color:${selRarDef.color}">${selRarDef.name}</b> — pick ${FUSE_COUNT - fuseSel.length} more.`;
-  const fuseSection = `<div class="branch-title">🧪 Fusion — pick 3 relics to gamble upward</div>
+      ? `<b style="color:${selRarDef.color}">${FUSE_COUNT}× ${Ld(selRar,'name',selRarDef.name)}</b> → <b style="color:${next.color}">${Ld(next.id,'name',next.name)}</b> · <b>${pct}%</b> ${t('relic.fuse.success')}`
+      : `${t('relic.fuse.picked')} <b>${fuseSel.length}/${FUSE_COUNT}</b> <b style="color:${selRarDef.color}">${Ld(selRar,'name',selRarDef.name)}</b>`;
+  const fuseSection = `<div class="branch-title">${t('relic.fuse.title')}</div>
     <div class="shard-item"><div class="info">${fuseInfo}</div>
       <button class="btn" id="doFuse" ${ready?'':'disabled'} style="min-width:96px">🧪 ${ready?`Fuse ${pct}%`:`${fuseSel.length}/${FUSE_COUNT}`}</button></div>`;
   openModal(`
@@ -3123,6 +3161,7 @@ window.addEventListener('keydown', audioUnlock);
 // ------------------------------------------------------------------ boot
 function boot(){
   S = load() || freshState();
+  autoFuse();                             // migrate old saves: collapse piled Common/Rare relics
   if (window.Sheets && Sheets.preload) Sheets.preload();   // avoid canvas→sheet size pop
   resize();
   refreshFeatureLocks(false);         // seed: hide locked systems, mark earned ones as already-known
