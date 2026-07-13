@@ -1948,7 +1948,11 @@ function drawBossIntro(now){
 
 function draw(now){
   const px = view.w / 900;
-  const size = Math.max(2, Math.round(3 * (view.h/460)));
+  // portrait screens are tall but narrow — shrink the world a bit so sprites
+  // don't crowd the short lane (landscape/desktop keep the original rounding)
+  const size = view.h > view.w
+    ? Math.max(2, 3 * (view.h/460) * 0.75)
+    : Math.max(2, Math.round(3 * (view.h/460)));
 
   // screen shake: cover the frame then offset the whole scene by a decaying jitter
   let _shk = false;
