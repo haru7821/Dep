@@ -29,6 +29,8 @@ window.Ads = (function () {
       } else if (window.CrazyGames && CrazyGames.SDK) {
         provider = 'crazygames';
         await CrazyGames.SDK.init();
+        // QA-required lifecycle events: we init once the game is ready to play
+        try { CrazyGames.SDK.game.loadingStop(); CrazyGames.SDK.game.gameplayStart(); } catch (e) {}
       } else if (window.gdsdk && gdsdk.showAd) {
         provider = 'gd';
       }
@@ -41,9 +43,11 @@ window.Ads = (function () {
     busy = true;
     const wasMuted = !!(window.GameAudio && GameAudio.isMuted());
     if (window.GameAudio && !wasMuted) GameAudio.toggleMute();
+    if (provider === 'crazygames') try { CrazyGames.SDK.game.gameplayStop(); } catch (e) {}
     return () => {
       busy = false;
       if (window.GameAudio && !wasMuted && GameAudio.isMuted()) GameAudio.toggleMute();
+      if (provider === 'crazygames') try { CrazyGames.SDK.game.gameplayStart(); } catch (e) {}
     };
   }
 
