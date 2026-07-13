@@ -2536,7 +2536,7 @@ function destroyRelic(id){
 // Higher rarities are riskier; on failure you keep just one of the same rarity.
 const FUSE_COUNT = 3;
 // keyed by INPUT rarity → chance to reach the next tier
-const FUSE_CHANCE = { common:0.80, rare:0.50, epic:0.10, legendary:0.02 };
+const FUSE_CHANCE = { common:0.80, rare:0.50, epic:0.10, legendary:0.05 };
 const relicsOfRarity = rar => S.relics.filter(r => r.rarity === rar);
 const nextRarity = rar => RELIC_RARITY[RELIC_RARITY.findIndex(r => r.id === rar) + 1];
 function makeRelic(rarId){
