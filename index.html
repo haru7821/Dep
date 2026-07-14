@@ -1,0 +1,355 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Echoes of the Aether Crystal — 방치형 디펜스</title>
+<style>
+  :root{
+    --bg:#0b0d1a; --panel:#141830; --panel2:#1d2244; --accent:#7bd3ff; --gold:#ffd75e;
+    --shard:#c58bff; --hp:#57e18a; --danger:#ff6b6b; --text:#e8ecff; --muted:#8b93c4;
+    --line:#2a3160;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+    font-family:'Segoe UI',system-ui,-apple-system,'Malgun Gothic',sans-serif;overflow:hidden}
+  #game{display:flex;flex-direction:column;height:100%;max-width:1100px;margin:0 auto}
+  header{display:flex;align-items:center;gap:14px;padding:8px 14px;background:var(--panel);
+    border-bottom:1px solid var(--line);flex-wrap:wrap}
+  header h1{font-size:15px;margin:0;letter-spacing:.5px;color:var(--accent);
+    text-shadow:0 0 10px rgba(123,211,255,.4);white-space:nowrap}
+  .stats{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;margin-left:auto}
+  .stat{display:flex;align-items:center;gap:5px}
+  .stat b{font-variant-numeric:tabular-nums}
+  .g-gold{color:var(--gold)} .g-shard{color:var(--shard)} .g-wave{color:var(--accent)}
+  /* Crystal HP: bar (graph) + number */
+  .crystal-stat{gap:6px}
+  .hpbar{position:relative;width:96px;height:14px;background:#0d1128;border:1px solid var(--line);
+    border-radius:7px;overflow:hidden}
+  .hpbar-fill{position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:7px;
+    background:linear-gradient(90deg,#3fbf6f,#57e18a);transition:width .2s ease,background .3s}
+  .hpbar-txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:700;color:#eaf6ee;text-shadow:0 1px 2px rgba(0,0,0,.7);
+    font-variant-numeric:tabular-nums;letter-spacing:.2px}
+  @media (max-width:600px){ .hpbar{width:72px;height:13px} }
+  .stage-wrap{position:relative;flex:1;min-height:0;background:#05060f}
+  #stage{display:block;width:100%;height:100%;image-rendering:pixelated}
+  #wavebanner{position:absolute;top:34px;left:50%;transform:translateX(-50%);
+    background:rgba(20,24,48,.85);border:1px solid var(--line);border-radius:20px;
+    padding:4px 16px;font-size:13px;pointer-events:none;transition:opacity .3s}
+  .panel{background:var(--panel);border-top:1px solid var(--line);padding:8px;
+    display:flex;gap:8px;overflow-x:auto}
+  .hero-card{flex:1 1 0;min-width:150px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:8px 10px;position:relative;transition:transform .08s}
+  .hero-card.locked{opacity:.5;filter:grayscale(.7)}
+  .hero-card:not(.locked):active{transform:scale(.98)}
+  .hero-card h3{margin:0 0 2px;font-size:13px;display:flex;align-items:center;gap:6px}
+  .hero-card .role{font-size:10px;color:var(--muted);margin-bottom:6px}
+  .hero-card .stat-row{font-size:11px;color:var(--muted);display:flex;justify-content:space-between}
+  .hero-card .stat-row b{color:var(--text)}
+  .buy{margin-top:6px;width:100%;border:0;border-radius:7px;padding:7px;cursor:pointer;
+    font-weight:700;font-size:12px;background:linear-gradient(#f2c14a,#e0a72e);color:#3a2a00}
+  .buy:disabled{background:#333a5c;color:#6a72a0;cursor:not-allowed}
+  .buy small{display:block;font-weight:400;font-size:10px;opacity:.8}
+  .skill-row{margin-top:6px;font-size:11px;color:var(--accent);display:flex;align-items:center;gap:4px}
+  .cd-bar{height:4px;background:#0d1128;border-radius:3px;overflow:hidden;margin-top:3px}
+  .cd-fill{height:100%;width:0%;border-radius:3px;transition:width .12s linear}
+  .lock-tag{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:11px;color:var(--muted);text-align:center;padding:8px}
+  .controls{display:flex;gap:8px;padding:8px;background:var(--panel);
+    border-top:1px solid var(--line);flex-wrap:wrap}
+  .btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);
+    border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:600}
+  .btn:active{transform:scale(.97)}
+  .btn.prestige{background:linear-gradient(#8b5cf6,#6d28d9);border-color:#8b5cf6}
+  .btn.prestige.nudge{animation:nudgePulse 1s ease-in-out infinite}
+  @keyframes nudgePulse{0%,100%{box-shadow:0 0 0 rgba(139,92,246,0)}50%{box-shadow:0 0 16px rgba(167,139,250,.95)}}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.sel{outline:2px solid var(--accent);outline-offset:-1px}
+  .btn.icon{padding:8px 11px;font-size:15px;line-height:1}
+  .spd{margin-left:auto;display:flex;gap:4px;align-items:center;font-size:12px;color:var(--muted)}
+  .spd .btn{padding:6px 10px}
+  /* touch: remove tap delay + text selection on interactive bits */
+  .btn,.buy,.hero-card,[data-spd]{touch-action:manipulation;user-select:none}
+  /* mobile / narrow screens */
+  @media (max-width:600px){
+    header h1{font-size:13px}
+    /* one fixed row: growing numbers must never push the HP bar to a new line */
+    .stats{gap:10px;font-size:12px;width:100%;margin-left:0;
+      flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+    .stats::-webkit-scrollbar{display:none}
+    .stat{flex:0 0 auto;white-space:nowrap}
+    .hero-card{min-width:132px;padding:7px 8px}
+    .controls{gap:6px}
+    .controls .btn{padding:8px 9px;font-size:11px}
+    .spd{width:100%;margin-left:0;justify-content:flex-end}
+  }
+  @media (max-width:380px){ .hero-card{min-width:120px} }
+  /* phones: controls collapse to ONE horizontally-scrollable row (saves ~80px) */
+  @media (max-width:600px), (max-height:480px){
+    .controls{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
+      padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+    .controls::-webkit-scrollbar{display:none}
+    .controls .btn{flex:0 0 auto;white-space:nowrap}
+    .spd{width:auto;margin-left:auto;flex:0 0 auto}
+  }
+  /* landscape phones: compress header/panel/controls so the battlefield stays big */
+  @media (orientation:landscape) and (max-height:480px){
+    #game{max-width:none}
+    header{padding:3px calc(10px + env(safe-area-inset-left)) 3px calc(10px + env(safe-area-inset-right));gap:8px;flex-wrap:nowrap}
+    header h1{display:none}
+    .stats{margin-left:0;gap:10px;font-size:11.5px;width:auto;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+    .stats::-webkit-scrollbar{display:none}
+    .hpbar{width:64px;height:12px}
+    .panel{padding:4px 6px}
+    .hero-card{min-width:100px;padding:4px 7px}
+    .hero-card .role,.hero-card .skill-row{display:none}
+    .hero-card h3{font-size:11px;margin:0}
+    .hero-card .stat-row{font-size:9.5px}
+    .cd-bar{margin-top:2px;height:3px}
+    .buy{margin-top:3px;padding:3px;font-size:10.5px}
+    .buy small{display:inline;font-size:9px;margin-left:3px}
+    .controls{padding:4px 6px calc(4px + env(safe-area-inset-bottom))}
+    .controls .btn{padding:5px 8px;font-size:10.5px}
+    .modal .box{max-height:96vh;padding:12px 14px}
+  }
+  .modal{position:fixed;inset:0;background:rgba(4,6,15,.82);display:none;
+    align-items:center;justify-content:center;z-index:30;padding:16px}
+  .modal.show{display:flex}
+  .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    max-width:440px;width:100%;padding:20px;max-height:90vh;overflow:auto;scrollbar-gutter:stable}
+  .modal h2{margin:0 0 10px;color:var(--accent);font-size:18px}
+  .modal p{font-size:13px;line-height:1.55;color:var(--text)}
+  .shard-shop{display:grid;gap:8px;margin:12px 0}
+  .shard-item{display:flex;align-items:center;gap:10px;background:var(--panel2);
+    border:1px solid var(--line);border-radius:9px;padding:9px}
+  .shard-item .info{flex:1;font-size:12px}
+  .shard-item .info b{color:var(--shard)}
+  .shard-item .lv{font-size:11px;color:var(--muted)}
+  .branch-title{font-size:12px;font-weight:700;color:var(--accent);margin:10px 2px 2px}
+  /* Keystone picker */
+  .ks-list{display:grid;gap:8px;margin:12px 0}
+  .ks{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);
+    border:1px solid var(--line);border-left:4px solid var(--kc,#888);border-radius:10px;
+    padding:10px;cursor:pointer;transition:transform .08s}
+  .ks:active{transform:scale(.99)}
+  .ks.on{outline:2px solid var(--kc,#888);outline-offset:-1px;
+    box-shadow:0 0 14px color-mix(in srgb, var(--kc) 55%, transparent)}
+  .ks-ic{font-size:22px;line-height:1}
+  .ks-nm{font-size:13px;font-weight:800;color:var(--kc,#e8ecff)}
+  .ks-desc{font-size:11px;color:var(--muted);line-height:1.45;margin-top:2px}
+  .ks-locked{opacity:.5;cursor:default;filter:grayscale(.5)}
+  .ks-lock{text-align:center;padding:22px 12px;background:var(--panel2);
+    border:1px solid var(--line);border-radius:12px;margin:12px 0}
+  .ks-lock-ic{font-size:40px;line-height:1;filter:grayscale(.2)}
+  .ks-lock-msg{font-size:15px;font-weight:800;color:#e8ecff;margin-top:10px}
+  .ks-lock-sub{font-size:12px;color:var(--muted);line-height:1.5;margin-top:8px}
+  .btn.locked{opacity:.55}
+  .util-hidden{display:none!important}
+  .menu-list{display:grid;gap:8px;margin:12px 0}
+  .menu-item{width:100%;text-align:left;display:flex;align-items:center;justify-content:space-between;font-size:14px}
+  .menu-item .mi-state{color:var(--muted);font-weight:700}
+  /* Race radial tech tree */
+  .modal .box.racebig{max-width:560px}
+  .modal .box.racebig h2{font-size:21px}
+  .modal .box.racebig p{font-size:14.5px}
+  .racetree{position:relative;width:100%;max-width:470px;aspect-ratio:1;margin:10px auto}
+  .rt-links{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .rt-link{stroke:#2a3160;stroke-width:2}
+  .rt-link.on{stroke:var(--rc,#7bd3ff);stroke-width:2.5;opacity:.85}
+  .rt-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;
+    width:13.5%;height:13.5%;border-radius:50%;border:2px solid var(--rc);
+    background:radial-gradient(circle,color-mix(in srgb,var(--rc) 25%,transparent),transparent);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--rc);font-weight:800}
+  .rt-node{position:absolute;width:11.5%;aspect-ratio:1;transform:translate(-50%,-50%);z-index:2;
+    display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .rt-node.rt-cap{width:14%;z-index:4}
+  .rt-node.rt-cap .rt-ic{font-size:25px;z-index:2}
+  .rt-node.rt-cap .rt-hex{z-index:1}
+  .rt-node.rt-cap .rt-badge{z-index:3}
+  /* rotating halo behind the capstone */
+  .rt-node.rt-cap::before{content:'';position:absolute;inset:-8px;border-radius:50%;z-index:0;
+    background:conic-gradient(from 0deg, transparent 0 62%, var(--rc) 82%, transparent);
+    animation:capRing 3.2s linear infinite;opacity:.6;filter:blur(1px)}
+  @keyframes capRing{to{transform:rotate(360deg)}}
+  /* unlocked capstone: float + pulsing glow */
+  .rt-node.rt-cap.has{animation:capFloat 2.4s ease-in-out infinite}
+  @keyframes capFloat{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.09)}}
+  .rt-node.rt-cap.has .rt-hex{animation:capGlow 1.5s ease-in-out infinite}
+  @keyframes capGlow{0%,100%{filter:drop-shadow(0 0 5px var(--rc))}50%{filter:drop-shadow(0 0 16px var(--rc)) brightness(1.25)}}
+  .rt-node.rt-cap.max::before{opacity:.9;animation-duration:2s}
+  .rt-node.rt-cap.locked::before{opacity:.2}
+  .rt-hex{position:absolute;inset:0;background:var(--rc);
+    clip-path:polygon(25% 5%,75% 5%,98% 50%,75% 95%,25% 95%,2% 50%)}
+  .rt-hex::after{content:'';position:absolute;inset:2px;background:var(--panel2);
+    clip-path:polygon(25% 5%,75% 5%,98% 50%,75% 95%,25% 95%,2% 50%)}
+  .rt-node.has .rt-hex::after{background:color-mix(in srgb,var(--rc) 30%,var(--panel2))}
+  .rt-node.max .rt-hex{filter:drop-shadow(0 0 6px var(--rc))}
+  .rt-node.locked{opacity:.5;filter:grayscale(.7);cursor:not-allowed}
+  .rt-node.sel{outline:2px solid #fff;outline-offset:2px;border-radius:6px}
+  .rt-ic{position:relative;z-index:1;font-size:21px;line-height:1}
+  .rt-badge{position:absolute;right:-5px;bottom:-5px;z-index:3;background:#0b0d1a;border:1px solid var(--rc);
+    border-radius:9px;font-size:10.5px;font-weight:800;color:#fff;padding:0 4px;line-height:1.5}
+  .rt-info{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:9px;padding:10px 12px;font-size:14.5px;min-height:54px}
+  .rt-info>div{flex:1}
+  /* not-yet-unlocked controls: shown but greyed + non-interactive */
+  .feat-locked{opacity:.4;filter:grayscale(.7);cursor:not-allowed}
+  .feat-locked:active{transform:none}
+  /* Overdrive gauge button (bottom-left of the battlefield) */
+  #odBtn{position:absolute;left:12px;bottom:12px;z-index:15;width:74px;height:40px;
+    border:2px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--text);
+    font-size:16px;font-weight:800;cursor:pointer;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;gap:4px;touch-action:manipulation;user-select:none}
+  #odBtn b{font-size:11px;position:relative;z-index:2}
+  #odFill{position:absolute;left:0;top:0;bottom:0;width:0%;z-index:1;
+    background:linear-gradient(90deg,#8a5a10,#e0a72e);transition:width .15s}
+  #odBtn.ready{border-color:#ffd75e;box-shadow:0 0 14px rgba(255,215,94,.7);animation:odPulse 1s infinite}
+  #odBtn.active{border-color:#7bd3ff;box-shadow:0 0 18px rgba(123,211,255,.8)}
+  #odBtn.active #odFill{background:linear-gradient(90deg,#1a6a9a,#7bd3ff)}
+  @keyframes odPulse{50%{box-shadow:0 0 26px rgba(255,215,94,1)}}
+  .toast{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
+    background:rgba(20,24,48,.92);border:1px solid var(--line);border-radius:10px;
+    padding:8px 14px;font-size:12px;pointer-events:none;opacity:0;transition:opacity .3s;z-index:20}
+  .toast.show{opacity:1}
+  .float{position:absolute;font-size:12px;font-weight:700;pointer-events:none;
+    animation:floatUp 1s ease-out forwards;text-shadow:0 1px 2px #000}
+  @keyframes floatUp{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-28px)}}
+  /* ---- Bestiary codex (parchment + ornate framed monster entries) ---- */
+  .modal .box.wide{max-width:680px}
+  .bestiary{background:
+      radial-gradient(140% 120% at 50% -10%, #ece0b8 0%, #d9c491 46%, #c1a86f 100%);
+    border:3px solid #6b4e2a;border-radius:12px;padding:14px;color:#3a2c14;
+    box-shadow:inset 0 0 46px rgba(90,60,20,.4);
+    background-image:radial-gradient(140% 120% at 50% -10%, #ece0b8 0%, #d9c491 46%, #c1a86f 100%),
+      repeating-linear-gradient(90deg, rgba(120,90,40,.05) 0 2px, transparent 2px 4px)}
+  .bestiary-title{text-align:center;font-family:'Courier New',monospace;font-weight:800;
+    letter-spacing:2px;font-size:16px;color:#f4e4b0;text-transform:uppercase;
+    background:linear-gradient(#4a3418,#2a1d0d);border:2px solid #8a6a34;border-radius:8px;
+    padding:8px 10px;margin:0 auto 14px;max-width:440px;
+    box-shadow:0 2px 0 #170f06, inset 0 0 14px rgba(0,0,0,.55)}
+  .bestiary-sub{text-align:center;font-family:'Courier New',monospace;font-size:11px;
+    color:#5a4526;margin:-8px 0 12px;letter-spacing:.5px}
+  .bestiary-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .mon-card{background:linear-gradient(#cab27a,#b6975c);border:2px solid #7a5a2e;
+    border-radius:8px;padding:8px;box-shadow:inset 0 0 10px rgba(90,60,20,.3)}
+  .mon-card.locked{filter:saturate(.5) brightness(.92)}
+  .mon-kills{position:absolute;top:4px;right:5px;font-family:'Courier New',monospace;
+    font-size:11px;font-weight:700;color:#ffe0b0;background:rgba(0,0,0,.5);
+    border-radius:5px;padding:1px 6px}
+  .mon-frame{position:relative;height:124px;border-radius:6px;overflow:hidden;
+    border:3px solid var(--fc,#4a7a3a);
+    background:radial-gradient(120% 110% at 50% 24%, #6a5a3a, #33281a);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:inset 0 0 20px rgba(0,0,0,.55)}
+  .mon-frame canvas{image-rendering:pixelated;max-width:100%;max-height:100%}
+  .mon-frame::before,.mon-frame::after{content:'';position:absolute;width:11px;height:11px;
+    border:2px solid var(--fc,#4a7a3a)}
+  .mon-frame::before{top:3px;left:3px;border-right:0;border-bottom:0}
+  .mon-frame::after{bottom:3px;right:3px;border-left:0;border-top:0}
+  .mon-plaque{margin-top:8px;background:linear-gradient(#241a0d,#352a18);
+    border:2px solid #6a4e26;border-radius:6px;padding:7px 9px;
+    font-family:'Courier New',monospace;line-height:1.5}
+  .mon-plaque .nm{font-weight:800;color:#ffe9a8;letter-spacing:1px;font-size:13px}
+  .mon-plaque .st{font-size:11px;color:#cdbb86;font-variant-numeric:tabular-nums}
+  .mon-plaque .el{font-size:11px;color:var(--fc,#8fd07a);font-weight:700;letter-spacing:1px}
+  .mon-plaque .wr{font-size:10px;color:#cdbb86;margin-top:2px;letter-spacing:.3px}
+  .mon-plaque .ab{font-size:10px;color:#8fd0ff;margin-top:2px}
+  .bestiary-close{width:100%;margin-top:14px}
+  @media (max-width:560px){ .bestiary-grid{grid-template-columns:1fr} }
+  /* ---- Relics ---- */
+  .relic-slots{display:flex;gap:8px;margin:6px 0 12px}
+  .relic-slot{flex:1;aspect-ratio:1;border:2px dashed var(--line);border-radius:10px;
+    display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--panel2);
+    cursor:pointer;position:relative}
+  .relic-slot.filled{border-style:solid}
+  .relic-list{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-height:46vh;
+    overflow-x:hidden;overflow-y:auto;scrollbar-gutter:stable}
+  .relic{display:flex;align-items:center;gap:9px;background:var(--panel2);border:1px solid var(--line);
+    border-left:4px solid var(--rc,#9fb0d8);border-radius:9px;padding:8px;cursor:pointer;min-width:0}
+  .relic>div{min-width:0}                       /* let the text column shrink instead of overflowing */
+  .relic.eq{outline:2px solid var(--rc,#9fb0d8);outline-offset:-1px}
+  .relic.fsel{outline:2px dashed #7bffb0;outline-offset:-1px;box-shadow:0 0 12px rgba(123,255,176,.35)}
+  .relic .ic{font-size:20px;flex:0 0 auto}
+  .relic .rn{font-size:12px;font-weight:700;overflow-wrap:break-word}
+  .relic .rd{font-size:10px;color:var(--muted);overflow-wrap:break-word}
+  .relic .rr{font-size:10px;font-weight:700;color:var(--rc,#9fb0d8);overflow-wrap:break-word}
+  .relic.mythic{border-color:#ffd75e;background:linear-gradient(120deg,#3a2f12,#26200e);
+    box-shadow:0 0 10px rgba(255,215,94,.5);animation:mythShine 1.6s ease-in-out infinite}
+  .relic.mythic .rn{color:#ffe9a0}
+  .relic.mythic .ic{filter:drop-shadow(0 0 4px rgba(255,215,94,.9))}
+  @keyframes mythShine{0%,100%{box-shadow:0 0 8px rgba(255,215,94,.4)}50%{box-shadow:0 0 20px rgba(255,215,94,.95)}}
+  .relic-acts{flex:0 0 auto;display:flex;flex-direction:column;gap:5px}
+  .relic-del{flex:0 0 auto;border:1px solid var(--line);background:#2a1420;color:#ff8a8a;
+    border-radius:7px;padding:5px 7px;font-size:13px;cursor:pointer;line-height:1}
+  .relic-del:active{transform:scale(.94)} .relic-del:hover{background:#3a1a26;border-color:var(--danger)}
+  @media (max-width:560px){ .relic-list{grid-template-columns:1fr} }
+</style>
+
+<div id="game">
+  <header>
+    <h1>⟡ Echoes of the Aether Crystal</h1>
+    <div class="stats">
+      <div class="stat g-wave">🌊 Stage <b id="s-wave">1-1</b></div>
+      <div class="stat g-gold">🪙 <b id="s-gold">0</b></div>
+      <div class="stat g-shard">💠 <b id="s-shard">0</b></div>
+      <div class="stat" style="color:var(--hp)">🌳 <b id="s-tp">0</b></div>
+      <div class="stat crystal-stat"><span class="g-hp">💎</span>
+        <div class="hpbar" title="Crystal HP"><div class="hpbar-fill" id="s-crystal-fill"></div>
+          <span class="hpbar-txt" id="s-crystal-num">100/100</span></div>
+        <b id="s-crystal">100%</b></div>
+    </div>
+  </header>
+
+  <div class="stage-wrap">
+    <canvas id="stage"></canvas>
+    <div id="wavebanner">Wave 1</div>
+    <button id="odBtn" title="Overdrive">⚡<span id="odFill"></span><b id="odTxt">0%</b></button>
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <div class="panel" id="heroPanel"></div>
+
+  <div class="controls">
+    <button class="btn prestige" id="btnPrestige">💠 Reseal Crystal (Prestige)</button>
+    <button class="btn" id="btnShop">💠 Shard Shop</button>
+    <button class="btn" id="btnTalents">🌳 Talents</button>
+    <button class="btn" id="btnRace" title="Choose a race and its tech tree">🧬 Race</button>
+    <button class="btn" id="btnKeystone">⭐ Keystone</button>
+    <button class="btn" id="btnAch">🏆 Achievements</button>
+    <button class="btn" id="btnBestiary">📖 Bestiary</button>
+    <button class="btn" id="btnRelics">🗡️ Relics</button>
+    <button class="btn" id="btnTower">🏰 Fortify</button>
+    <button class="btn" id="btnAuto" title="Auto-buy the cheapest upgrade and auto-fire Overdrive">🅰️ Auto</button>
+    <button class="btn" id="btnBoost" title="Watch an ad for 30 minutes of double gold"
+      style="background:linear-gradient(#3a2f12,#26200e);border-color:#ffd75e;color:#ffd75e">📺 ×2</button>
+    <button class="btn" id="btnMenu">⚙️ Settings</button>
+    <button class="btn util-hidden" id="btnStats">📊 Stats</button>
+    <button class="btn util-hidden" id="btnSave">💾 Saves</button>
+    <button class="btn util-hidden" id="btnNewStart">🆕 New Start</button>
+    <button class="btn icon util-hidden" id="btnMusic" title="Music on/off">♪</button>
+    <button class="btn icon util-hidden" id="btnMute" title="Mute all">🔊</button>
+    <button class="btn icon util-hidden" id="btnSettings" title="Settings">⚙️</button>
+    <button class="btn" id="btnBuyMode" title="Hero buy amount">🛒 Buy ×1</button>
+    <div class="spd">
+      <span id="lblSpeed">Speed</span>
+      <button class="btn" data-spd="1">1×</button>
+      <button class="btn" data-spd="2">2×</button>
+    </div>
+  </div>
+</div>
+
+<!-- Offline / Prestige / Shop modal -->
+<div class="modal" id="modal">
+  <div class="box" id="modalBox"></div>
+</div>
+
+<script src="sprites.js?v=112"></script>
+<script src="dungeon.js?v=112"></script>
+<script src="sheets.js?v=112"></script>
+<script src="audio.js?v=112"></script>
+<!-- Portal SDKs: uncomment ONE when shipping to that portal. Without any SDK
+     the game falls back to a built-in test-ad overlay (Ads layer, ads.js).
+<script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script>
+<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
+<script src="https://html5.api.gamedistribution.com/main.min.js" data-gd-sdk></script>
+-->
+<script src="ads.js?v=112"></script>
+<script src="game.js?v=112"></script>
