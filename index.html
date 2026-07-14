@@ -71,7 +71,11 @@
   /* mobile / narrow screens */
   @media (max-width:600px){
     header h1{font-size:13px}
-    .stats{gap:10px;font-size:12px;width:100%;margin-left:0}
+    /* one fixed row: growing numbers must never push the HP bar to a new line */
+    .stats{gap:10px;font-size:12px;width:100%;margin-left:0;
+      flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+    .stats::-webkit-scrollbar{display:none}
+    .stat{flex:0 0 auto;white-space:nowrap}
     .hero-card{min-width:132px;padding:7px 8px}
     .controls{gap:6px}
     .controls .btn{padding:8px 9px;font-size:11px}
@@ -337,15 +341,15 @@
   <div class="box" id="modalBox"></div>
 </div>
 
-<script src="sprites.js?v=111"></script>
-<script src="dungeon.js?v=111"></script>
-<script src="sheets.js?v=111"></script>
-<script src="audio.js?v=111"></script>
+<script src="sprites.js?v=112"></script>
+<script src="dungeon.js?v=112"></script>
+<script src="sheets.js?v=112"></script>
+<script src="audio.js?v=112"></script>
 <!-- Portal SDKs: uncomment ONE when shipping to that portal. Without any SDK
      the game falls back to a built-in test-ad overlay (Ads layer, ads.js).
 <script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script>
 <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
 <script src="https://html5.api.gamedistribution.com/main.min.js" data-gd-sdk></script>
 -->
-<script src="ads.js?v=111"></script>
-<script src="game.js?v=111"></script>
+<script src="ads.js?v=112"></script>
+<script src="game.js?v=112"></script>
