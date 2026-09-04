@@ -2,3 +2,9 @@ node_modules/
 package-lock.json
 package.json
 clean-view.png
+
+# Local HyperFrames/Claude skill tooling installed for an unrelated task
+# (a promo video for a different project) — not part of this game's codebase.
+.agents/
+.claude/
+skills-lock.json
